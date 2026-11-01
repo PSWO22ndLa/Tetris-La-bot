@@ -1,0 +1,8 @@
+== 第 1 輪：4 個行程 × 10 局 自我對戰（用目前的 nn.json，偶爾亂放）
+== 訓練（接著上一版的權重）
+存好 nn_new.json（65432 筆，最佳 val R² 0.323）
+== 比較（同一組垃圾，16 局）
+CLASSIC {"games":16,"avgPieces":229.7,"app":0.777,"deaths":12,"msPerPiece":37.2}
+HYBRID  {"games":16,"avgPieces":155.4,"app":0.803,"deaths":14,"msPerPiece":48.7}
+NEURAL  {"games":16,"avgPieces":169.4,"app":0.789,"deaths":14,"msPerPiece":40.2}
+完成：把 nn.json 上傳到網頁 設定 → CUSTOMIZATION → LA BOT BRAIN → LOAD nn.json
