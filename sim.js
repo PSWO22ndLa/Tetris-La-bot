@@ -3,13 +3,13 @@ const C = require(require('path').resolve(process.argv.find(a => a.startsWith('c
 const W = INIT.W, BH = INIT.BOT_H, VAL = INIT.BOT_VAL;
 const args = Object.fromEntries(process.argv.slice(2).map(a => a.split('=')));
 const games = +(args.games || 4), cap = +(args.cap || 500), seed0 = +(args.seed || 1), out = args.out || null;
-if (args.nn){ const N = require(require('path').resolve(args.nn)); N.pure = args.pure === '1'; N.mix = +(args.mix || 1); C.setNN(N); }
+if (args.nn && require('fs').existsSync(args.nn)){ const N = JSON.parse(require('fs').readFileSync(args.nn, 'utf8')); N.v = N.v || (N.layers[0].n === 277 ? 2 : 1); N.pure = args.pure === '1'; N.mix = +(args.mix || 1); C.setNN(N); }   // 沒有 nn.json（第一次）→ 用規則版產資料
 if (args.qx != null && C.setQX) C.setQX(args.qx === '1');
 for (const [k, v] of Object.entries(args)) if (k.startsWith('w.')) C.LBW[k.slice(2)] = +v;
 if (args.beam) C.LBW.beam = +args.beam; if (args.depth) C.LBW.depth = +args.depth;
 let S = seed0 * 2654435761 >>> 0; const rnd = () => { S ^= S << 13; S >>>= 0; S ^= S >>> 17; S ^= S << 5; S >>>= 0; return S / 4294967296; };
 Math.random = rnd;
-const EPS = +(args.eps || 0);
+const EPS = +(args.eps || 0), B2BR = +(args.b2br ?? .5);
 const GAMMA = +(args.gamma || .95), DEATH = +(args.death || 40);
 const feats = [], targets = [];
 const stats = [];
@@ -32,7 +32,8 @@ for (let g = 0; g < games; g++){
     let out2 = atk; while (out2 > 0 && pending.length){ const c = Math.min(out2, pending[0].n); pending[0].n -= c; out2 -= c; if (!pending[0].n) pending.shift(); }
     // 特徵：放完的盤面（跟搜尋葉節點一樣），pend＝這手之後還在排隊的量
     C.setR({ pend: Math.min(12, pending.reduce((a, p) => a + p.n, 0)) });
-    recF.push(Array.from(C.lbFeatB(C.lbToBits(bd), { b2b, combo }))); recR.push(atk); sent += atk;
+    { const bits = C.lbToBits(bd); recF.push({ f: Array.from(C.lbFeatB(bits, { b2b, combo }), v => +v.toFixed(4)), b: Array.from(bits), h: hold ? 'IJLOSTZ'.indexOf(hold) : -1 }); }
+    recR.push(atk + (r.n && b2b >= 1 && b2b > b0 ? B2BR : 0)); sent += atk;   // v2 獎勵：攻擊＋B2B 接下去的小獎勵
     // 垃圾：倒數到 0 且這手沒消行 → 進場（一次最多 8）
     for (const p of pending) p.d--;
     if (!r.n){ let room = 8;

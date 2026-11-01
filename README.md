@@ -1,5 +1,7 @@
 # labot-train
 
+> **v2（學 fusion）**：網路改看整個 24×10 盤面＋HOLD＋30 個特徵（277 輸入、48→24 隱藏層），訓練獎勵多一項「B2B 接下去」。舊版（v1，30 輸入）的網路和資料放在 `archive_v1/`，v2 從零重新練。
+
 La bot 的神經網路評分訓練工具。全部用 Bun 跑，不需要 Python。
 
 ## 自動訓練（GitHub Actions）
@@ -58,6 +60,6 @@ bun sim.js games=16 cap=500 seed=101 nn=nn.json pure=1                          
 
 ## 注意
 
-- 網路輸入是 30 個盤面特徵，要改特徵網頁也要一起改（`lbFeatB`）。
-- 練出來的 `nn.json` 第一層必須是 30 輸入，網頁才會收。
+- v2 網路輸入 277 個（30 特徵＋HOLD 7＋盤面 240），網頁 `lbNNv2` 對應；v1（30 輸入）網頁也還認得。
+- 比較結果多了 `maxB2B`（最長 B2B）、`avgB2B`（消行時平均 B2B）、`breaks3`（B2B ≥3 時被斷幾次）。
 - 第 1 輪實測：HYBRID 比 CLASSIC 多撐約 10%，NEURAL 還很弱。純網路要多跑幾輪才會追上。
