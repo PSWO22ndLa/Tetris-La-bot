@@ -1,0 +1,55 @@
+// 自我對戰：La bot（經典或 NN 評分）在 QP 式垃圾壓力下打到死／上限，記錄 (特徵, 之後的折扣攻擊)
+const C = require('./core.js'); const INIT = require('./init.json').init; C.init(INIT);
+const W = INIT.W, BH = INIT.BOT_H, VAL = INIT.BOT_VAL;
+const args = Object.fromEntries(process.argv.slice(2).map(a => a.split('=')));
+const games = +(args.games || 4), cap = +(args.cap || 500), seed0 = +(args.seed || 1), out = args.out || null;
+if (args.nn){ const N = require(require('path').resolve(args.nn)); N.pure = args.pure === '1'; N.mix = +(args.mix || 1); C.setNN(N); }
+if (args.beam) C.LBW.beam = +args.beam; if (args.depth) C.LBW.depth = +args.depth;
+let S = seed0 * 2654435761 >>> 0; const rnd = () => { S ^= S << 13; S >>>= 0; S ^= S >>> 17; S ^= S << 5; S >>>= 0; return S / 4294967296; };
+Math.random = rnd;
+const EPS = +(args.eps || 0);
+const GAMMA = +(args.gamma || .95), DEATH = +(args.death || 40);
+const feats = [], targets = [];
+const stats = [];
+for (let g = 0; g < games; g++){
+  const L = +(args.lmin || .6) + rnd() * +(args.lrange || 1.8);                                  // 這局的垃圾壓力
+  let bd = new Uint8Array(W * BH), hold = null, q = [], bag = [], b2b = -1, combo = -1, pending = [], hole = (rnd() * W) | 0, nextWave = 6 + rnd() * 10 / L;
+  const fill = () => { while (q.length < 7){ if (!bag.length){ bag = ['I','J','L','O','S','T','Z']; for (let i = 6; i > 0; i--){ const k = (rnd() * (i + 1)) | 0; [bag[i], bag[k]] = [bag[k], bag[i]]; } } q.push(bag.pop()); } };
+  const recF = [], recR = []; let dead = false, pieces = 0, sent = 0, t0 = Date.now();
+  for (; pieces < cap; pieces++){
+    fill();
+    const pend = pending.reduce((a, p) => a + p.n, 0);
+    let d = C.lbDecide({ bd, hold, q: q.slice(0, 6), bag: [], b2b, combo, noBook: true, pend, rules: null });
+    if (d && EPS && rnd() < EPS){ C.lbTables(); const ms = [...C.lbMovesB(C.lbToBits(bd), q[0]).values()]; if (ms.length) d = { m: ms[(rnd() * ms.length) | 0], held: false }; }   // 探索：偶爾亂放，讓資料涵蓋爛盤面
+    if (!d){ dead = true; break; }
+    if (d.held){ const h = hold; hold = q.shift(); if (h) q.unshift(h); }
+    q.shift();
+    const r = C.lbPlace(bd, d.m), st = { b2b, combo };
+    C.setR({});
+    const atk = C.lbAttack(r.n, d.m.spin, st, r.pc, 0); b2b = st.b2b; combo = st.combo; bd = r.b;
+    let out2 = atk; while (out2 > 0 && pending.length){ const c = Math.min(out2, pending[0].n); pending[0].n -= c; out2 -= c; if (!pending[0].n) pending.shift(); }
+    // 特徵：放完的盤面（跟搜尋葉節點一樣），pend＝這手之後還在排隊的量
+    C.setR({ pend: Math.min(12, pending.reduce((a, p) => a + p.n, 0)) });
+    recF.push(Array.from(C.lbFeatB(C.lbToBits(bd), { b2b, combo }))); recR.push(atk); sent += atk;
+    // 垃圾：倒數到 0 且這手沒消行 → 進場（一次最多 8）
+    for (const p of pending) p.d--;
+    if (!r.n){ let room = 8;
+      while (room > 0 && pending.length && pending[0].d <= 0){ const p = pending[0], n = Math.min(room, p.n);
+        for (let i = 0; i < n; i++){ for (let x = 0; x < W; x++) if (bd[x]){ dead = true; } if (dead) break;
+          bd.copyWithin(0, W); if (rnd() < .2) hole = (rnd() * W) | 0; for (let x = 0; x < W; x++) bd[(BH - 1) * W + x] = x === hole ? 0 : 8; }
+        if (dead) break; p.n -= n; room -= n; if (!p.n) pending.shift(); } }
+    if (dead) break;
+    let spawnBlocked = false; for (let y = 0; y < 4 && !spawnBlocked; y++) for (let x = 3; x < 7; x++) if (bd[y * W + x]){ spawnBlocked = true; break; }
+    if (spawnBlocked){ dead = true; break; }
+    if (--nextWave <= 0){ nextWave = (3 + rnd() * 9) / L; let n = 1 + Math.floor(-Math.log(rnd() + 1e-9) * 1.6 * L); if (rnd() < .08 * L) n += 5 + ((rnd() * 5) | 0); pending.push({ n: Math.min(n, 14), d: 2 + ((rnd() * 3) | 0) }); }
+  }
+  // 目標：之後的折扣攻擊（不含這手），死掉扣 DEATH
+  let G = dead ? -DEATH : 0; const n = recF.length, tg = new Array(n);
+  for (let i = n - 1; i >= 0; i--){ tg[i] = G; G = recR[i] + GAMMA * G; }
+  const keep = dead ? n : Math.max(0, n - 40);                 // 沒死（到上限）：最後 40 手的目標被截斷，不要
+  for (let i = 0; i < keep; i++){ feats.push(recF[i]); targets.push(tg[i]); }
+  stats.push({ L: +L.toFixed(2), pieces, sent, app: +(sent / Math.max(1, pieces)).toFixed(3), dead, ms: Date.now() - t0 });
+}
+const surv = stats.reduce((a, s) => a + s.pieces, 0) / stats.length, app = stats.reduce((a, s) => a + s.sent, 0) / Math.max(1, stats.reduce((a, s) => a + s.pieces, 0));
+console.log(JSON.stringify({ games, avgPieces: +surv.toFixed(1), app: +app.toFixed(3), deaths: stats.filter(s => s.dead).length, msPerPiece: +(stats.reduce((a, s) => a + s.ms, 0) / stats.reduce((a, s) => a + s.pieces, 0)).toFixed(1) }));
+if (out) require('fs').writeFileSync(out, JSON.stringify({ X: feats, y: targets, stats }));
