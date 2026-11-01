@@ -9,7 +9,8 @@ for r in $(seq 1 "$ROUNDS"); do
   tag=$(date +%Y%m%d_%H%M%S)
   echo "== 第 $r 輪：$P 個行程 × $GAMES 局 自我對戰（用目前的 nn.json，偶爾亂放）"
   for p in $(seq 1 "$P"); do
-    bun sim.js games="$GAMES" cap=600 seed="$RANDOM$p" beam=8 depth=6 nn=nn.json mix=1 eps=0.08 out="data/${tag}_$p.json" > /dev/null &
+    MODE=$([ $((p % 2)) -eq 0 ] && echo "pure=1" || echo "mix=1")   # 一半用 NEURAL 自己打（讓網路看到自己犯的錯），一半用 HYBRID
+    bun sim.js games="$GAMES" cap=600 seed="$RANDOM$p" beam=8 depth=6 nn=nn.json $MODE eps=0.08 out="data/${tag}_$p.json" > /dev/null &
   done
   wait
   echo "== 訓練（接著上一版的權重）"
