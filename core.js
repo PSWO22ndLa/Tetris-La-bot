@@ -1,5 +1,5 @@
-let W, BOT_H, SHAPES, KICK_JLSTZ, KICK_I_PLUS, KICK_180, BOT_VAL, CLIMB_CFG, LBW, LB_BOOK, LBT = null, PER = 8, LB_R = {}; const LB_ASCK = {}; const lbSx = t => LB_R.sx && LB_R.sx[t] != null ? LB_R.sx[t] : t === 'O' ? 4 : 3; let LB_DIRS = [1, 3, 2], LB_OSPIN = false; const LB_GW = 30, LB_GPOT = {"f_osgl":"O","f_odbl":"O","b_ostill":"O","c_oodbl":"O","b_o6":"O","f_szdbl":"SZ","d_szdbl2":"SZ","f_ljtrp":"LJ","d_ljtrp2":"LJ","e_tss":"T","e_tsd":"T","c_tst":"T","b_tsdup":"T","b_tsdcmb":"T","a_tsdedge":"T","c_mini4":"T","e_spin":"TSZLJ","d_spin0x3":"TSZLJ","b_spin3p":"TSZLJI","e_szspin":"SZ","c_szspin3":"SZ","c_szgarb":"SZ","a_szspin2x2":"SZ","e_ljspin":"LJ","b_ljspin3":"LJ","c_ljgarb":"LJ","a_ljspin2x2":"LJ","d_szlj2":"SZLJ","d_ispin":"I","a_ispin2":"I","h_ospin2x2":"O","f_quad":"I","b_quad4":"I","b_quad2row":"I","d_quadup":"I","d_quadcmb":"I","c_quad2col":"I","c_trp3":"IJLT"}, LB_TMPL = {"rv_tmini":[{"F":[1022,1008,1008,0],"E":[1,15,15,15]},{"F":[511,63,63,0],"E":[512,960,960,960]},{"F":[1016,1017,0,0],"E":[7,6,15,15]},{"F":[127,639,0,0],"E":[896,384,960,960]},{"F":[1021,1016,1017,0],"E":[2,7,6,15]},{"F":[767,127,639,0],"E":[256,896,384,960]}],"rv_tst":[{"F":[1019,1017,1019,8,12,0],"E":[4,6,4,7,3,15]},{"F":[895,639,895,64,192,0],"E":[128,384,128,896,768,960]}],"rv_tsdup":[{"F":[1019,1009,1019,8,12,0],"E":[4,14,4,7,3,15]},{"F":[895,575,895,64,192,0],"E":[128,448,128,896,768,960]}],"rv_tedge":[{"F":[255,255,511,96,608,0],"E":[768,768,512,896,384,992]},{"F":[1020,1020,1022,24,25,0],"E":[3,3,1,7,6,31]}],"rv_sz1":[{"F":[1009,1011,0],"E":[14,12,31]},{"F":[575,831,0],"E":[448,192,992]},{"F":[1017,1011,0],"E":[6,12,31]},{"F":[639,831,0],"E":[384,192,992]},{"F":[1017,1011,19],"E":[6,12,12]},{"F":[639,831,800],"E":[384,192,192]}],"rv_sz3":[{"F":[1019,1017,1021,8,0,0],"E":[4,6,2,7,15,15]},{"F":[895,639,767,64,0,0],"E":[128,384,256,896,960,960]},{"F":[1021,1017,1019,8,12,0],"E":[2,6,4,7,3,15]},{"F":[767,639,895,64,192,0],"E":[256,384,128,896,768,960]},{"F":[1021,1017,1019,8,8,12],"E":[2,6,4,7,7,3]},{"F":[767,639,895,64,64,192],"E":[256,384,128,896,896,768]}],"rv_szg":[{"F":[1019,993,993,3,0],"E":[4,30,30,28,31]},{"F":[895,543,543,768,0],"E":[128,480,480,224,992]},{"F":[1019,1000,1004,8,0],"E":[4,23,19,23,31]},{"F":[895,95,223,64,0],"E":[128,928,800,928,992]}],"rv_lj1":[{"F":[1009,1011,0],"E":[14,12,31]},{"F":[575,831,0],"E":[448,192,992]},{"F":[1021,993,3],"E":[2,30,28]},{"F":[767,543,768],"E":[256,480,224]},{"F":[1021,1009,24],"E":[2,14,7]},{"F":[767,575,96],"E":[256,448,896]}],"rv_lj3":[{"F":[1017,1019,1019,8,12,0],"E":[6,4,4,7,3,15]},{"F":[639,895,895,64,192,0],"E":[384,128,128,896,768,960]},{"F":[1017,1019,1019,8,8,12],"E":[6,4,4,7,7,3]},{"F":[639,895,895,64,64,192],"E":[384,128,128,896,896,768]}],"rv_ljg":[{"F":[1019,995,51,0],"E":[4,28,12,63]},{"F":[895,799,816,0],"E":[128,224,192,1008]},{"F":[1021,993,3,0],"E":[2,30,28,31]},{"F":[767,543,768,0],"E":[256,480,224,992]}],"rv_i1":[{"F":[993,35,32,32,0],"E":[30,28,31,31,63]},{"F":[543,784,16,16,0],"E":[480,224,992,992,1008]},{"F":[995,993,35,35],"E":[28,30,28,28]},{"F":[799,543,784,784],"E":[224,480,224,224]},{"F":[995,995,993,35],"E":[28,28,30,28]},{"F":[799,799,543,784],"E":[224,224,480,224]}],"rv_i2":[{"F":[1007,1007,992,992,48,0],"E":[16,16,31,31,15,63]},{"F":[991,991,31,31,48,0],"E":[32,32,992,992,960,1008]},{"F":[1007,1007,993,993,49,0],"E":[16,16,30,30,14,63]},{"F":[991,991,543,543,560,0],"E":[32,32,480,480,448,1008]},{"F":[1007,999,1007,993,49,1],"E":[16,24,16,30,14,62]},{"F":[991,927,991,543,560,512],"E":[32,96,32,480,448,496]}],"rv_sz2x2":[{"F":[1017,1017,1011,1011,0],"E":[6,6,12,12,31]},{"F":[639,639,831,831,0],"E":[384,384,192,192,992]},{"F":[1011,1017,1017,1011,0],"E":[12,6,6,12,31]},{"F":[831,639,639,831,0],"E":[192,384,384,192,992]}],"rv_lj2x2":[{"F":[1016,1022,1016,1022,0],"E":[7,1,7,1,15]},{"F":[127,511,127,511,0],"E":[896,512,896,512,960]},{"F":[1022,1016,1022,1016,1020,0],"E":[1,7,1,7,3,15]},{"F":[511,127,511,127,255,0],"E":[512,896,512,896,768,960]}],"rv_obox":[{"F":[3,1020,1020,7,0,0],"E":[0,3,3,0,3,3],"deep":1},{"F":[768,255,255,896,0,0],"E":[0,768,768,0,768,768],"deep":1}]}, LB_SETUPS = [{"k":"tst","F":[1019,1017,1019,120,60],"E":[4,6,4,7,3],"tot":34,"nT":1,"tst":true},{"k":"tst","F":[895,639,895,120,240],"E":[128,384,128,896,768],"tot":34,"nT":1,"tst":true},{"k":"tsttower","F":[1019,1017,1019,1019,1017,1019,8,12],"E":[4,6,4,4,6,4,23,19],"tot":55,"nT":2,"tst":true},{"k":"tsttower","F":[895,639,895,895,639,895,64,192],"E":[128,384,128,128,384,128,928,800],"tot":55,"nT":2,"tst":true},{"k":"stsd","F":[1017,1017,1019,1016,1020],"E":[6,6,4,7,3],"tot":40,"nT":1,"tst":false},{"k":"stsd","F":[639,639,895,127,255],"E":[384,384,128,896,768],"tot":40,"nT":1,"tst":false},{"k":"fractal","F":[1007,967,1007,967,12],"E":[16,56,16,56,242],"tot":34,"nT":2,"tst":false},{"k":"fractal","F":[991,911,991,911,192],"E":[32,112,32,112,316],"tot":34,"nT":2,"tst":false},{"k":"dtc","F":[1019,1019,1009,1017,1019,8,12],"E":[4,4,14,6,4,55,51],"tot":45,"nT":2,"tst":true},{"k":"dtc","F":[895,895,575,639,895,64,192],"E":[128,128,448,384,128,944,816],"tot":45,"nT":2,"tst":true},{"k":"kcrimson","F":[1017,1017,1019,1019,1017,1019,1016,12],"E":[6,6,4,4,6,4,7,19],"tot":60,"nT":3,"tst":true},{"k":"kcrimson","F":[639,639,895,895,639,895,127,192],"E":[384,384,128,128,384,128,896,800],"tot":60,"nT":3,"tst":true},{"k":"trinity_a","F":[1019,1009,1011,1011,1015,1009,25],"E":[4,14,12,12,8,14,38],"tot":51,"nT":3,"tst":false},{"k":"trinity_a","F":[895,575,831,831,959,575,608],"E":[128,448,192,192,64,448,400],"tot":51,"nT":3,"tst":false},{"k":"trinity_b","F":[1019,1009,1017,1017,1019,1016,12],"E":[4,14,6,6,4,7,51],"tot":50,"nT":3,"tst":false},{"k":"trinity_b","F":[895,575,639,639,895,127,192],"E":[128,448,384,384,128,896,816],"tot":50,"nT":3,"tst":false},{"k":"tsd","F":[1007,967,15],"E":[16,56,240],"tot":20,"nT":1,"tst":false},{"k":"tsd","F":[991,911,960],"E":[32,112,60],"tot":20,"nT":1,"tst":false},{"k":"tsd","F":[991,911,30],"E":[32,112,480],"tot":20,"nT":1,"tst":false},{"k":"tsd","F":[1007,967,480],"E":[16,56,30],"tot":20,"nT":1,"tst":false},{"k":"t3n","F":[1007,975,1007,8,24],"E":[16,48,16,244,228],"tot":29,"nT":1,"tst":true},{"k":"t3n","F":[991,975,991,64,96],"E":[32,48,32,188,156],"tot":29,"nT":1,"tst":true},{"k":"stsdsnake","F":[1011,1011,1015,1009,1017,1017,1021,1009,1011,1011,1015,1009,1017,1017,1021,1009,19,0],"E":[12,12,8,14,6,6,2,14,12,12,8,14,6,6,2,14,44,63],"tot":131,"nT":8,"tst":false},{"k":"stsdsnake","F":[831,831,959,575,639,639,767,575,831,831,959,575,639,639,767,575,800,0],"E":[192,192,64,448,384,384,256,448,192,192,64,448,384,384,256,448,208,1008],"tot":131,"nT":8,"tst":false},{"k":"tdouble","F":[1019,1021,1017,1021,1009,1011],"E":[4,2,6,2,14,12],"tot":50,"nT":2,"tst":true},{"k":"tdouble","F":[895,767,639,767,575,831],"E":[128,256,384,256,448,192],"tot":50,"nT":2,"tst":true},{"k":"tstdt","F":[1019,1019,1009,1017,1019,1019,1017,1019,1016,12],"E":[4,4,14,6,4,4,6,4,7,51],"tot":77,"nT":3,"tst":true},{"k":"tstdt","F":[895,895,575,639,895,895,639,895,127,192],"E":[128,128,448,384,128,128,384,128,896,816],"tot":77,"nT":3,"tst":true}], LB_MIDBOOK = [{"name":"STSD","n":5,"rows":[1020,1016,1019,1017,1017],"slots":[{"p":"J","rel":[20,21,30,40]},{"p":"I","rel":[43,44,45,46]},{"p":"O","rel":[37,38,47,48]},{"p":"L","rel":[28,29,39,49]},{"p":"I","rel":[33,34,35,36]},{"p":"L","rel":[15,23,24,25]},{"p":"J","rel":[7,17,26,27]},{"p":"Z","rel":[2,3,13,14]},{"p":"J","rel":[4,5,6,16]},{"p":"O","rel":[8,9,18,19]}]},{"name":"STSD·M","n":5,"rows":[255,127,895,639,639],"slots":[{"p":"L","rel":[32,40,41,42]},{"p":"J","rel":[33,43,44,45]},{"p":"J","rel":[34,35,36,46]},{"p":"L","rel":[28,29,39,49]},{"p":"I","rel":[0,10,20,30]},{"p":"I","rel":[1,11,21,31]},{"p":"L","rel":[14,22,23,24]},{"p":"L","rel":[4,5,15,25]},{"p":"J","rel":[6,7,16,26]},{"p":"O","rel":[2,3,12,13]}]}], LB_GTMPL = {"h_ospin2x2":"rv_obox","c_tst":"rv_tst","b_tsdup":"rv_tsdup","a_tsdedge":"rv_tedge","c_szspin3":"rv_sz3","b_ljspin3":"rv_lj3","a_ispin2":"rv_i2","d_ispin":"rv_i1","a_szspin2x2":"rv_sz2x2","a_ljspin2x2":"rv_lj2x2","e_szspin":"rv_sz1","e_ljspin":"rv_lj1","c_mini4":"rv_tmini","c_szgarb":"rv_szg","c_ljgarb":"rv_ljg"}, LBW_G = {"holes":2.1513,"cover":1.0718,"bump":0.1877,"rowT":0.1989,"sum":0.0031,"danger":0.3214,"well":0.3118,"tsd":6.9221,"tst":20,"atk":3.904,"burn":3.0753,"b2b":1.689,"tspin":1.2767,"pc":4.2074,"chain":3,"b2bLv":0.3658}; function botFill(){}
-const LB_SEEN = new Uint32Array(8192), LB_Q = new Int32Array(8192); let LB_GEN = 0; const LB_H = new Int32Array(32), LB_TOP = new Int32Array(32), LB_HH = new Int32Array(32), LB_TSTC = new Map();
+let W, BOT_H, SHAPES, KICK_JLSTZ, KICK_I_PLUS, KICK_180, BOT_VAL, CLIMB_CFG, LBW, LB_BOOK, LB_NN = null, LB_QX = true, LBT = null, PER = 8, LB_R = {}; const LB_ASCK = {}; const lbSx = t => LB_R.sx && LB_R.sx[t] != null ? LB_R.sx[t] : t === 'O' ? 4 : 3; let LB_DIRS = [1, 3, 2], LB_OSPIN = false; const LB_GW = 30, LB_GPOT = {"f_osgl":"O","f_odbl":"O","b_ostill":"O","c_oodbl":"O","b_o6":"O","f_szdbl":"SZ","d_szdbl2":"SZ","f_ljtrp":"LJ","d_ljtrp2":"LJ","e_tss":"T","e_tsd":"T","c_tst":"T","b_tsdup":"T","b_tsdcmb":"T","a_tsdedge":"T","c_mini4":"T","e_spin":"TSZLJ","d_spin0x3":"TSZLJ","b_spin3p":"TSZLJI","e_szspin":"SZ","c_szspin3":"SZ","c_szgarb":"SZ","a_szspin2x2":"SZ","e_ljspin":"LJ","b_ljspin3":"LJ","c_ljgarb":"LJ","a_ljspin2x2":"LJ","d_szlj2":"SZLJ","d_ispin":"I","a_ispin2":"I","h_ospin2x2":"O","f_quad":"I","b_quad4":"I","b_quad2row":"I","d_quadup":"I","d_quadcmb":"I","c_quad2col":"I","c_trp3":"IJLT"}, LB_TMPL = {"rv_tmini":[{"F":[1022,1008,1008,0],"E":[1,15,15,15]},{"F":[511,63,63,0],"E":[512,960,960,960]},{"F":[1016,1017,0,0],"E":[7,6,15,15]},{"F":[127,639,0,0],"E":[896,384,960,960]},{"F":[1021,1016,1017,0],"E":[2,7,6,15]},{"F":[767,127,639,0],"E":[256,896,384,960]}],"rv_tst":[{"F":[1019,1017,1019,8,12,0],"E":[4,6,4,7,3,15]},{"F":[895,639,895,64,192,0],"E":[128,384,128,896,768,960]}],"rv_tsdup":[{"F":[1019,1009,1019,8,12,0],"E":[4,14,4,7,3,15]},{"F":[895,575,895,64,192,0],"E":[128,448,128,896,768,960]}],"rv_tedge":[{"F":[255,255,511,96,608,0],"E":[768,768,512,896,384,992]},{"F":[1020,1020,1022,24,25,0],"E":[3,3,1,7,6,31]}],"rv_sz1":[{"F":[1009,1011,0],"E":[14,12,31]},{"F":[575,831,0],"E":[448,192,992]},{"F":[1017,1011,0],"E":[6,12,31]},{"F":[639,831,0],"E":[384,192,992]},{"F":[1017,1011,19],"E":[6,12,12]},{"F":[639,831,800],"E":[384,192,192]}],"rv_sz3":[{"F":[1019,1017,1021,8,0,0],"E":[4,6,2,7,15,15]},{"F":[895,639,767,64,0,0],"E":[128,384,256,896,960,960]},{"F":[1021,1017,1019,8,12,0],"E":[2,6,4,7,3,15]},{"F":[767,639,895,64,192,0],"E":[256,384,128,896,768,960]},{"F":[1021,1017,1019,8,8,12],"E":[2,6,4,7,7,3]},{"F":[767,639,895,64,64,192],"E":[256,384,128,896,896,768]}],"rv_szg":[{"F":[1019,993,993,3,0],"E":[4,30,30,28,31]},{"F":[895,543,543,768,0],"E":[128,480,480,224,992]},{"F":[1019,1000,1004,8,0],"E":[4,23,19,23,31]},{"F":[895,95,223,64,0],"E":[128,928,800,928,992]}],"rv_lj1":[{"F":[1009,1011,0],"E":[14,12,31]},{"F":[575,831,0],"E":[448,192,992]},{"F":[1021,993,3],"E":[2,30,28]},{"F":[767,543,768],"E":[256,480,224]},{"F":[1021,1009,24],"E":[2,14,7]},{"F":[767,575,96],"E":[256,448,896]}],"rv_lj3":[{"F":[1017,1019,1019,8,12,0],"E":[6,4,4,7,3,15]},{"F":[639,895,895,64,192,0],"E":[384,128,128,896,768,960]},{"F":[1017,1019,1019,8,8,12],"E":[6,4,4,7,7,3]},{"F":[639,895,895,64,64,192],"E":[384,128,128,896,896,768]}],"rv_ljg":[{"F":[1019,995,51,0],"E":[4,28,12,63]},{"F":[895,799,816,0],"E":[128,224,192,1008]},{"F":[1021,993,3,0],"E":[2,30,28,31]},{"F":[767,543,768,0],"E":[256,480,224,992]}],"rv_i1":[{"F":[993,35,32,32,0],"E":[30,28,31,31,63]},{"F":[543,784,16,16,0],"E":[480,224,992,992,1008]},{"F":[995,993,35,35],"E":[28,30,28,28]},{"F":[799,543,784,784],"E":[224,480,224,224]},{"F":[995,995,993,35],"E":[28,28,30,28]},{"F":[799,799,543,784],"E":[224,224,480,224]}],"rv_i2":[{"F":[1007,1007,992,992,48,0],"E":[16,16,31,31,15,63]},{"F":[991,991,31,31,48,0],"E":[32,32,992,992,960,1008]},{"F":[1007,1007,993,993,49,0],"E":[16,16,30,30,14,63]},{"F":[991,991,543,543,560,0],"E":[32,32,480,480,448,1008]},{"F":[1007,999,1007,993,49,1],"E":[16,24,16,30,14,62]},{"F":[991,927,991,543,560,512],"E":[32,96,32,480,448,496]}],"rv_sz2x2":[{"F":[1017,1017,1011,1011,0],"E":[6,6,12,12,31]},{"F":[639,639,831,831,0],"E":[384,384,192,192,992]},{"F":[1011,1017,1017,1011,0],"E":[12,6,6,12,31]},{"F":[831,639,639,831,0],"E":[192,384,384,192,992]}],"rv_lj2x2":[{"F":[1016,1022,1016,1022,0],"E":[7,1,7,1,15]},{"F":[127,511,127,511,0],"E":[896,512,896,512,960]},{"F":[1022,1016,1022,1016,1020,0],"E":[1,7,1,7,3,15]},{"F":[511,127,511,127,255,0],"E":[512,896,512,896,768,960]}],"rv_obox":[{"F":[3,1020,1020,7,0,0],"E":[0,3,3,0,3,3],"deep":1},{"F":[768,255,255,896,0,0],"E":[0,768,768,0,768,768],"deep":1}]}, LB_SETUPS = [{"k":"tst","F":[1019,1017,1019,120,60],"E":[4,6,4,7,3],"tot":34,"nT":1,"tst":true},{"k":"tst","F":[895,639,895,120,240],"E":[128,384,128,896,768],"tot":34,"nT":1,"tst":true},{"k":"tsttower","F":[1019,1017,1019,1019,1017,1019,8,12],"E":[4,6,4,4,6,4,23,19],"tot":55,"nT":2,"tst":true},{"k":"tsttower","F":[895,639,895,895,639,895,64,192],"E":[128,384,128,128,384,128,928,800],"tot":55,"nT":2,"tst":true},{"k":"stsd","F":[1017,1017,1019,1016,1020],"E":[6,6,4,7,3],"tot":40,"nT":1,"tst":false},{"k":"stsd","F":[639,639,895,127,255],"E":[384,384,128,896,768],"tot":40,"nT":1,"tst":false},{"k":"fractal","F":[1007,967,1007,967,12],"E":[16,56,16,56,242],"tot":34,"nT":2,"tst":false},{"k":"fractal","F":[991,911,991,911,192],"E":[32,112,32,112,316],"tot":34,"nT":2,"tst":false},{"k":"dtc","F":[1019,1019,1009,1017,1019,8,12],"E":[4,4,14,6,4,55,51],"tot":45,"nT":2,"tst":true},{"k":"dtc","F":[895,895,575,639,895,64,192],"E":[128,128,448,384,128,944,816],"tot":45,"nT":2,"tst":true},{"k":"kcrimson","F":[1017,1017,1019,1019,1017,1019,1016,12],"E":[6,6,4,4,6,4,7,19],"tot":60,"nT":3,"tst":true},{"k":"kcrimson","F":[639,639,895,895,639,895,127,192],"E":[384,384,128,128,384,128,896,800],"tot":60,"nT":3,"tst":true},{"k":"trinity_a","F":[1019,1009,1011,1011,1015,1009,25],"E":[4,14,12,12,8,14,38],"tot":51,"nT":3,"tst":false},{"k":"trinity_a","F":[895,575,831,831,959,575,608],"E":[128,448,192,192,64,448,400],"tot":51,"nT":3,"tst":false},{"k":"trinity_b","F":[1019,1009,1017,1017,1019,1016,12],"E":[4,14,6,6,4,7,51],"tot":50,"nT":3,"tst":false},{"k":"trinity_b","F":[895,575,639,639,895,127,192],"E":[128,448,384,384,128,896,816],"tot":50,"nT":3,"tst":false},{"k":"tsd","F":[1007,967,15],"E":[16,56,240],"tot":20,"nT":1,"tst":false},{"k":"tsd","F":[991,911,960],"E":[32,112,60],"tot":20,"nT":1,"tst":false},{"k":"tsd","F":[991,911,30],"E":[32,112,480],"tot":20,"nT":1,"tst":false},{"k":"tsd","F":[1007,967,480],"E":[16,56,30],"tot":20,"nT":1,"tst":false},{"k":"t3n","F":[1007,975,1007,8,24],"E":[16,48,16,244,228],"tot":29,"nT":1,"tst":true},{"k":"t3n","F":[991,975,991,64,96],"E":[32,48,32,188,156],"tot":29,"nT":1,"tst":true},{"k":"stsdsnake","F":[1011,1011,1015,1009,1017,1017,1021,1009,1011,1011,1015,1009,1017,1017,1021,1009,19,0],"E":[12,12,8,14,6,6,2,14,12,12,8,14,6,6,2,14,44,63],"tot":131,"nT":8,"tst":false},{"k":"stsdsnake","F":[831,831,959,575,639,639,767,575,831,831,959,575,639,639,767,575,800,0],"E":[192,192,64,448,384,384,256,448,192,192,64,448,384,384,256,448,208,1008],"tot":131,"nT":8,"tst":false},{"k":"tdouble","F":[1019,1021,1017,1021,1009,1011],"E":[4,2,6,2,14,12],"tot":50,"nT":2,"tst":true},{"k":"tdouble","F":[895,767,639,767,575,831],"E":[128,256,384,256,448,192],"tot":50,"nT":2,"tst":true},{"k":"tstdt","F":[1019,1019,1009,1017,1019,1019,1017,1019,1016,12],"E":[4,4,14,6,4,4,6,4,7,51],"tot":77,"nT":3,"tst":true},{"k":"tstdt","F":[895,895,575,639,895,895,639,895,127,192],"E":[128,128,448,384,128,128,384,128,896,816],"tot":77,"nT":3,"tst":true}], LB_MIDBOOK = [{"name":"STSD","n":5,"rows":[1020,1016,1019,1017,1017],"slots":[{"p":"J","rel":[20,21,30,40]},{"p":"Z","rel":[24,33,34,43]},{"p":"I","rel":[44,45,46,47]},{"p":"I","rel":[18,28,38,48]},{"p":"I","rel":[19,29,39,49]},{"p":"O","rel":[25,26,35,36]},{"p":"L","rel":[16,17,27,37]},{"p":"L","rel":[13,14,15,23]},{"p":"I","rel":[2,3,4,5]},{"p":"I","rel":[6,7,8,9]}]},{"name":"STSD·M","n":5,"rows":[255,127,895,639,639],"slots":[{"p":"I","rel":[40,41,42,43]},{"p":"I","rel":[14,24,34,44]},{"p":"O","rel":[35,36,45,46]},{"p":"L","rel":[28,29,39,49]},{"p":"J","rel":[20,30,31,32]},{"p":"L","rel":[12,13,23,33]},{"p":"Z","rel":[10,11,21,22]},{"p":"L","rel":[4,5,15,25]},{"p":"J","rel":[6,7,16,26]},{"p":"I","rel":[0,1,2,3]}]},{"name":"STSD·M","n":5,"rows":[255,127,895,639,639],"slots":[{"p":"I","rel":[40,41,42,43]},{"p":"I","rel":[14,24,34,44]},{"p":"O","rel":[35,36,45,46]},{"p":"L","rel":[28,29,39,49]},{"p":"J","rel":[20,30,31,32]},{"p":"L","rel":[12,13,23,33]},{"p":"Z","rel":[10,11,21,22]},{"p":"O","rel":[15,16,25,26]},{"p":"I","rel":[0,1,2,3]},{"p":"I","rel":[4,5,6,7]}]}], LB_GTMPL = {"h_ospin2x2":"rv_obox","c_tst":"rv_tst","b_tsdup":"rv_tsdup","a_tsdedge":"rv_tedge","c_szspin3":"rv_sz3","b_ljspin3":"rv_lj3","a_ispin2":"rv_i2","d_ispin":"rv_i1","a_szspin2x2":"rv_sz2x2","a_ljspin2x2":"rv_lj2x2","e_szspin":"rv_sz1","e_ljspin":"rv_lj1","c_mini4":"rv_tmini","c_szgarb":"rv_szg","c_ljgarb":"rv_ljg"}, LBW_G = {"holes":2.1513,"cover":1.0718,"bump":0.1877,"rowT":0.1989,"sum":0.0031,"danger":0.3214,"well":0.3118,"tsd":6.9221,"tst":20,"atk":3.904,"burn":3.0753,"b2b":1.689,"tspin":1.2767,"pc":4.2074,"chain":3,"b2bLv":0.3658}; function botFill(){}
+const LB_SEEN = new Uint32Array(8192), LB_Q = new Int32Array(8192); let LB_GEN = 0; const LB_H = new Int32Array(32), LB_TOP = new Int32Array(32), LB_HH = new Int32Array(32), LB_TSTC = new Map(), LB_FH = new Int32Array(32), LB_FT = new Int32Array(32);
 const lbOccB = (bb, x, y) => x < 0 || x >= W || y >= BOT_H || (y >= 0 && ((bb[y] >> x) & 1) === 1);
 function lbAscK(dir){                                                 // 五／六連塊、突變塊：ASC-DX（±3 範圍近的先試，同 ascKicks）
   if (LB_ASCK[dir]) return LB_ASCK[dir];
@@ -188,6 +188,45 @@ function lbEvalB(b){
   let well2 = 0; for (let x = 0; x < W; x++){ if (x === wx) continue; const d = Math.min(x ? h[x - 1] : 99, x < W - 1 ? h[x + 1] : 99) - h[x]; if (d >= 3) well2 += (d - 2) * (d - 2); }
   return -w.holes * holes - w.cover * cover - w.bump * bump - w.rowT * rowT - w.sum * sum - w.danger * danger * danger - (w.pillar || 0) * pillar - (w.well2 || 0) * well2
     + (danger < 4 ? w.well * well : 0) + (danger < 3 ? w.tsd * lbTsdB(b, h) : 0) + (danger < 4 && w.tst ? w.tst * lbTstB(b) : 0) + (danger < 3 && w.tstPot ? w.tstPot * lbTstPotB(b) : 0);
+}
+function lbFeatB(b, st){
+  const full = (1 << W) - 1, h = LB_FH, topY = LB_FT, wall = (1 << (W + 1)) | 1, tm = (1 << (W + 1)) - 1;
+  h.fill(0); let seen = 0, holes = 0, cover = 0, rowT = 0, holeRows = 0;
+  for (let y = 0; y < BOT_H; y++){
+    const r = b[y]; let nw = r & ~seen;
+    while (nw){ const bit = nw & -nw, x = 31 - Math.clz32(bit); h[x] = BOT_H - y; topY[x] = y; nw ^= bit; }
+    seen |= r;
+    let hl = seen & ~r & full; if (hl) holeRows++;
+    while (hl){ const bit = hl & -hl, x = 31 - Math.clz32(bit); holes++; cover += Math.min(4, y - topY[x]); hl ^= bit; }
+    const v = (r << 1) | wall; rowT += lbPop((v ^ (v >> 1)) & tm);
+  }
+  let colT = 0; for (let y = 1; y < BOT_H; y++) colT += lbPop((b[y] ^ b[y - 1]) & full);
+  let bump = 0, maxH = 0; for (let x = 0; x < W; x++){ maxH = Math.max(maxH, h[x]); if (x) bump += Math.abs(h[x] - h[x - 1]); }
+  let wx = 0; for (let x = 0; x < W; x++) if (h[x] < h[wx]) wx = x;
+  const l = wx ? h[wx - 1] : 99, r = wx < W - 1 ? h[wx + 1] : 99, well = Math.min(6, Math.min(l, r) - h[wx]);
+  let well2 = 0; for (let x = 0; x < W; x++){ if (x === wx) continue; const d = Math.min(x ? h[x - 1] : 99, x < W - 1 ? h[x + 1] : 99) - h[x]; if (d >= 3) well2 += d - 2; }
+  const pend = LB_R.pend || 0, hp = LB_R.hpad || 0, b2 = st ? st.b2b : -1, cb = st ? st.combo : -1;
+  const f = new Float32Array(30);
+  for (let x = 0; x < W && x < 10; x++) f[x] = h[x] / 20;
+  f[10] = holes / 10; f[11] = cover / 20; f[12] = rowT / 40; f[13] = colT / 40; f[14] = bump / 30; f[15] = maxH / 20;
+  f[16] = well / 6; f[17] = well2 / 10; f[18] = lbTsdB(b, h) / 2; f[19] = lbTstB(b); f[20] = holeRows / 10;
+  f[21] = Math.max(0, b2) / 10; f[22] = b2 >= 0 ? 1 : 0; f[23] = Math.max(0, cb) / 10; f[24] = pend / 12; f[25] = hp / 10;
+  f[26] = Math.max(0, maxH + hp + pend - 10) / 10; f[27] = wx / 9; f[28] = Math.min(maxH + hp + pend, 24) >= 18 ? 1 : 0; f[29] = 1;
+  return f;
+}
+function lbNNv(f){                                                  // MLP：relu 隱藏層 ×2
+  const N = LB_NN, L = N.layers; let a = f;
+  for (let li = 0; li < L.length; li++){
+    const { w, b, n, m } = L[li], o = new Float32Array(m);
+    for (let j = 0; j < m; j++){ let s = b[j]; const off = j * n; for (let i = 0; i < n; i++) s += w[off + i] * a[i]; o[j] = li < L.length - 1 ? (s > 0 ? s : 0) : s; }
+    a = o;
+  }
+  return a[0] * (N.ys || 1) + (N.ym || 0);
+}
+function LB_NN_LEAF(b, st){
+  const v = lbNNv(lbFeatB(b, st)) * LBW.atk;
+  if (LB_NN.pure) return v;
+  return lbEvalB(b) + (LBW.chain || 0) * Math.max(0, st.b2b - 3) + (LB_NN.mix || 1) * v;
 }
 function lbSetupAnchor(b, prefer){
   if (!LB_SETUPS || !LB_SETUPS.length) return null;
@@ -649,16 +688,19 @@ function lbDecide(o){
   o.setupOut = SU && !SU.done ? SU.k : null;
   const root = { bd: lbToBits(o.bd), hold: o.hold || null, q: o.q.slice(), st: { b2b: o.b2b ?? -1, combo: o.combo ?? -1, la: LB_R.la || null, ls: LB_R.ls || null }, acc: 0, first: null, gN: gN0, lastT: o.lastType || null };
   let layer = [root];
-  const depthN = Math.min(LBW.depth, o.q.length);
+  const qN = Math.min(LBW.depth, o.q.length), depthN = qN + (LB_QX && qN === o.q.length && (o.hold || o.q.length > 1) ? 1 : 0);   // 照 fusion 的 quiescence：NEXT 用完後，B2B／combo 進行中的盤面再用 HOLD 那顆多看一步
   for (let depth = 0; depth < depthN; depth++){
     if (depth > 0 && o.deadline && performance.now() > o.deadline) break;   // 時間到：用已經算完的那一層裡最好的（快速時自動變淺，不會卡）
-    const next = [], seen = new Map();
+    const next = [], seen = new Map(), qx = depth >= qN;              // qx：延伸層
+    if (qx) for (const s of layer) if (!(s.st.b2b >= 1 || s.st.combo >= 1) || !s.hold){ s.qxKeep = true; next.push(s); }   // 安靜的盤面不延伸，原分數直接留著比
     for (const s of layer){
+      if (qx && s.qxKeep) continue;
       if (depth > 0 && o.deadline && next.length && performance.now() > o.deadline) break;   // 層內也看時間：20 PPS 一顆只有 50ms，等整層算完會超時（父節點已照分數排好，先算的是最好的幾個）
       const pot = G ? lbComboPot(s.bd) : 0;
       let ptop = 0; if (G) while (ptop < BOT_H && !s.bd[ptop]) ptop++;
       const opts = [];
       if (s.q.length) opts.push({ use: s.q[0], hold: s.hold, q: s.q.slice(1), held: false });
+      else if (qx && s.hold) opts.push({ use: s.hold, hold: null, q: [], held: true });   // 延伸：NEXT 用完，放 HOLD 那顆
       if (LB_R.noHold){}                                              // NO HOLD／ASCETICISM：不考慮 hold
       else if (s.hold && s.q.length){ if (s.hold !== s.q[0]) opts.push({ use: s.hold, hold: s.q[0], q: s.q.slice(1), held: true }); }
       else if (!s.hold && s.q.length > 1) opts.push({ use: s.q[1], hold: s.q[0], q: s.q.slice(2), held: true });
@@ -673,7 +715,7 @@ function lbDecide(o){
           const plain = r.n > 0 && r.n < 4 && !m.spin;                 // 普通消行（會斷 B2B）
           let b2bK = 1;                                               // 疊太高時 B2B 讓位給地形（保命優先）：b2bSafe 高度以上線性降到 0
           if (LBW.b2bSafe){ let t = 0; while (t < BOT_H && !s.bd[t]) t++; b2bK = Math.max(0, Math.min(1, 1 - (BOT_H - t + (LB_R.hpad || 0) + Math.max(0, (LB_R.pend || 0) - atk) - LBW.b2bSafe) / 6)); }   // pend 先扣掉這一手的攻擊（會先抵銷排隊垃圾）：不然 F10 一直有大垃圾在排，B2B 權重永遠被壓成 0
-          let rew = LB_NN && LB_NN.pure ? LBW.atk * atk + (r.pc ? LBW.pc : 0) - (m.spin === 2 && !r.n ? 0 : 0) : LBW.atk * atk - (plain && !r.pc ? LBW.burn * r.n * b2bK : 0) - (brokeB2B ? (LBW.b2b + (LBW.b2bLv || 0) * s.st.b2b) * b2bK : 0) + (r.pc ? LBW.pc : 0) + (spA === 2 && r.n ? LBW.tspin : 0);
+          let rew = LB_NN && LB_NN.pure && !G ? LBW.atk * atk + (r.pc ? LBW.pc : 0) : LBW.atk * atk - (plain && !r.pc ? LBW.burn * r.n * b2bK : 0) - (brokeB2B ? (LBW.b2b + (LBW.b2bLv || 0) * s.st.b2b) * b2bK : 0) + (r.pc ? LBW.pc : 0) + (spA === 2 && r.n ? LBW.tspin : 0);
           if (m.spin === 2 && !r.n && !LB_R.allspin) rew -= 1;         // 白轉（ALL-SPIN 的 Spin-Zero 可以拿來隔開重複動作，不扣）
           if (!r.n && LBW.newHole){                                   // 新蓋出洞（之後只能單消慢慢挖、斷 B2B）：重罰；但 T-Spin 的屋簷（蓋完有 TSD／TST 洞）不算
             const h0 = lbHolesB(s.bd), h1 = lbHolesB(r.b);
@@ -715,7 +757,7 @@ function lbDecide(o){
           const old = seen.get(key);
           if (old){ if (acc > old.acc){ old.score += acc - old.acc; old.acc = acc; old.st = st; old.first = s.first || { m, held: op.held, atk }; } continue; }
           const child = { bd: r.b, hold: op.hold, q: op.q, st, acc, first: s.first || { m, held: op.held, atk }, gN, lastT: m.type };
-          child.score = acc + (LB_NN && !G ? LB_NN_LEAF(r.b, st) : lbEvalB(r.b) + (LBW.chain || 0) * Math.max(0, st.b2b - 3)) + (G ? lbGoalEval(G, r.b, gN) : 0);
+          child.score = acc + (LB_NN && !G ? LB_NN_LEAF(r.b, st) : lbEvalB(r.b) + (LBW.chain || 0) * Math.max(0, st.b2b - 3)) + (G ? lbGoalEval(G, r.b, gN) : 0);   // 有載入神經網路（設定頁）：葉節點改用網路評分
           seen.set(key, child); next.push(child);
         }
       }
@@ -727,7 +769,7 @@ function lbDecide(o){
       for (let i = 0; i < K; i++){ let top = 0; while (top < BOT_H && !next[i].bd[top]) top++; next[i].score += Math.max(0, Math.min(1, (top - 9) / 5)) * lbGoalPot(G, next[i]); }
       next.sort((a, b) => b.score - a.score);
     }
-    layer = next.slice(0, depth === depthN - 1 ? 1 : LBW.beam);
+    layer = next.slice(0, depth === depthN - 1 ? 1 : depth === qN - 1 && depthN > qN ? Math.max(4, LBW.beam) : LBW.beam);
   }
   const res = layer[0] && layer[0].first ? layer[0].first : null;
   return res && SU ? { ...res, setup: SU.done ? SU.k + ':ready' : SU.k } : res;
@@ -741,48 +783,5 @@ function lbPlace(bd, m){
   }
   return { b, n, pc: n > 0 && !b.some(v => v) };
 }
-// ── 神經網路評分（C）：盤面特徵 → 小型 MLP → 預估未來折扣攻擊（行）。權重由 Python 離線訓練
-let LB_NN = null;
-const LB_FH = new Int32Array(32), LB_FT = new Int32Array(32);
-function lbFeatB(b, st){
-  const full = (1 << W) - 1, h = LB_FH, topY = LB_FT, wall = (1 << (W + 1)) | 1, tm = (1 << (W + 1)) - 1;
-  h.fill(0); let seen = 0, holes = 0, cover = 0, rowT = 0, holeRows = 0;
-  for (let y = 0; y < BOT_H; y++){
-    const r = b[y]; let nw = r & ~seen;
-    while (nw){ const bit = nw & -nw, x = 31 - Math.clz32(bit); h[x] = BOT_H - y; topY[x] = y; nw ^= bit; }
-    seen |= r;
-    let hl = seen & ~r & full; if (hl) holeRows++;
-    while (hl){ const bit = hl & -hl, x = 31 - Math.clz32(bit); holes++; cover += Math.min(4, y - topY[x]); hl ^= bit; }
-    const v = (r << 1) | wall; rowT += lbPop((v ^ (v >> 1)) & tm);
-  }
-  let colT = 0; for (let y = 1; y < BOT_H; y++) colT += lbPop((b[y] ^ b[y - 1]) & full);
-  let bump = 0, maxH = 0; for (let x = 0; x < W; x++){ maxH = Math.max(maxH, h[x]); if (x) bump += Math.abs(h[x] - h[x - 1]); }
-  let wx = 0; for (let x = 0; x < W; x++) if (h[x] < h[wx]) wx = x;
-  const l = wx ? h[wx - 1] : 99, r = wx < W - 1 ? h[wx + 1] : 99, well = Math.min(6, Math.min(l, r) - h[wx]);
-  let well2 = 0; for (let x = 0; x < W; x++){ if (x === wx) continue; const d = Math.min(x ? h[x - 1] : 99, x < W - 1 ? h[x + 1] : 99) - h[x]; if (d >= 3) well2 += d - 2; }
-  const pend = LB_R.pend || 0, hp = LB_R.hpad || 0, b2 = st ? st.b2b : -1, cb = st ? st.combo : -1;
-  const f = new Float32Array(30);
-  for (let x = 0; x < W && x < 10; x++) f[x] = h[x] / 20;
-  f[10] = holes / 10; f[11] = cover / 20; f[12] = rowT / 40; f[13] = colT / 40; f[14] = bump / 30; f[15] = maxH / 20;
-  f[16] = well / 6; f[17] = well2 / 10; f[18] = lbTsdB(b, h) / 2; f[19] = lbTstB(b); f[20] = holeRows / 10;
-  f[21] = Math.max(0, b2) / 10; f[22] = b2 >= 0 ? 1 : 0; f[23] = Math.max(0, cb) / 10; f[24] = pend / 12; f[25] = hp / 10;
-  f[26] = Math.max(0, maxH + hp + pend - 10) / 10; f[27] = wx / 9; f[28] = Math.min(maxH + hp + pend, 24) >= 18 ? 1 : 0; f[29] = 1;
-  return f;
-}
-function lbNNv(f){                                                  // MLP：relu 隱藏層 ×2
-  const N = LB_NN, L = N.layers; let a = f;
-  for (let li = 0; li < L.length; li++){
-    const { w, b, n, m } = L[li], o = new Float32Array(m);
-    for (let j = 0; j < m; j++){ let s = b[j]; const off = j * n; for (let i = 0; i < n; i++) s += w[off + i] * a[i]; o[j] = li < L.length - 1 ? (s > 0 ? s : 0) : s; }
-    a = o;
-  }
-  return a[0] * (N.ys || 1) + (N.ym || 0);
-}
-function LB_NN_LEAF(b, st){
-  const v = lbNNv(lbFeatB(b, st)) * LBW.atk;
-  if (LB_NN.pure) return v;
-  return lbEvalB(b) + (LBW.chain || 0) * Math.max(0, st.b2b - 3) + (LB_NN.mix || 1) * v;
-}
-
 module.exports = { init(d){ ({ W, BOT_H, SHAPES, KICK_JLSTZ, KICK_I_PLUS, KICK_180, BOT_VAL, CLIMB_CFG, LBW, LB_BOOK } = d); },
-  lbDecide, lbPlace, lbAttack, lbToBits, lbFeatB, lbMovesB, lbTables, setNN(n){ LB_NN = n; }, setR(r){ LB_R = r; }, get LBW(){ return LBW; } };
+  lbDecide, lbPlace, lbAttack, lbToBits, lbFeatB, lbMovesB, lbTables, setNN(n){ LB_NN = n; }, setR(r){ LB_R = r; }, setQX(v){ LB_QX = v; }, get LBW(){ return LBW; } };

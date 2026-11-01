@@ -1,9 +1,11 @@
 // 自我對戰：La bot（經典或 NN 評分）在 QP 式垃圾壓力下打到死／上限，記錄 (特徵, 之後的折扣攻擊)
-const C = require('./core.js'); const INIT = require('./init.json').init; C.init(INIT);
+const C = require(require('path').resolve(process.argv.find(a => a.startsWith('core=')) ? process.argv.find(a => a.startsWith('core=')).slice(5) : './core.js')); const INIT = require('./init.json').init; C.init(INIT);
 const W = INIT.W, BH = INIT.BOT_H, VAL = INIT.BOT_VAL;
 const args = Object.fromEntries(process.argv.slice(2).map(a => a.split('=')));
 const games = +(args.games || 4), cap = +(args.cap || 500), seed0 = +(args.seed || 1), out = args.out || null;
 if (args.nn){ const N = require(require('path').resolve(args.nn)); N.pure = args.pure === '1'; N.mix = +(args.mix || 1); C.setNN(N); }
+if (args.qx != null && C.setQX) C.setQX(args.qx === '1');
+for (const [k, v] of Object.entries(args)) if (k.startsWith('w.')) C.LBW[k.slice(2)] = +v;
 if (args.beam) C.LBW.beam = +args.beam; if (args.depth) C.LBW.depth = +args.depth;
 let S = seed0 * 2654435761 >>> 0; const rnd = () => { S ^= S << 13; S >>>= 0; S ^= S >>> 17; S ^= S << 5; S >>>= 0; return S / 4294967296; };
 Math.random = rnd;
@@ -15,7 +17,7 @@ for (let g = 0; g < games; g++){
   const L = +(args.lmin || .6) + rnd() * +(args.lrange || 1.8);                                  // 這局的垃圾壓力
   let bd = new Uint8Array(W * BH), hold = null, q = [], bag = [], b2b = -1, combo = -1, pending = [], hole = (rnd() * W) | 0, nextWave = 6 + rnd() * 10 / L;
   const fill = () => { while (q.length < 7){ if (!bag.length){ bag = ['I','J','L','O','S','T','Z']; for (let i = 6; i > 0; i--){ const k = (rnd() * (i + 1)) | 0; [bag[i], bag[k]] = [bag[k], bag[i]]; } } q.push(bag.pop()); } };
-  const recF = [], recR = []; let dead = false, pieces = 0, sent = 0, t0 = Date.now();
+  const recF = [], recR = []; let dead = false, pieces = 0, sent = 0, t0 = Date.now(), maxB = 0, brk = 0, sumB = 0, nClr = 0;
   for (; pieces < cap; pieces++){
     fill();
     const pend = pending.reduce((a, p) => a + p.n, 0);
@@ -26,7 +28,7 @@ for (let g = 0; g < games; g++){
     q.shift();
     const r = C.lbPlace(bd, d.m), st = { b2b, combo };
     C.setR({});
-    const atk = C.lbAttack(r.n, d.m.spin, st, r.pc, 0); b2b = st.b2b; combo = st.combo; bd = r.b;
+    const b0 = b2b; const atk = C.lbAttack(r.n, d.m.spin, st, r.pc, 0); b2b = st.b2b; combo = st.combo; bd = r.b; if (r.n){ nClr++; sumB += Math.max(0, b2b); if (b0 >= 3 && b2b < 0) brk++; } maxB = Math.max(maxB, b2b);
     let out2 = atk; while (out2 > 0 && pending.length){ const c = Math.min(out2, pending[0].n); pending[0].n -= c; out2 -= c; if (!pending[0].n) pending.shift(); }
     // 特徵：放完的盤面（跟搜尋葉節點一樣），pend＝這手之後還在排隊的量
     C.setR({ pend: Math.min(12, pending.reduce((a, p) => a + p.n, 0)) });
@@ -48,8 +50,8 @@ for (let g = 0; g < games; g++){
   for (let i = n - 1; i >= 0; i--){ tg[i] = G; G = recR[i] + GAMMA * G; }
   const keep = dead ? n : Math.max(0, n - 40);                 // 沒死（到上限）：最後 40 手的目標被截斷，不要
   for (let i = 0; i < keep; i++){ feats.push(recF[i]); targets.push(tg[i]); }
-  stats.push({ L: +L.toFixed(2), pieces, sent, app: +(sent / Math.max(1, pieces)).toFixed(3), dead, ms: Date.now() - t0 });
+  stats.push({ maxB, brk, avgB: nClr ? sumB / nClr : 0, L: +L.toFixed(2), pieces, sent, app: +(sent / Math.max(1, pieces)).toFixed(3), dead, ms: Date.now() - t0 });
 }
 const surv = stats.reduce((a, s) => a + s.pieces, 0) / stats.length, app = stats.reduce((a, s) => a + s.sent, 0) / Math.max(1, stats.reduce((a, s) => a + s.pieces, 0));
-console.log(JSON.stringify({ games, avgPieces: +surv.toFixed(1), app: +app.toFixed(3), deaths: stats.filter(s => s.dead).length, msPerPiece: +(stats.reduce((a, s) => a + s.ms, 0) / stats.reduce((a, s) => a + s.pieces, 0)).toFixed(1) }));
+console.log(JSON.stringify({ games, avgPieces: +surv.toFixed(1), app: +app.toFixed(3), deaths: stats.filter(s => s.dead).length, maxB2B: Math.max(...stats.map(s => s.maxB)), avgB2B: +(stats.reduce((a, s) => a + s.avgB, 0) / stats.length).toFixed(2), breaks3: stats.reduce((a, s) => a + s.brk, 0), msPerPiece: +(stats.reduce((a, s) => a + s.ms, 0) / stats.reduce((a, s) => a + s.pieces, 0)).toFixed(1) }));
 if (out) require('fs').writeFileSync(out, JSON.stringify({ X: feats, y: targets, stats }));
