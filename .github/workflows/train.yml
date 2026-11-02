@@ -1,10 +1,10 @@
 name: train
 on:
   schedule:
-    - cron: '17 */6 * * *'          # 每 6 小時自動跑一次（UTC）
+    - cron: '17 * * * *'            # 每小時自動跑一次（UTC）；公開 repo 的 Actions 不限分鐘數
   workflow_dispatch:                # 手機 GitHub App → Actions → train → Run workflow
     inputs:
-      rounds: { description: '幾輪', default: '3' }
+      rounds: { description: '幾輪', default: '6' }
       games: { description: '每個行程幾局', default: '30' }
 permissions:
   contents: write
@@ -20,7 +20,7 @@ jobs:
       - uses: oven-sh/setup-bun@v2
       - name: 產資料 → 訓練 → 比較
         run: |
-          ROUNDS=${{ github.event.inputs.rounds || '3' }} GAMES=${{ github.event.inputs.games || '30' }} ./run.sh | tee last_run.txt
+          ROUNDS=${{ github.event.inputs.rounds || '6' }} GAMES=${{ github.event.inputs.games || '30' }} ./run.sh | tee last_run.txt
       - name: 只留最新 16 份資料（repo 不要越長越大）
         run: |
           ls -1t data/*.json | grep -v 'data/start.json' | tail -n +17 | xargs -r rm -f
