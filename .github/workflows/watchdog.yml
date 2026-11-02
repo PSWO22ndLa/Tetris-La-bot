@@ -1,0 +1,29 @@
+name: watchdog
+# 看門狗：每 10 分鐘看一次 train 有沒有在跑／排隊；都沒有（停掉、失敗、接力斷了）就重新開一次
+# repo 根目錄放 PAUSE 檔 → 不會重開
+on:
+  schedule:
+    - cron: '*/10 * * * *'
+  workflow_dispatch:
+permissions:
+  actions: write
+  contents: read
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: train 停了就叫它繼續
+        env:
+          GH_TOKEN: ${{ github.token }}
+          R: ${{ github.repository }}
+        run: |
+          if [ -f PAUSE ]; then echo '有 PAUSE 檔：不重開'; exit 0; fi
+          busy=$(gh run list -R "$R" -w train.yml -L 20 --json status -q '[.[] | select(.status != "completed")] | length')
+          last=$(gh run list -R "$R" -w train.yml -L 1 --json conclusion,createdAt -q '.[0] | "\(.createdAt) \(.conclusion)"')
+          echo "進行中／排隊：$busy　最後一次：$last"
+          if [ "$busy" = "0" ]; then
+            gh workflow run train.yml -R "$R" --ref main
+            echo '已重新開始訓練'
+          fi
