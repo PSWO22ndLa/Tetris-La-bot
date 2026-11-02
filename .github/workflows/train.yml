@@ -32,9 +32,10 @@ jobs:
           git config user.email 'actions@users.noreply.github.com'
           git add -A nn.json data hist last_run.txt
           git commit -m "train: $(date -u +%Y-%m-%dT%H:%MZ)" || exit 0
-          git push
+          for i in 1 2 3 4 5; do git push && exit 0; git pull --rebase -X theirs || git rebase --abort; sleep 5; done   # repo 中途有別的 commit 時先接上再推
+          exit 1
       - name: 接著跑下一次（GitHub 的排程常常延遲或漏跑；repo 裡放一個 PAUSE 檔就會停）
-        if: success()
+        if: ${{ !cancelled() }}                # 就算這次失敗也要接下一次
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
