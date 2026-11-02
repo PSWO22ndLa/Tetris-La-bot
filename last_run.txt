@@ -1,22 +1,22 @@
 == 第 1 輪：4 個行程 × 30 局 自我對戰（用目前的 nn.json，偶爾亂放）
 == 訓練（接著上一版的權重）
-存好 nn_new.json（v2，40727 筆，最佳 val R² 0.558）
+存好 nn_new.json（v2，41403 筆，最佳 val R² 0.578）
 == 比較（同一組垃圾，16 局）
-CLASSIC {"games":16,"avgPieces":263.4,"app":0.785,"deaths":11,"maxB2B":36,"avgB2B":3.87,"breaks3":41,"msPerPiece":37.8}
-HYBRID  {"games":16,"avgPieces":187.6,"app":0.619,"deaths":14,"maxB2B":18,"avgB2B":1.29,"breaks3":30,"msPerPiece":66.2}
-NEURAL  {"games":16,"avgPieces":27,"app":0.181,"deaths":16,"maxB2B":4,"avgB2B":0.25,"breaks3":0,"msPerPiece":73.7}
+CLASSIC {"games":16,"avgPieces":263.4,"app":0.785,"deaths":11,"maxB2B":36,"avgB2B":3.87,"breaks3":41,"msPerPiece":22.6}
+HYBRID  {"games":16,"avgPieces":197.6,"app":0.614,"deaths":13,"maxB2B":25,"avgB2B":1.01,"breaks3":27,"msPerPiece":42.6}
+NEURAL  {"games":16,"avgPieces":27.6,"app":0.095,"deaths":16,"maxB2B":0,"avgB2B":0,"breaks3":0,"msPerPiece":35.8}
 == 第 2 輪：4 個行程 × 30 局 自我對戰（用目前的 nn.json，偶爾亂放）
 == 訓練（接著上一版的權重）
-存好 nn_new.json（v2，47517 筆，最佳 val R² 0.527）
+存好 nn_new.json（v2，48221 筆，最佳 val R² 0.587）
 == 比較（同一組垃圾，16 局）
-CLASSIC {"games":16,"avgPieces":263.4,"app":0.785,"deaths":11,"maxB2B":36,"avgB2B":3.87,"breaks3":41,"msPerPiece":40.3}
-HYBRID  {"games":16,"avgPieces":160.1,"app":0.66,"deaths":15,"maxB2B":28,"avgB2B":1.8,"breaks3":24,"msPerPiece":75.8}
-NEURAL  {"games":16,"avgPieces":35.4,"app":0.199,"deaths":16,"maxB2B":3,"avgB2B":0.14,"breaks3":0,"msPerPiece":60.3}
+CLASSIC {"games":16,"avgPieces":263.4,"app":0.785,"deaths":11,"maxB2B":36,"avgB2B":3.87,"breaks3":41,"msPerPiece":22.7}
+HYBRID  {"games":16,"avgPieces":176.8,"app":0.73,"deaths":14,"maxB2B":20,"avgB2B":1.81,"breaks3":33,"msPerPiece":42}
+NEURAL  {"games":16,"avgPieces":32.6,"app":0.19,"deaths":16,"maxB2B":2,"avgB2B":0.09,"breaks3":0,"msPerPiece":40.7}
 == 第 3 輪：4 個行程 × 30 局 自我對戰（用目前的 nn.json，偶爾亂放）
 == 訓練（接著上一版的權重）
-存好 nn_new.json（v2，55759 筆，最佳 val R² 0.524）
+存好 nn_new.json（v2，56094 筆，最佳 val R² 0.582）
 == 比較（同一組垃圾，16 局）
-CLASSIC {"games":16,"avgPieces":263.4,"app":0.785,"deaths":11,"maxB2B":36,"avgB2B":3.87,"breaks3":41,"msPerPiece":41.1}
-HYBRID  {"games":16,"avgPieces":229.9,"app":0.736,"deaths":14,"maxB2B":29,"avgB2B":1.38,"breaks3":38,"msPerPiece":71.1}
-NEURAL  {"games":16,"avgPieces":47.3,"app":0.418,"deaths":16,"maxB2B":5,"avgB2B":0.43,"breaks3":1,"msPerPiece":54.8}
+CLASSIC {"games":16,"avgPieces":263.4,"app":0.785,"deaths":11,"maxB2B":36,"avgB2B":3.87,"breaks3":41,"msPerPiece":22.4}
+HYBRID  {"games":16,"avgPieces":207.8,"app":0.723,"deaths":13,"maxB2B":20,"avgB2B":1.33,"breaks3":42,"msPerPiece":46.7}
+NEURAL  {"games":16,"avgPieces":49.2,"app":0.361,"deaths":16,"maxB2B":4,"avgB2B":0.25,"breaks3":3,"msPerPiece":53.9}
 完成：把 nn.json 上傳到網頁 設定 → CUSTOMIZATION → LA BOT BRAIN → LOAD nn.json
