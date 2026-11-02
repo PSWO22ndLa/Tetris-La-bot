@@ -8,6 +8,7 @@ on:
       games: { description: '每個行程幾局', default: '30' }
 permissions:
   contents: write
+  actions: write
 concurrency:
   group: train
   cancel-in-progress: false
@@ -32,3 +33,10 @@ jobs:
           git add -A nn.json data hist last_run.txt
           git commit -m "train: $(date -u +%Y-%m-%dT%H:%MZ)" || exit 0
           git push
+      - name: 接著跑下一次（GitHub 的排程常常延遲或漏跑；repo 裡放一個 PAUSE 檔就會停）
+        if: success()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          [ -f PAUSE ] && { echo '有 PAUSE 檔，不接著跑'; exit 0; }
+          gh workflow run train.yml --ref main
