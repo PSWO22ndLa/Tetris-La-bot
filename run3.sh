@@ -38,6 +38,6 @@ for r in $(seq 1 "$ROUNDS"); do
   echo "新網路 $NEW　目前最強 $BEST　規則版 $CL（同一組 $BENCH 局）"
   if awk "BEGIN{exit !($NEW > $BEST)}"; then
     cp nn3_new.json nn3_best.json; TEACH="nn=nn3_best.json"; echo "→ 新網路當老師"
-    if awk "BEGIN{exit !($NEW > $CL)}"; then cp nn3_new.json nn.json; echo "→ 也贏過規則版：更新 nn.json（網站會抓這個）"; fi
+    if awk "BEGIN{exit !($NEW > $CL * 1.05)}"; then cp nn3_new.json nn.json; echo "→ 贏規則版 5% 以上：更新 nn.json（網站會抓這個）"; else echo "→ 但沒明顯贏過規則版（要多 5%），nn.json 不動"; fi   # 24 局的運氣差就有 ±10% 以上，差一點點不算
   else echo "→ 沒贏，維持原本的"; fi
 done
