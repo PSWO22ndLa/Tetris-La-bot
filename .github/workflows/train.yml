@@ -25,12 +25,12 @@ jobs:
       - name: 只留最新 16 份資料（repo 不要越長越大）
         run: |
           ls -1t data3/*.json | tail -n +41 | xargs -r rm -f
-          ls -1t hist3/bench_2* 2>/dev/null | tail -n +41 | xargs -r rm -f
+          ls -1dt hist3/2*/ hist3/bench_2* 2>/dev/null | tail -n +41 | xargs -r rm -rf
       - name: 存回 repo
         run: |
           git config user.name 'labot-train'
           git config user.email 'actions@users.noreply.github.com'
-          git add -A nn.json nn3.json nn3_new.json data3 hist3 last_run.txt
+          git add -A nn.json nn3*.json data3 hist3 last_run.txt
           git commit -m "train: $(date -u +%Y-%m-%dT%H:%MZ)" || exit 0
           for i in 1 2 3 4 5; do git push && exit 0; git pull --rebase -X theirs || git rebase --abort; sleep 5; done   # repo 中途有別的 commit 時先接上再推
           exit 1
