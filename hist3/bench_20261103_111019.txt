@@ -1,0 +1,1 @@
+{"games":16,"avgPieces":143.9,"app":0.794,"deaths":14,"maxB2B":34,"avgB2B":3.8,"breaks3":21,"msPerPiece":33.7}
