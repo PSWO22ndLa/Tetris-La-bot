@@ -4,8 +4,8 @@ on:
     - cron: '17 * * * *'            # 每小時自動跑一次（UTC）；公開 repo 的 Actions 不限分鐘數
   workflow_dispatch:                # 手機 GitHub App → Actions → train → Run workflow
     inputs:
-      rounds: { description: '幾輪', default: '6' }
-      games: { description: '每個行程幾局', default: '30' }
+      rounds: { description: '幾輪', default: '4' }
+      games: { description: '每個行程幾局', default: '16' }
 permissions:
   contents: write
   actions: write
@@ -21,16 +21,16 @@ jobs:
       - uses: oven-sh/setup-bun@v2
       - name: 產資料 → 訓練 → 比較
         run: |
-          ROUNDS=${{ github.event.inputs.rounds || '6' }} GAMES=${{ github.event.inputs.games || '30' }} ./run.sh | tee last_run.txt
+          ROUNDS=${{ github.event.inputs.rounds || '4' }} GAMES=${{ github.event.inputs.games || '16' }} ./run3.sh | tee last_run.txt
       - name: 只留最新 16 份資料（repo 不要越長越大）
         run: |
-          ls -1t data/*.json | grep -v 'data/start.json' | tail -n +17 | xargs -r rm -f
-          ls -1t hist/* | tail -n +31 | xargs -r rm -f
+          ls -1t data3/*.json | tail -n +41 | xargs -r rm -f
+          ls -1t hist3/bench_2* 2>/dev/null | tail -n +41 | xargs -r rm -f
       - name: 存回 repo
         run: |
           git config user.name 'labot-train'
           git config user.email 'actions@users.noreply.github.com'
-          git add -A nn.json data hist last_run.txt
+          git add -A nn.json nn3.json nn3_new.json data3 hist3 last_run.txt
           git commit -m "train: $(date -u +%Y-%m-%dT%H:%MZ)" || exit 0
           for i in 1 2 3 4 5; do git push && exit 0; git pull --rebase -X theirs || git rebase --abort; sleep 5; done   # repo 中途有別的 commit 時先接上再推
           exit 1

@@ -3,7 +3,7 @@ const C = require(require('path').resolve(process.argv.find(a => a.startsWith('c
 const W = INIT.W, BH = INIT.BOT_H, VAL = INIT.BOT_VAL;
 const args = Object.fromEntries(process.argv.slice(2).map(a => a.split('=')));
 const games = +(args.games || 4), cap = +(args.cap || 500), seed0 = +(args.seed || 1), out = args.out || null;
-if (args.nn && require('fs').existsSync(args.nn)){ const N = JSON.parse(require('fs').readFileSync(args.nn, 'utf8')); N.v = N.v || (N.layers[0].n === 277 ? 2 : 1); N.pure = args.pure === '1'; N.mix = +(args.mix || 1); C.setNN(N); }   // 沒有 nn.json（第一次）→ 用規則版產資料
+if (args.nn && require('fs').existsSync(args.nn)){ const N = JSON.parse(require('fs').readFileSync(args.nn, 'utf8')); N.v = N.v || (N.layers[0].n === 277 ? 2 : 1); N.pure = !N.dist && args.pure === '1'; N.mix = +(args.mix || 1); if (N.dist && args.k != null) N.k = +args.k; if (N.dist && args.clip != null) N.clip = +args.clip; if (N.dist && args.rerank != null) N.rerank = +args.rerank; C.setNN(N); }   // 沒有 nn.json（第一次）→ 用規則版產資料
 if (args.qx != null && C.setQX) C.setQX(args.qx === '1');
 for (const [k, v] of Object.entries(args)) if (k.startsWith('w.')) C.LBW[k.slice(2)] = +v;
 if (args.beam) C.LBW.beam = +args.beam; if (args.depth) C.LBW.depth = +args.depth;
@@ -11,7 +11,7 @@ let S = seed0 * 2654435761 >>> 0; const rnd = () => { S ^= S << 13; S >>>= 0; S 
 Math.random = rnd;
 const EPS = +(args.eps || 0), B2BR = +(args.b2br ?? .5);
 const GAMMA = +(args.gamma || .95), DEATH = +(args.death || 40);
-const feats = [], targets = [];
+const feats = [], targets = [], DIST = args.dist === '1';   // dist=1：v3 蒸餾資料（目標＝這一手搜尋找到的最佳分數，不看之後的運氣）
 const stats = [];
 for (let g = 0; g < games; g++){
   const L = +(args.lmin || .6) + rnd() * +(args.lrange || 1.8);                                  // 這局的垃圾壓力
@@ -22,6 +22,7 @@ for (let g = 0; g < games; g++){
     fill();
     const pend = pending.reduce((a, p) => a + p.n, 0);
     let d = C.lbDecide({ bd, hold, q: q.slice(0, 6), bag: [], b2b, combo, noBook: true, pend, rules: null });
+    if (DIST && d && C.lastV != null && isFinite(C.lastV)){ const bits = C.lbToBits(bd); feats.push({ f: Array.from(C.lbFeatB(bits, { b2b, combo }), v => +v.toFixed(4)), b: Array.from(bits), h: hold ? 'IJLOSTZ'.indexOf(hold) : -1 }); targets.push(+(C.lastV - C.evalBase(bits, { b2b, combo })).toFixed(3)); }   // 殘差：搜尋值 − 規則版靜態評分
     if (d && EPS && rnd() < EPS){ C.lbTables(); const ms = [...C.lbMovesB(C.lbToBits(bd), q[0]).values()]; if (ms.length) d = { m: ms[(rnd() * ms.length) | 0], held: false }; }   // 探索：偶爾亂放，讓資料涵蓋爛盤面
     if (!d){ dead = true; break; }
     if (d.held){ const h = hold; hold = q.shift(); if (h) q.unshift(h); }
@@ -50,7 +51,7 @@ for (let g = 0; g < games; g++){
   let G = dead ? -DEATH : 0; const n = recF.length, tg = new Array(n);
   for (let i = n - 1; i >= 0; i--){ tg[i] = G; G = recR[i] + GAMMA * G; }
   const keep = dead ? n : Math.max(0, n - 40);                 // 沒死（到上限）：最後 40 手的目標被截斷，不要
-  for (let i = 0; i < keep; i++){ feats.push(recF[i]); targets.push(tg[i]); }
+  if (!DIST) for (let i = 0; i < keep; i++){ feats.push(recF[i]); targets.push(tg[i]); }
   stats.push({ maxB, brk, avgB: nClr ? sumB / nClr : 0, L: +L.toFixed(2), pieces, sent, app: +(sent / Math.max(1, pieces)).toFixed(3), dead, ms: Date.now() - t0 });
 }
 const surv = stats.reduce((a, s) => a + s.pieces, 0) / stats.length, app = stats.reduce((a, s) => a + s.sent, 0) / Math.max(1, stats.reduce((a, s) => a + s.pieces, 0));
