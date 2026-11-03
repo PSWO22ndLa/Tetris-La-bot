@@ -1,18 +1,18 @@
-起點：規則版 470.2　目前最強 470.2（老師：規則版）
-== 第 1 輪：4 個行程 × 16 局（老師：規則版）
-存好 nn3_new.json（v2，11220 筆，最佳 val R² 0.597）
-新網路 {"games":16,"avgPieces":293.1,"app":0.816,"deaths":11,"maxB2B":32,"avgB2B":3.81,"breaks3":56,"msPerPiece":36}
-→ 換上新網路（綜合分 532.3，規則版 470.2）
+起點：規則版 470.2　目前最強 562.6（老師：nn=nn3.json）
+== 第 1 輪：4 個行程 × 16 局（老師：nn=nn3.json）
+存好 nn3_new.json（v2，64997 筆，最佳 val R² 0.773）
+新網路 {"games":16,"avgPieces":288.6,"app":0.786,"deaths":9,"maxB2B":74,"avgB2B":6.18,"breaks3":39,"msPerPiece":26.5}
+→ 沒變強（515.4 ≤ 562.6），維持原本的
 == 第 2 輪：4 個行程 × 16 局（老師：nn=nn3.json）
-存好 nn3_new.json（v2，23337 筆，最佳 val R² 0.709）
-新網路 {"games":16,"avgPieces":306.4,"app":0.836,"deaths":9,"maxB2B":43,"avgB2B":4.05,"breaks3":51,"msPerPiece":37.3}
-→ 換上新網路（綜合分 562.6，規則版 470.2）
+存好 nn3_new.json（v2，77282 筆，最佳 val R² 0.805）
+新網路 {"games":16,"avgPieces":239.3,"app":0.831,"deaths":13,"maxB2B":58,"avgB2B":5.49,"breaks3":34,"msPerPiece":26}
+→ 沒變強（438.2 ≤ 562.6），維持原本的
 == 第 3 輪：4 個行程 × 16 局（老師：nn=nn3.json）
-存好 nn3_new.json（v2，37937 筆，最佳 val R² 0.728）
-新網路 {"games":16,"avgPieces":260.6,"app":0.826,"deaths":12,"maxB2B":55,"avgB2B":5.18,"breaks3":45,"msPerPiece":35.5}
-→ 沒變強（475.9 ≤ 562.6），維持原本的
+存好 nn3_new.json（v2，89411 筆，最佳 val R² 0.811）
+新網路 {"games":16,"avgPieces":250.2,"app":0.802,"deaths":12,"maxB2B":33,"avgB2B":4.02,"breaks3":50,"msPerPiece":28}
+→ 沒變強（450.9 ≤ 562.6），維持原本的
 == 第 4 輪：4 個行程 × 16 局（老師：nn=nn3.json）
-存好 nn3_new.json（v2，51983 筆，最佳 val R² 0.774）
-新網路 {"games":16,"avgPieces":226.1,"app":0.824,"deaths":12,"maxB2B":65,"avgB2B":5.61,"breaks3":36,"msPerPiece":37.3}
-→ 沒變強（412.4 ≤ 562.6），維持原本的
+存好 nn3_new.json（v2，101732 筆，最佳 val R² 0.812）
+新網路 {"games":16,"avgPieces":256.4,"app":0.862,"deaths":12,"maxB2B":28,"avgB2B":3.49,"breaks3":52,"msPerPiece":26.2}
+→ 沒變強（477.4 ≤ 562.6），維持原本的
 規則版 {"games":16,"avgPieces":263.4,"app":0.785,"deaths":11,"maxB2B":36,"avgB2B":3.87,"breaks3":41,"msPerPiece":36.5}
