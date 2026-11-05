@@ -17,12 +17,13 @@ for (let g = 0; g < games; g++){
   const L = +(args.lmin || .6) + rnd() * +(args.lrange || 1.8);                                  // 這局的垃圾壓力
   let bd = new Uint8Array(W * BH), hold = null, q = [], bag = [], b2b = -1, combo = -1, pending = [], hole = (rnd() * W) | 0, nextWave = 6 + rnd() * 10 / L;
   const fill = () => { while (q.length < 7){ if (!bag.length){ bag = ['I','J','L','O','S','T','Z']; for (let i = 6; i > 0; i--){ const k = (rnd() * (i + 1)) | 0; [bag[i], bag[k]] = [bag[k], bag[i]]; } } q.push(bag.pop()); } };
-  const recF = [], recR = []; let dead = false, pieces = 0, sent = 0, t0 = Date.now(), maxB = 0, brk = 0, sumB = 0, nClr = 0;
+  const recF = [], recR = [], dIdx = []; let dead = false,   // dIdx：這局的蒸餾樣本在 targets 裡的位置＋第幾手（死掉時往回扣分）
+   pieces = 0, sent = 0, t0 = Date.now(), maxB = 0, brk = 0, sumB = 0, nClr = 0;
   for (; pieces < cap; pieces++){
     fill();
     const pend = pending.reduce((a, p) => a + p.n, 0);
     let d = C.lbDecide({ bd, hold, q: q.slice(0, 6), bag: [], b2b, combo, noBook: true, pend, rules: null });
-    if (DIST && d && C.lastV != null && isFinite(C.lastV)){ const bits = C.lbToBits(bd); feats.push({ f: Array.from(C.lbFeatB(bits, { b2b, combo }), v => +v.toFixed(4)), b: Array.from(bits), h: hold ? 'IJLOSTZ'.indexOf(hold) : -1 }); targets.push(+(C.lastV - C.evalBase(bits, { b2b, combo })).toFixed(3)); }   // 殘差：搜尋值 − 規則版靜態評分
+    if (DIST && d && C.lastV != null && isFinite(C.lastV)){ const bits = C.lbToBits(bd); feats.push({ f: Array.from(C.lbFeatB(bits, { b2b, combo }), v => +v.toFixed(4)), b: Array.from(bits), h: hold ? 'IJLOSTZ'.indexOf(hold) : -1 }); targets.push(+(C.lastV - C.evalBase(bits, { b2b, combo })).toFixed(3)); dIdx.push([targets.length - 1, pieces]); }   // 殘差：搜尋值 − 規則版靜態評分
     if (d && EPS && rnd() < EPS){ C.lbTables(); const ms = [...C.lbMovesB(C.lbToBits(bd), q[0]).values()]; if (ms.length) d = { m: ms[(rnd() * ms.length) | 0], held: false }; }   // 探索：偶爾亂放，讓資料涵蓋爛盤面
     if (!d){ dead = true; break; }
     if (d.held){ const h = hold; hold = q.shift(); if (h) q.unshift(h); }
@@ -52,6 +53,8 @@ for (let g = 0; g < games; g++){
   for (let i = n - 1; i >= 0; i--){ tg[i] = G; G = recR[i] + GAMMA * G; }
   const keep = dead ? n : Math.max(0, n - 40);                 // 沒死（到上限）：最後 40 手的目標被截斷，不要
   if (!DIST) for (let i = 0; i < keep; i++){ feats.push(recF[i]); targets.push(tg[i]); }
+  // v3.1 保命：這局最後頂死 → 死前 DW 手內的盤面目標往下扣（越接近死越多），讓網路學會快頂時別硬撐 B2B
+  if (DIST && dead){ const DW = +(args.dwin || 30), DP = +(args.dpen || 60); for (const [ti, pc] of dIdx){ const left = pieces - pc; if (left <= DW) targets[ti] = +(targets[ti] - DP * (1 - left / (DW + 1))).toFixed(3); } }
   stats.push({ maxB, brk, avgB: nClr ? sumB / nClr : 0, L: +L.toFixed(2), pieces, sent, app: +(sent / Math.max(1, pieces)).toFixed(3), dead, ms: Date.now() - t0 });
 }
 const surv = stats.reduce((a, s) => a + s.pieces, 0) / stats.length, app = stats.reduce((a, s) => a + s.sent, 0) / Math.max(1, stats.reduce((a, s) => a + s.pieces, 0));

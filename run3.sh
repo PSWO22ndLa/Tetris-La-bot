@@ -8,7 +8,7 @@
 # 用法：ROUNDS=6 GAMES=16 ./run3.sh
 set -euo pipefail
 cd "$(dirname "$0")"
-ROUNDS=${ROUNDS:-6}; GAMES=${GAMES:-16}; P=${P:-$(nproc)}; BENCH=${BENCH:-24}
+ROUNDS=${ROUNDS:-6}; GAMES=${GAMES:-16}; P=${P:-$(nproc)}; BENCH=${BENCH:-32}
 mkdir -p data3 hist3
 score(){ bun -e "const s=JSON.parse(require('fs').readFileSync('$1','utf8'));console.log((s.avgPieces*(1+s.app)).toFixed(1))"; }   # 綜合分：存活×(1＋每顆攻擊)
 # 同一組垃圾（每輪換新種子）跑 BENCH 局，分兩個行程；輸出合併後的結果
