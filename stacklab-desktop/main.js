@@ -17,7 +17,7 @@ async function tio(req, u){
   const target = 'https://tetr.io' + u.pathname.slice(4) + u.search;
   // 非資源（API 等）：原樣轉發，不存
   if (!u.pathname.startsWith('/tio/res/') || req.method !== 'GET')
-    return net.fetch(target, { method: req.method, headers: req.headers, body: req.body, duplex: 'half', bypassCustomProtocolHandlers: true });
+    return net.fetch(target, { method: req.method, headers: req.headers, body: req.body, duplex: 'half', bypassCustomProtocolHandlers: true }).catch(() => new Response(null, { status: 502 }));
   const rel = path.normalize(decodeURIComponent(u.pathname.slice('/tio/res/'.length))).replace(/^(\.\.[\\/])+/, '');
   const file = path.join(CACHE(), 'res', rel);
   if (!file.startsWith(path.join(CACHE(), 'res'))) return new Response('forbidden', { status: 403 });
@@ -53,7 +53,7 @@ app.whenReady().then(() => {
   Menu.setApplicationMenu(null);
   protocol.handle('https', async req => {
     const u = new URL(req.url);
-    if (u.hostname !== HOST) return net.fetch(req, { bypassCustomProtocolHandlers: true });
+    if (u.hostname !== HOST) return net.fetch(req, { bypassCustomProtocolHandlers: true }).catch(() => new Response(null, { status: 502 }));   // 沒網路：回錯誤碼，不要丟例外
     if (u.pathname.startsWith('/tio/')) return tio(req, u);
     let p = decodeURIComponent(u.pathname); if (p === '/' || p === '') p = '/index.html';
     const f = path.join(APP_DIR, path.normalize(p).replace(/^(\.\.[\\/])+/, ''));
