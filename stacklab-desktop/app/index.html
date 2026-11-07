@@ -382,6 +382,8 @@ document.documentElement.classList.add('booting'); addEventListener('load', func
   body.game #gameCorner{ display:flex; }
   #gameCorner .gc-row{ display:flex; gap:6px; }
   #gameCorner .gc-zen{ display:flex; gap:6px; } #gameCorner .gc-zen.hidden{ display:none; }
+  #gameCorner .gc-zen i.zui{ display:block; width:20px; height:20px; margin:auto; background:center/contain no-repeat; pointer-events:none; }
+  #zenRedoBtn i.zui{ transform:scaleX(-1); }
   #gameCorner #zenCfgBtn{ display:flex; align-items:center; gap:5px; border-color:#4fd1a0; color:#9ff2cf; }
   #gameCorner button{ padding:6px 12px; font-size:13px; background:rgba(12,16,26,.55); border:1px solid rgba(255,255,255,.22); color:#e6ecf8; backdrop-filter:none; }
   body.game .gamebar{ display:none !important; }
@@ -4415,6 +4417,9 @@ const spawnRotOf = t => { const ks = kickSet(); return (ks.spawn && ks.spawn[t])
 const PK = {};
 SHAPES.I5.s = 5;
 const pk = t => (t in PK) ? PK[t] : t === 'I5' ? KEYS.indexOf('I') : KEYS.indexOf(t);
+// 官方 kicksets 的 color_overrides：TETRA-X → I 用 L 色、L 用 O 色、O 用 S 色、S 用 I 色；ARS → Z 用 S 色、S 用 T 色、I 用 Z 色、T 用 I 色
+const KCOLOR = { 'TETRA-X': { I:'L', L:'O', O:'S', S:'I' }, ARS: { Z:'S', S:'T', I:'Z', T:'I' } };
+const pkC = t => { let o = null; try { o = KCOLOR[kickName()]; } catch(e){} return pk((o && o[t]) || t); };   // 畫面上的顏色（判定還是用原本的方塊種類）
 const pkSnd = t => (PIECE_ORDER.includes(t) ? t : (KEYS[pk(t)] || 'T')).toLowerCase();
 const isPoly = t => typeof t === 'string' && (t in PK);
 function buildPolys(n, prefix){
@@ -5085,7 +5090,7 @@ function drawMini(t, r){
   const xs = raw.map(c=>c[0]), ys = raw.map(c=>c[1]);
   const bw = Math.max(...xs) - Math.min(...xs) + 1, bh = Math.max(...ys) - Math.min(...ys) + 1;
   const u = Math.min(r.w / Math.max(4.6, bw + .6), r.h / Math.max(2.6, bh + .6));
-  const ox = r.x + (r.w - bw*u)/2, oy = r.y + (r.h - bh*u)/2, kv = pk(t);
+  const ox = r.x + (r.w - bw*u)/2, oy = r.y + (r.h - bh*u)/2, kv = pkC(t);
   for (const [cx,cy] of raw) drawCell(ctx, kv, ox + (cx - Math.min(...xs))*u, oy + (cy - Math.min(...ys))*u, u);
 }
 const GUTB = () => (mode === 'sim' && climb && climb.kind === 'qp' ? Math.max(climb.snow && W < 10 ? 6 : 3.2, badgeNeedCells()) : mode === 'sim' && boardSkinOn() ? skinFrameBelow() + (typeof tlSkin === 'function' && tlSkin() ? 1.1 : 0) : mode === 'sim' && climb && climb.kind === 'league' && typeof duoWide === 'function' && duoWide() ? 1.1 : typeof genBoard === 'function' && genBoard() ? (typeof isZen === 'function' && isZen() ? 2.9 : .35) : 0);   // generic 下框外推 9px   // TL：盤面下面要寫名字
@@ -5336,7 +5341,7 @@ function drawSlotGen(label, types, x0, wide, dim, X, CS){
   types.slice(0, isN ? 5 : 1).forEach((t, i) => {
     const raw = SHAPES[t][spawnRotOf(t)], xs = raw.map(c => c[0]), ys = raw.map(c => c[1]), mx = Math.min(...xs), my = Math.min(...ys);
     const pw = Math.max(...xs) - mx + 1, ph = Math.max(...ys) - my + 1, cx = bx + 78 * u, cy = top + (72 + 90 * i) * u;
-    for (const [a, b] of raw) drawCell(X, pk(t), cx + (a - mx - pw / 2) * CS, cy + (b - my - ph / 2) * CS, CS);
+    for (const [a, b] of raw) drawCell(X, pkC(t), cx + (a - mx - pw / 2) * CS, cy + (b - my - ph / 2) * CS, CS);
   });
   X.restore();
 }
@@ -5370,7 +5375,7 @@ function drawSlot(label, types, x0, wide, dim, X = ctx, CS = cell, S = climb){
     const bw = Math.max(...xs) - Math.min(...xs) + 1, bh = Math.max(...ys) - Math.min(...ys) + 1;
     const u = Math.min((wide - pad*2) / Math.max(4, bw), CS * 0.62, slot / (bh + 1.1));
     const ox = x0 + (wide - bw*u)/2, oy = y + (slot - bh*u)/2;
-    const kv = pk(t);
+    const kv = pkC(t);
     for (const [cx,cy] of raw)
       drawCell(X, kv, ox + (cx - Math.min(...xs))*u, oy + (cy - Math.min(...ys))*u, u);
     y += slot;
@@ -6135,7 +6140,7 @@ function botAnimOf(o, best){
 // 對手／隊友的動作文字（實機：跟你一樣畫在它自己盤面的左邊、HOLD 下面：T-SPIN／QUAD／B2B x3／1 COMBO）
 function oppClearMsg(o, n, spin, type, pc, b2bN, comboN){
   const L = [];
-  if (spin) L.push({ text: (spin === 1 ? 'MINI ' : '') + (type || 'T') + '-SPIN', color: pieceColor(pk(type || 'T')) || '#b04fd8', size: 'sm' });
+  if (spin) L.push({ text: (spin === 1 ? 'MINI ' : '') + (type || 'T') + '-SPIN', color: pieceColor(pkC(type || 'T')) || '#b04fd8', size: 'sm' });
   if (n) L.push({ text: (CLEAR_NAME[n] || n + ' LINES').toUpperCase(), color: '#eef2f7', size: 'lg' });
   if (n && pc) L.push({ text: 'PERFECT CLEAR', color: '#f7d33e', size: 'lg' });
   if (n && b2bN > 1) L.push({ text: `BACK-TO-BACK X${b2bN}`, color: '#FFD864', size: 'sm' });
@@ -8284,7 +8289,7 @@ function drawFrame(){
   if (mode === 'sim' && climb && climb.tut){ drawTutTarget(); drawTutDemo(); }
   if (mode === 'sim' && climb && climb.drill){ const t = drillTarget(); if (t) drawTutOne({ p: t.p, cells: t.cells }); }
   if (mode === 'sim' && active){
-    const k = pk(active.type);
+    const k = pkC(active.type);
     ctx.save();
     const shA = optN('oShadowVis') / 15;                                  // 官方 shadow visibility（預設 15% = 原本的亮度）
     ctx.globalAlpha = Math.min(1, .28 * shA); ctx.fillStyle = opt('oColorGhost') ? COLORS[k] : '#9aa3b8';
@@ -8328,6 +8333,7 @@ function drawFrame(){
     if (climb && climb.koFx) drawKoFx();
     if (climb && climb.gainFx) drawAltGain();
     if (climb && (climb.popOff || climb.popDef)) drawAtkPops();
+    if (climb && climb.undoFx) drawUndoFx();
     { const n = performance.now(); hsUiTick(Math.min(100, n - (HS_UI.lastNow || n))); HS_UI.lastNow = n; }                                                  // 官方 HYPERSPEED 介面（DOM 疊層）
     ctx.restore(); ctx.save(); if (meFall) dangerNow = false;       // 你輸了掉出畫面的那段變形只套在你自己的盤面上
     if (climb && climb.kind === 'league') drawOppBoard();
@@ -9370,8 +9376,43 @@ function zenUndo(redo){
   const from = redo ? ZENH.redo : ZENH.undo, to = redo ? ZENH.undo : ZENH.redo;
   if (!from.length){ sfxEv('no', 'no'); return; }
   to.push(zenSnap(active.type)); zenRestore(from.pop());
-  sfxEv(redo ? 'redo' : 'undo', redo ? 'redo' : 'undo');
-  say(redo ? 'REDO' : 'UNDO');
+  sfxEv(redo ? 'redo' : 'undo', redo ? 'redo' : 'undo', 0.7);                    // 官方 sfx.Play("undo"/"redo", .7)
+  if (opt('oActText') === 'all') climb.undoFx = { t: performance.now(), redo };   // 官方 fx("undoredo")：ACTION TEXT 是 OFF／SOME 就不畫
+  boardKick(redo ? 7 : -7, 0, false);                                           // 官方 holderstate.dx ∓7：盤面往左（UNDO）／右（REDO）推一下
+  draw();
+}
+// 官方 ns.undoredo：board.png 裡 (98,171,69,69) 的箭頭，放在盤面正中央；0.5 秒內 2→3.5 倍＋淡出（bezier .11,.42,.58,1），
+// REDO 左右翻；前 0.25 秒錨點 x 0.5→0.75→0.5（往旁邊頓一下）
+let UNDO_ICO = null;
+function undoIcoCanvas(){                                                     // 沒抓官方 board.png 時的備用箭頭（白色，同尺寸）
+  if (UNDO_ICO) return UNDO_ICO;
+  const c = document.createElement('canvas'); c.width = c.height = 69; const x = c.getContext('2d');
+  x.strokeStyle = '#fff'; x.fillStyle = '#fff'; x.lineWidth = 9; x.lineCap = 'butt';
+  x.beginPath(); x.arc(36, 37, 19, Math.PI * 1.08, Math.PI * .62, false); x.stroke();
+  x.beginPath(); x.moveTo(4, 36); x.lineTo(30, 36); x.lineTo(17, 18); x.closePath(); x.fill();
+  return UNDO_ICO = c;
+}
+function undoIcoSrc(){
+  const B = genTex('gBoard'); if (B && (B.naturalWidth || B.width)) return [B, 98, 171, 69, 69];
+  return [undoIcoCanvas(), 0, 0, 69, 69];
+}
+const BEZ_UNDO = bez(.11, .42, .58, 1);
+function drawUndoFx(){
+  const F = climb.undoFx, ms = performance.now() - F.t;
+  if (ms >= 500){ climb.undoFx = null; return; }
+  const k = BEZ_UNDO(ms / 500), sc = 2 + 1.5 * k, f = Math.min(1, ms / 250);
+  const ax = f < .25 ? .5 + .25 * f / .25 : .75 - .25 * (f - .25) / .75;
+  const [img, sx, sy, sw, sh] = undoIcoSrc(), size = 69 * 2.5 * cell / 92;     // board.png：92 px＝1 格
+  ctx.save(); ctx.globalAlpha = 1 - k; ctx.translate(W / 2 * cell, (H - VISIBLE / 2) * cell); ctx.scale(F.redo ? -sc : sc, sc);
+  try { ctx.drawImage(img, sx, sy, sw, sh, -ax * size, -.5 * size, size, size); } catch(e){}
+  ctx.restore();
+  if (!drawUndoFx.raf) drawUndoFx.raf = requestAnimationFrame(() => { drawUndoFx.raf = 0; draw(); });
+}
+function zenBtnIcons(){                                                        // 右上角 UNDO／REDO 鈕：用同一個官方箭頭圖
+  const [img, sx, sy, sw, sh] = undoIcoSrc(), c = document.createElement('canvas'); c.width = c.height = 69;
+  try { c.getContext('2d').drawImage(img, sx, sy, sw, sh, 0, 0, 69, 69); } catch(e){ return; }
+  let url = ''; try { url = c.toDataURL(); } catch(e){ return; }
+  for (const id of ['zenUndoBtn', 'zenRedoBtn']){ const b = $(id); if (!b) continue; let i = b.querySelector('i.zui'); if (!i){ b.textContent = ''; i = document.createElement('i'); i.className = 'zui'; b.appendChild(i); } i.style.backgroundImage = `url("${url}")`; }
 }
 function lockPiece(){
   if (!active) return;
@@ -9386,7 +9427,7 @@ function lockPiece(){
   const spin = detectSpin(active);
   const lockCols = [...new Set(cellsOf(active).map(c => c[0]))];   // 成就用：Quad 打在哪一欄
   const lockInfo = { type: active.type, rot: active.rot & 3, x: active.x, cells: cellsOf(active).map(([x, y]) => [x, y]) };   // 復活任務用
-  const g = grid(), k = pk(active.type);
+  const g = grid(), k = pkC(active.type);
   let lockedOut = true;
   for (const [x,y] of cellsOf(active)){
     if (y < 0) continue;
@@ -9412,7 +9453,7 @@ function lockPiece(){
   const parts = [], lines = [];
   const push = (text, color, size) => { parts.push(text); lines.push({ text:text.toUpperCase(), color, size }); };
   if (spin){
-    const pc = pieceColor(pk(spin.type)) || '#6f7dff';   // 轉哪顆就用哪顆的顏色（有皮膚就用皮膚色）
+    const pc = pieceColor(pkC(spin.type)) || '#6f7dff';   // 轉哪顆就用哪顆的顏色（有皮膚就用皮膚色）
     push((spin.mini ? 'Mini ' : '') + spin.name, pc, 'sm');
   }
   if (r.cleared) push(climb && hasMod('warlock') && !spin ? 'Void' : (CLEAR_NAME[r.cleared] || `${r.cleared} Lines`), '#eef2f7', 'lg');
@@ -9463,7 +9504,7 @@ function composedBoard(){
     if ($('recGhost').checked)
       for (const [x,y] of cellsOf(ghostOf(active)))
         if (y>=0 && !g[y*W+x]) g[y*W+x] = 8;
-    const k = pk(active.type);
+    const k = pkC(active.type);
     for (const [x,y] of cellsOf(active)) if (y>=0) g[y*W+x] = k;
   }
   return g;
@@ -12685,7 +12726,7 @@ function syncUI(){
   $('runRestart').classList.toggle('hidden', !!(game && climb.custom && !climb.custom.retry));
   document.body.classList.toggle('tut', !!(game && climb.tut));
   $('zenTag').classList.add('hidden');                                  // ZEN 設定改到右上角（#zenCorner）
-  { const zc = $('zenCorner'); if (zc) zc.classList.toggle('hidden', !(game && climb.kind === 'practice' && climb.sub === 'zen')); }
+  { const zc = $('zenCorner'); if (zc){ const on = !!(game && climb.kind === 'practice' && climb.sub === 'zen'); zc.classList.toggle('hidden', !on); if (on) zenBtnIcons(); } }
   { const zp = $('zenPanel'), on = !!(game && climb.kind === 'practice' && climb.sub === 'zen');      // 官方：ZEN 一開局右緣就有側欄
     document.body.classList.toggle('zside', on);
     if (on && !zp.classList.contains('zside')){ zp.classList.add('zside'); renderZenPanel(); zp.classList.remove('hidden', 'open'); }
@@ -14609,7 +14650,7 @@ function qplMini(c, t, r){
   const bw = Math.max(...xs) - Math.min(...xs) + 1, bh = Math.max(...ys) - Math.min(...ys) + 1;
   const u = Math.min(r.w / Math.max(4.6, bw + .6), r.h / Math.max(2.6, bh + .6));
   const ox = r.x + (r.w - bw * u) / 2, oy = r.y + (r.h - bh * u) / 2;
-  for (const [cx, cy] of raw) drawCell(c, pk(t), ox + (cx - Math.min(...xs)) * u, oy + (cy - Math.min(...ys)) * u, u);
+  for (const [cx, cy] of raw) drawCell(c, pkC(t), ox + (cx - Math.min(...xs)) * u, oy + (cy - Math.min(...ys)) * u, u);
 }
 function qplBoardCells(c, o, cs, alpha = 1){
   c.globalAlpha = alpha;
