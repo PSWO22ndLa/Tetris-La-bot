@@ -1,0 +1,43 @@
+{
+  "name": "stack-lab",
+  "productName": "Stack Lab",
+  "version": "1.0.0",
+  "description": "Gridless TETR.IO-style simulator",
+  "author": "PSWO22ndLa",
+  "main": "main.js",
+  "private": true,
+  "scripts": {
+    "start": "electron .",
+    "dist": "electron-builder --win --x64"
+  },
+  "devDependencies": {
+    "electron": "44.9.3",
+    "electron-builder": "26.18.0"
+  },
+  "build": {
+    "appId": "io.github.pswo22ndla.stacklab",
+    "productName": "Stack Lab",
+    "files": [
+      "main.js",
+      "app/**"
+    ],
+    "asar": true,
+    "win": {
+      "target": [
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "app/icon.png"
+    },
+    "portable": {
+      "artifactName": "StackLab-portable.exe"
+    },
+    "directories": {
+      "output": "dist"
+    }
+  }
+}

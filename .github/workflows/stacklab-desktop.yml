@@ -1,0 +1,32 @@
+# Stack Lab 桌面版：stacklab-desktop/ 有改就在 Windows 上編 portable .exe，放到 Releases 的 tag「stacklab」
+# 網站上的下載按鈕固定連 releases/download/stacklab/StackLab-portable.exe
+name: Stack Lab desktop (.exe)
+on:
+  push:
+    paths: ['stacklab-desktop/**', '.github/workflows/stacklab-desktop.yml']
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  build:
+    runs-on: windows-latest
+    defaults:
+      run:
+        working-directory: stacklab-desktop
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: pnpm install --no-frozen-lockfile
+      - run: pnpm exec electron-builder --win portable --x64 --publish never
+      - uses: softprops/action-gh-release@v2
+        with:
+          tag_name: stacklab
+          name: Stack Lab Desktop
+          body: Gridless TETR.IO-style simulator — Windows portable build (no install needed).
+          files: stacklab-desktop/dist/StackLab-portable.exe
+          make_latest: false
