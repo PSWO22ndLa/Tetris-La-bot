@@ -3876,6 +3876,7 @@ const FX_TINT = new Map();
    第一次跨過 500：放 fire＋fire_flair，給 300 幀寬限、再 +14；之後每幀 −5/60（寬限中不減）；≥500 時盤面左右和底邊一直冒火（fire_burn） */
 function fireAdd(n){
   if (!climb || climb.over || !opt('oFireMeter') || !(n > 0)) return;
+  if (!(climb.kind === 'league' || climb.kind === 'qp' || (climb.opts && climb.opts.room))) return;   // 官方 display_fire 預設關，只有對戰（TL／QP／房間）開
   const was = (climb.fire || 0) >= 500; climb.fire = Math.min(700, (climb.fire || 0) + n);
   if (climb.fire >= 500 && !was){ climb.fireGrace = 300; climb.fire = Math.min(700, climb.fire + 14); sfxEv('fire', 'fire'); fireFx(true); }
 }
