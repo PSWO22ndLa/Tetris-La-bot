@@ -1675,7 +1675,7 @@ document.documentElement.classList.add('booting'); addEventListener('load', func
 
   /* ===== 逆位揭示（仿 TETR.IO：卡片甩出 → 縮回中央、紅色多邊形背景、組合名稱故障閃爍登場） ===== */
   /* 手機長按不要跳出「翻譯／複製／全部選取」：QP 大廳的卡片區、揭示畫面、標籤都禁止選字 */
-  #modsel .qpl-mods, #modsel .qpl-reveal, #modsel .evdeck, #modsel .qpstart, #modsel .qpl-party{ -webkit-user-select:none; user-select:none; -webkit-touch-callout:none; }
+  :is(#modsel, #h2hModHost) .qpl-mods, :is(#modsel, #h2hModHost) .qpl-reveal, :is(#modsel, #h2hModHost) .evdeck, #modsel .qpstart, #modsel .qpl-party{ -webkit-user-select:none; user-select:none; -webkit-touch-callout:none; }
   .qpl-reveal{ position:relative; overflow:hidden; height:clamp(200px, 56vw, 290px); margin:0 -6px; cursor:pointer;
     background:radial-gradient(90% 90% at 50% 45%, #3a0a14, #160408); }
   .qpl-reveal.hidden{ display:none; }
@@ -2060,6 +2060,13 @@ document.documentElement.classList.add('booting'); addEventListener('load', func
   [data-t="blitz"] .oblk{ --bk:rgb(62,36,36); --bc:rgb(121,69,69) rgb(50,29,29) rgb(36,22,22) rgb(98,61,61); --h1:rgb(219,161,161); --p:rgb(243,197,197); --sg:rgb(121,75,75); --sgl:rgb(176,99,99); --sgc:rgb(235,172,172);
     --cb:rgb(166,98,98); --cbc:rgb(219,147,147); --cbx:rgb(23,16,16); --cbxb:rgb(8,7,7) rgb(38,30,30) rgb(43,35,35) rgb(15,12,12); --cbo:rgb(163,104,104); --cbob:rgb(227,145,145) rgb(125,79,79) rgb(115,72,72) rgb(191,122,122);
     --btn:rgb(76,49,49); --btnb:rgb(108,69,69) rgb(61,41,41) rgb(48,33,33) rgb(92,62,62); --btnc:rgb(220,171,171); --big:rgb(246,195,195); --bigs:rgb(187,142,142); --rk:rgb(109,60,60); --kp:rgb(169,124,124); --kp2:rgb(241,201,201); --lab:rgb(219,147,147); --mus:rgb(246,195,195); }
+  [data-t="zenith"] .oblk{ --bk:rgb(62,26,15); --bc:rgb(176,61,26) rgb(62,24,12) rgb(40,15,8) rgb(141,46,27); --h1:rgb(238,176,145); --p:rgb(255,196,160); --sg:rgb(120,44,20); --sgl:rgb(214,96,52); --sgc:rgb(255,214,190);
+    --cb:rgb(190,110,80); --cbc:rgb(255,180,140); --cbo:rgb(184,84,48); --cbob:rgb(255,156,107) rgb(141,46,27) rgb(120,40,22) rgb(214,96,52);
+    --btn:rgb(92,36,18); --btnb:rgb(141,56,30) rgb(66,26,12) rgb(48,18,8) rgb(120,46,24); --btnc:rgb(255,180,140); --big:rgb(255,196,160); --bigs:rgb(200,120,90); --lab:rgb(255,180,140); --mus:rgb(255,196,160); }
+  #h2hModHost{ display:block; box-sizing:content-box; width:70vw; max-width:calc(100% - 1em - 2em - 6px); padding:0 1em; border:3px solid transparent; margin:0 0 1em; font-size:var(--ofs); text-align:left; }
+  #h2hModHost > .qpl-panel{ margin:0; font-size:16px; }
+  @media (max-width:640px){ #h2hModHost{ width:auto; max-width:none; margin-left:1.5em; padding:0; } }
+  .h2h-tabs{ display:flex; gap:.4em; margin:.5em 0 .3em; flex-wrap:wrap; } .h2h-tabs .obtn{ font-size:1.35em !important; }
   [data-t="zen"] .oblk{ --bk:rgb(49,33,51); --bc:rgb(117,69,121) rgb(48,29,50) rgb(35,22,36) rgb(95,61,98); --h1:rgb(216,161,219); --p:rgb(240,197,243); --sg:rgb(119,75,121); --sgl:rgb(171,99,176); --sgc:rgb(227,172,235);
     --btn:rgb(76,49,76); --btnb:rgb(107,69,108) rgb(60,41,61) rgb(48,33,48) rgb(90,62,92); --btnc:rgb(220,171,218); }
   #solopre .homebar, #soloRes .homebar{ font-size:var(--ofs); }
@@ -2781,23 +2788,23 @@ document.documentElement.classList.add('booting'); addEventListener('load', func
   #modsel .qpstart small{ font-size:max(1vw, .8em); font-weight:700; letter-spacing:0; color:rgb(178,96,64); transition:opacity .3s, transform .3s; }
   #modsel .qpstart.nomods b{ transform:translateY(.6rem); } #modsel .qpstart.nomods small{ transform:translateY(1rem); opacity:0; }
   #modsel.tyr .qpstart b{ transform:scaleY(-1); text-shadow:0 0 16px rgba(255,0,89,.4); color:rgb(255,108,108); }
-  #modsel .qpl-mods{ padding:1em 0 0; }
-  #modsel .qpl-label{ position:relative; border-top:0; padding:18px 2px 1.2em; margin-top:.4em; }
-  #modsel .qpl-label::before{ content:""; position:absolute; top:0; left:.2rem; right:.2rem; height:3px; background:linear-gradient(to right, transparent 0, rgb(184,58,27) .6rem, rgb(184,58,27) calc(100% - .6rem), transparent 100%); }
-  #modsel .qpl-label b{ font-size:2em; font-weight:700; letter-spacing:0; color:rgb(255,156,107); }
-  #modsel .qpl-label b::before, #modsel .qpl-label b::after{ display:inline-block; content:""; width:1em; height:.7em; background-color:currentColor; position:relative; top:-.075em;
+  :is(#modsel, #h2hModHost) .qpl-mods{ padding:1em 0 0; }
+  :is(#modsel, #h2hModHost) .qpl-label{ position:relative; border-top:0; padding:18px 2px 1.2em; margin-top:.4em; }
+  :is(#modsel, #h2hModHost) .qpl-label::before{ content:""; position:absolute; top:0; left:.2rem; right:.2rem; height:3px; background:linear-gradient(to right, transparent 0, rgb(184,58,27) .6rem, rgb(184,58,27) calc(100% - .6rem), transparent 100%); }
+  :is(#modsel, #h2hModHost) .qpl-label b{ font-size:2em; font-weight:700; letter-spacing:0; color:rgb(255,156,107); }
+  :is(#modsel, #h2hModHost) .qpl-label b::before, :is(#modsel, #h2hModHost) .qpl-label b::after{ display:inline-block; content:""; width:1em; height:.7em; background-color:currentColor; position:relative; top:-.075em;
     clip-path:polygon(50% 0%, 43% 20%, 33% 38%, 18% 46%, 0% 50%, 18% 54%, 33% 62%, 43% 80%, 50% 100%, 47% 75%, 41% 62%, 30% 50%, 41% 38%, 47% 25%); }
-  #modsel .qpl-label b::after{ transform:scaleX(-1); }
-  @media (max-width:600px){ #modsel .qpl-label{ padding-right:4.2em; } #modsel .qpl-label b{ font-size:1.4em; } #modsel .qpl-label .qpl-reset{ font-size:1em; right:12px; bottom:auto; top:calc(18px + .55em); } }
-  #modsel .qpl-label b.generic{ color:rgb(178,96,64); }
-  #modsel .qpl-label b.generic::before, #modsel .qpl-label b.generic::after{ height:.5em; top:-.15em; margin:0 .5em; clip-path:polygon(0 100%, 50% 0, 100% 100%); transform:none; }
-  #modsel .qpl-label button:not(.qpl-reset){ color:rgb(178,96,64); }
-  #modsel .qpl-label .qpl-reset{ position:absolute; right:18px; bottom:18px; margin:-.5em; width:3.3em; font:700 1.2em var(--t-font); letter-spacing:0; text-transform:lowercase;
+  :is(#modsel, #h2hModHost) .qpl-label b::after{ transform:scaleX(-1); }
+  @media (max-width:600px){ :is(#modsel, #h2hModHost) .qpl-label{ padding-right:4.2em; } :is(#modsel, #h2hModHost) .qpl-label b{ font-size:1.4em; } :is(#modsel, #h2hModHost) .qpl-label .qpl-reset{ font-size:1em; right:12px; bottom:auto; top:calc(18px + .55em); } }
+  :is(#modsel, #h2hModHost) .qpl-label b.generic{ color:rgb(178,96,64); }
+  :is(#modsel, #h2hModHost) .qpl-label b.generic::before, :is(#modsel, #h2hModHost) .qpl-label b.generic::after{ height:.5em; top:-.15em; margin:0 .5em; clip-path:polygon(0 100%, 50% 0, 100% 100%); transform:none; }
+  :is(#modsel, #h2hModHost) .qpl-label button:not(.qpl-reset){ color:rgb(178,96,64); }
+  :is(#modsel, #h2hModHost) .qpl-label .qpl-reset{ position:absolute; right:18px; bottom:18px; margin:-.5em; width:3.3em; font:700 1.2em var(--t-font); letter-spacing:0; text-transform:lowercase;
     background-color:rgb(90,38,22); border:1px solid rgb(113,49,39); border-radius:3px; color:rgb(178,96,64); padding:.35em 0 .05em; text-align:center; filter:brightness(1); transition:filter .3s, opacity .3s; }
-  #modsel .qpl-label .qpl-reset:hover{ filter:brightness(1.2); }
-  #modsel .qpl-lbldesc{ font-size:1.2em; font-weight:700; letter-spacing:0; color:rgb(178,96,64); margin-top:-1.1em; padding-bottom:.6em; text-transform:none; }
-  #modsel .qpl-ev{ padding:1em; } #modsel .qpl-evt{ font-size:2em; font-weight:700; letter-spacing:0; color:rgb(178,96,64); }
-  #modsel .qpl-ev .deckhelp, #modsel .qpl-toggle{ font-weight:700; letter-spacing:0; color:rgb(178,96,64) !important; }
+  :is(#modsel, #h2hModHost) .qpl-label .qpl-reset:hover{ filter:brightness(1.2); }
+  :is(#modsel, #h2hModHost) .qpl-lbldesc{ font-size:1.2em; font-weight:700; letter-spacing:0; color:rgb(178,96,64); margin-top:-1.1em; padding-bottom:.6em; text-transform:none; }
+  :is(#modsel, #h2hModHost) .qpl-ev{ padding:1em; } :is(#modsel, #h2hModHost) .qpl-evt{ font-size:2em; font-weight:700; letter-spacing:0; color:rgb(178,96,64); }
+  :is(#modsel, #h2hModHost) .qpl-ev .deckhelp, :is(#modsel, #h2hModHost) .qpl-toggle{ font-weight:700; letter-spacing:0; color:rgb(178,96,64) !important; }
 
   /* QP 結算：同一套官方 scroller_block 外框＋ .replayinfo／.watchreplay／.bigscore 配色 */
   #qpResult .qr-wrap{ width:min(800px, 100% - 20px); font-size:clamp(11px, 2.4vw, 16px); font-family:var(--t-font); }
@@ -5354,7 +5361,7 @@ function genBars(X, segs){
     const lerp = (a, b) => Math.round(a + (b - a) * p), col = `rgb(${lerp(0xB8, 0xFF)},${lerp(0x4E, 0xCC)},${lerp(0x07, 0x00)})`;
     if (B) nine(X, gTint(B, 175, 24, 60, 60, col), 0, 0, 60, 60, 0, 32, 0, 0, ix, H * cell - h - 30 * k, iw, h + 30 * k, k); else { X.fillStyle = col; X.fillRect(ix, H * cell - h, iw, h); } });
 }
-function genProgress(){ if (!climb) return 0; if (climb.sub === '40l') return Math.min(raceLines(), climb.lines || 0) / raceLines(); if (climb.sub === 'blitz') return climb.opts && climb.opts.race ? Math.min(1, (climb.score || 0) / climb.opts.race.goal) : (climb.elapsed || 0) / (BLITZ.secs * 1000); if (climb.sub === 'zen') return Math.min(1, climb.zenProg || 0); return 0; }
+function genProgress(){ if (!climb) return 0; if (climb.sub === '40l') return Math.min(raceLines(), climb.lines || 0) / raceLines(); if (climb.sub === 'blitz') return raceNoClock() ? Math.min(1, (climb.score || 0) / climb.opts.race.goal) : (climb.elapsed || 0) / (BLITZ.secs * 1000); if (climb.sub === 'zen') return Math.min(1, climb.zenProg || 0); return 0; }
 // 官方 Kc.generic.ns.border：board.png (111,2,27,18) 九宮格 [11,2,11,11]，左右下各外推 9px；只有左、右、下三邊
 function drawGenBorder(X = ctx){
   const top = (H - VISIBLE) * cell, k = cell / 92, B = genTex('gBoard');
@@ -6011,7 +6018,7 @@ function drawClimbHUD(wide){
     return;
   }
   if (climb.kind === 'practice' && climb.sub === 'blitz'){
-    const left = Math.max(0, BLITZ.secs - climb.elapsed / 1000), rc = climb.opts && climb.opts.race;
+    const left = Math.max(0, BLITZ.secs - climb.elapsed / 1000), rc = raceNoClock() ? climb.opts.race : null;
     if (rc) line('TIME', clockParts(secs), SC); else line('TIME', clockParts(left), left < 10 ? '#ff5a5a' : SC);
     line('SCORE', [climb.score.toLocaleString('en-US'), rc ? ' / ' + rc.goal.toLocaleString('en-US') : ''], SC);
     line('LEVEL', [String(climb.blvl), ` · ${Math.max(0, blitzNeed(climb.blvl) - climb.blLines)} TO NEXT`], SC);
@@ -8885,6 +8892,7 @@ async function saveAsProject(){
 }
 function setScreen(sc){
   document.documentElement.classList.remove('booting');
+  if (typeof h2hMods === 'function' && !(sc === 'solopre' && soloPreKind === 'h2h')) h2hMods(false);
   { const hb = document.getElementById('hsBar'); if (hb && sc !== 'edit') hb.style.display = 'none'; }
   if (screen === 'modsel' && sc !== 'modsel' && !inGame() && typeof tbgNext === 'function') tbgNext(true);   // 官方：離開 QP（zenith）回選單 → ni(!0) 立刻換背景
   screen = sc;
@@ -8904,7 +8912,7 @@ function setScreen(sc){
   if (typeof tbgSync === 'function') tbgSync();
   // 官方 #menus[data-menu-type]：每個畫面的標題列／底列配色
   document.body.dataset.menu = ({ home:'home', multisel:'playmulti', roomlist:'multilisting', mproom:'lobby', bgmtweak:'config', practicesel:'play1p', drillsel:'play1p', tutsel:'play1p', customsel:'custom', config:'config', cfgacct:'config', about:'about',
-    channel:'tetra', achv:'tetra', chlb:'tetra', chme:'tetra', chpl:'tetra', modsel:'zenith', leaguesel:'league', solopre:(typeof soloPreKind !== 'undefined' ? (soloPreKind === 'h2h' ? 'playmulti' : soloPreKind) : '40l') })[sc] || 'default';
+    channel:'tetra', achv:'tetra', chlb:'tetra', chme:'tetra', chpl:'tetra', modsel:'zenith', leaguesel:'league', solopre:(typeof soloPreKind !== 'undefined' ? (soloPreKind === 'h2h' ? LV_T(LV.kind) : soloPreKind) : '40l') })[sc] || 'default';
   $('frameLabel').hidden = sc !== 'edit';
   $('saveState').hidden = sc !== 'edit';
   if (sc !== 'modsel' && typeof qrOutOfLobby === 'function') qrOutOfLobby();
@@ -10614,7 +10622,7 @@ const SOLO_PRE = {
   cheese: { t:'CHEESE', d:'dig through garbage as fast as you can!<br>every row has one hole: clear them all to finish.', f:'press START to begin playing' },
   finesse:{ t:'FINESSE', d:'place every piece with the fewest key presses.<br>a piece placed with more presses than needed is a FAULT.', f:'press START to begin playing' },
   rot:    { t:'ROTATION', d:'reach each outlined spot with ONE press of the right rotation key: CW, CCW or 180.<br>made to break the habit of only pressing CCW.', f:'press START to begin playing' },
-  h2h:    { t:'HEAD TO HEAD', d:'race a friend on the same keyboard!<br>first to reach the goal wins. top out and you lose!', f:'press START to begin the race' },
+  h2h:    { t:'HEAD TO HEAD', d:'play a friend on the same keyboard!', f:'press START to begin' },
   zen:    { t:'ZEN', d:'relax or train in a neverending mode! your progress is stored across games.<br>adjust the feel or help train using the ZEN SIDEBAR.<br>you can undo and redo placements with CTRL+Z and CTRL+Y!', f:'press START to begin playing' },
 };
 // 官方音樂選擇：RANDOM: CALM 起跳，點一下換下一首（右鍵換上一首）
@@ -12622,11 +12630,11 @@ function climbTick(dt){
   if (climb.kind === 'practice'){             // 40L／ZEN 重力跟設定走；BLITZ 照官方每級重力
     climb.gravity = climb.sub === 'tut' || (climb.sub === 'drill' && climb.drill && climb.drill.kind !== 'cheese') ? 0 : climb.sub === 'blitz' ? blitzGrav(climb.blvl) : climb.sub === 'zen' ? zenGrav() : Math.max(0, +$('gravity').value || 0);
     if (climb.sub === 'zen') zenGarbageTick(dt);
-    if (climb.sub === 'blitz' && !climb.opts.race){ const left = Math.ceil(BLITZ.secs - climb.elapsed / 1000);                 // 官方：剩 60／30 秒動作字；10–4 秒 timer1、3–1 秒 timer2
+    if (climb.sub === 'blitz' && !raceNoClock()){ const left = Math.ceil(BLITZ.secs - climb.elapsed / 1000);                 // 官方：剩 60／30 秒動作字；10–4 秒 timer1、3–1 秒 timer2
       if (left !== climb.tLeft){ climb.tLeft = left;
         if ((left === 60 || left === 30) && opt('oActText') === 'all') clearMsg = { lines: [{ text: `${left}S LEFT`, color: '#ffd84a', size: 'md', k: 'left' }], t: performance.now() };
         if (left > 3 && left <= 10) sfxEv('timer1', 'timer1'); else if (left > 0 && left <= 3) sfxEv('timer2', 'timer2'); } }
-    if (climb.sub === 'blitz' && !climb.opts.race && climb.elapsed >= BLITZ.secs * 1000){ climb.elapsed = BLITZ.secs * 1000; finishSolo(true); }
+    if (climb.sub === 'blitz' && !raceNoClock() && climb.elapsed >= BLITZ.secs * 1000){ climb.elapsed = BLITZ.secs * 1000; finishSolo(true); }
     return;
   }
   if (climb.kind === 'league'){ leagueTick(dt); return; }
@@ -17992,6 +18000,7 @@ function mrStart(){
 //    你照該模式的規則打；房裡的人照他們真實的 PPS／APM 模擬進度（⚠️ 40L／BLITZ 用的 PPS 是 TL PPS ×1.1–1.35 推估，分數模型是推估）
 //    誰先到目標誰贏；你打完（或死掉）後把其他人快轉算完，排出名次
 const RACE_NAME = { '40l': '40 LINES RACE', blitz: 'BLITZ RACE', zenith: 'ZENITH RACE' };
+const raceNoClock = () => !!(climb && climb.opts && climb.opts.race && !climb.opts.race.cmp);   // 房間的 BLITZ RACE：沒有時間限制，先到分數的贏
 const raceLines = () => (climb && climb.opts && climb.opts.race && climb.opts.race.kind === '40l') ? climb.opts.race.goal : 40;
 const raceFloorAlt = n => { const f = FLOORS.find(x => x.n === n); return f ? f.m : 1650; };
 function raceStart(r, kind, c, song){
@@ -18033,7 +18042,7 @@ function raceStepBot(b, kind, goal, dt, t){
 }
 function raceInit(){
   const R0 = climb.opts.race; if (climb.race) return climb.race;
-  climb.race = { kind: R0.kind, goal: R0.goal, local: !!R0.local, bots: (R0.players || []).map(p => raceBot(p, R0.kind)), feed: [], hudT: 0, first: null, postT: 0 };
+  climb.race = { kind: R0.kind, goal: R0.goal, cmp: !!R0.cmp, local: !!R0.local, bots: (R0.players || []).map(p => raceBot(p, R0.kind)), feed: [], hudT: 0, first: null, postT: 0 };
   raceHud(); return climb.race;
 }
 function raceMine(){ const k = climb.race.kind; return k === '40l' ? Math.min(climb.race.goal, climb.lines || 0) : k === 'blitz' ? climb.score || 0 : climb.alt || 0; }
@@ -18045,23 +18054,24 @@ function raceTick(dt){
       if (!R.first){ R.first = b; if (opt('oActText') === 'all') clearMsg = { lines: [{ text: `${b.name} FINISHED`, color: '#ff8a8a', size: 'sm' }], t: performance.now() }; sfxEv('elim', 'elim', .5); } }
     if (wd == null && b.dead != null) R.feed.unshift(`<b>${mpEsc(b.name)}</b> <i>TOPPED OUT</i>`);
     R.feed.length = Math.min(R.feed.length, 4); }
-  if (R.kind !== '40l' && raceMine() >= raceGoalV(R)){ raceEnd(true); return; }   // 40L 由 sprintDone → finishSolo 處理
+  if (!R.cmp && R.kind !== '40l' && raceMine() >= raceGoalV(R)){ raceEnd(true); return; }   // 40L 由 sprintDone → finishSolo 處理
   if ((R.hudT += dt) > 200){ R.hudT = 0; raceHud(); }
   if (R.local && (R.postT += dt) > 120){ R.postT = 0; try { parent.postMessage({ t: 'prog', p: LOCAL_P, v: raceMine() }, '*'); } catch(e){} }
 }
 const raceFmt = t => { const m = Math.floor(t / 60), x = t - m * 60; return `${m}:${String(Math.floor(x)).padStart(2, '0')}.${String(Math.floor((x % 1) * 1000)).padStart(3, '0')}`; };
-const raceVal = (R, v) => R.kind === '40l' ? `${Math.floor(v)}/${R.goal}` : R.kind === 'blitz' ? Math.floor(v).toLocaleString('en-US') : `${v.toFixed(1)}m`;
+const raceVal = (R, v) => R.kind === '40l' ? `${Math.floor(v)}/${R.goal}` : R.cmp && R.kind === 'blitz' ? Math.floor(v).toLocaleString('en-US') : R.kind === 'blitz' ? Math.floor(v).toLocaleString('en-US') : `${v.toFixed(1)}m`;
 function raceRows(R, meFin, meDead){
   const me = { name: LOCAL_P ? LOCAL_P + 'P' : (profName() || 'YOU').toUpperCase(), me: true, v: raceMine(), fin: meFin, dead: meDead };
+  if (R.cmp) return [me, ...R.bots].sort((a, b) => b.v - a.v);
   return [me, ...R.bots].sort((a, b) => (a.fin != null) !== (b.fin != null) ? (a.fin != null ? -1 : 1) : a.fin != null ? a.fin - b.fin : (a.dead != null) !== (b.dead != null) ? (a.dead != null ? 1 : -1) : b.v - a.v);
 }
 function raceHud(){
   const R = climb && climb.race; if (!R) return;
-  const gv = raceGoalV(R), rows = raceRows(R, null, null), mi = rows.findIndex(x => x.me);
+  const rows = raceRows(R, null, null), mi = rows.findIndex(x => x.me), gv = R.cmp ? Math.max(1, ...rows.map(x => x.v)) : raceGoalV(R);
   const show = rows.slice(0, 6); if (mi >= 6) show[5] = rows[mi];
-  $('rcTop').innerHTML = `${R.local ? 'HEAD TO HEAD' : RACE_NAME[R.kind]} · GOAL <b>${R.kind === '40l' ? R.goal + ' LINES' : R.kind === 'blitz' ? R.goal.toLocaleString('en-US') : 'FLOOR ' + R.goal}</b> · <b>${mi + 1}</b>/${rows.length}`;
+  $('rcTop').innerHTML = R.cmp ? `HEAD TO HEAD · <b>${R.kind === 'blitz' ? 'HIGHER SCORE WINS' : 'HIGHER ALTITUDE WINS'}</b>` : `${R.local ? 'HEAD TO HEAD' : RACE_NAME[R.kind]} · GOAL <b>${R.kind === '40l' ? R.goal + ' LINES' : R.kind === 'blitz' ? R.goal.toLocaleString('en-US') : 'FLOOR ' + R.goal}</b> · <b>${mi + 1}</b>/${rows.length}`;
   $('rcList').innerHTML = show.map(x => { const i = rows.indexOf(x) + 1, w = Math.max(0, Math.min(100, x.v / gv * 100));
-    return `<div class="rc-row${x.me ? ' me' : ''}${x.fin != null ? ' fin' : ''}${x.dead != null ? ' dead' : ''}"><span class="n">${i}</span><span class="nm"><i style="width:${w}%"></i>${mpEsc(x.name)}</span><span class="v">${x.fin != null ? raceFmt(x.fin) : raceVal(R, x.v)}</span></div>`; }).join('');
+    return `<div class="rc-row${x.me ? ' me' : ''}${x.fin != null ? ' fin' : ''}${x.dead != null ? ' dead' : ''}"><span class="n">${i}</span><span class="nm"><i style="width:${w}%"></i>${mpEsc(x.name)}</span><span class="v">${x.fin != null && !R.cmp ? raceFmt(x.fin) : raceVal(R, x.v)}${R.cmp && (x.fin != null || x.dead != null) ? ' ✓' : ''}</span></div>`; }).join('');
   $('rcFeed').innerHTML = R.feed.map(f => `<p>${f}</p>`).join('');
 }
 function raceEnd(done, reason){
@@ -18071,7 +18081,7 @@ function raceEnd(done, reason){
   const meFin = done ? secs : null, meDead = done ? null : secs;
   if (R.local){                                                                   // 同一台電腦 2P：結果交給外層頁面判勝負
     sfxEv(done ? 'finish' : 'topout', done ? 'finish' : 'topout', 'gameover');
-    clearMsg = { lines: [{ text: done ? 'FINISHED' : (reason || 'TOPPED OUT'), color: done ? '#7dff9c' : '#ef4b4b', size: 'sm' }, { text: raceFmt(secs), color: '#eef2f7', size: 'md' }], t: performance.now(), keep: true };
+    clearMsg = { lines: [{ text: R.cmp ? (done ? 'TIME UP' : (reason || 'TOPPED OUT')) : done ? 'FINISHED' : (reason || 'TOPPED OUT'), color: done ? '#7dff9c' : '#ef4b4b', size: 'sm' }, { text: R.cmp ? raceVal(R, raceMine()) : raceFmt(secs), color: '#eef2f7', size: 'md' }, ...(R.cmp ? [{ text: 'WAITING FOR THE OTHER PLAYER…', color: '#9aa6c4', size: 'sm' }] : [])], t: performance.now(), keep: true };
     try { parent.postMessage({ t: 'done', p: LOCAL_P, done: !!done, secs, v: raceMine() }, '*'); } catch(e){}
     raceHud(); draw(); return;
   }
@@ -18099,34 +18109,49 @@ function lvLoad(){ try { const j = JSON.parse(localStorage.getItem('bp:localvs')
   if (!LV.keys) LV.keys = JSON.parse(JSON.stringify(LOCAL_KEYS)); }
 function lvSave(){ try { localStorage.setItem('bp:localvs', JSON.stringify({ kind: LV.kind, goal: LV.goal, keys: LV.keys })); } catch(e){} }
 const LV_GOALS = { '40l': [10, 20, 40, 100, 150], blitz: [20000, 50000, 100000, 200000, 500000, 1000000], zenith: [2, 3, 4, 5, 6, 7, 8, 9, 10] };
-const LV_MODES = [['40l', '40 LINES'], ['blitz', 'BLITZ'], ['zenith', 'ZENITH']];
+const LV_MODES = [['40l', '40 LINES'], ['blitz', 'BLITZ'], ['zenith', 'QUICK PLAY']];
+const LV_DESC = { '40l': 'a race! the first to clear the lines wins.<br>top out and you lose.', blitz: '2 minutes each. the higher score wins!<br>topping out ends your run early.', zenith: 'scale the ZENITH TOWER side by side. the higher altitude wins!<br>both players use the mods picked below.' };
+const LV_T = k => k === 'zenith' ? 'zenith' : k;
+// QP 的 mod 面板：HEAD TO HEAD 選 QUICK PLAY 時整塊搬到開局頁最下面，離開就搬回 QP 大廳
+const H2H_MODS = { el: null, home: null, next: null };
+function h2hMods(on){
+  const P = H2H_MODS.el || (H2H_MODS.el = document.querySelector('#modsel .qpl-mods'));
+  if (!P) return;
+  if (!H2H_MODS.home){ H2H_MODS.home = P.parentNode; H2H_MODS.next = P.nextSibling; }
+  const host = $('h2hModHost');
+  if (on && host){ host.appendChild(P); try { renderModSel(); } catch(e){} }
+  else if (P.parentNode !== H2H_MODS.home){ H2H_MODS.home.insertBefore(P, H2H_MODS.next); }
+}
 const lvGoalTxt = (k, v) => k === '40l' ? `${v} LINES` : k === 'blitz' ? `${(+v).toLocaleString('en-US')} POINTS` : `FLOOR ${v} (${raceFloorAlt(v)}m)`;
 function renderH2HPre(){
-  lvLoad(); const el = $('solopre'), M = SOLO_PRE.h2h, o = soloOpt('h2h'); el.dataset.t = 'h2h';
+  lvLoad(); h2hMods(false); const el = $('solopre'), M = SOLO_PRE.h2h, o = soloOpt('h2h'), k = LV.kind;
+  el.dataset.t = LV_T(k); document.body.dataset.menu = LV_T(k);                         // 點哪個模式，整頁就換那個模式的顏色
   const songs = songList(), sName = (songs.find(x => x[0] === o.song) || songs[0])[1];
   const keyCol = p => `<div><h2>${p}P</h2>${LV_ACT.map(([a, n]) => { const on = LV.listen && LV.listen.p === p && LV.listen.a === a;
     return `<div class="orow"><label>${n.toLowerCase()}</label><button class="ospin${on ? ' listen' : ''}" data-p="${p}" data-a="${a}">${on ? 'PRESS A KEY…' : (LV.keys[p][a] || []).map(c => keyName(c, true)).join(' / ') || '—'}</button></div>`; }).join('')}</div>`;
   el.innerHTML = `<div class="homebar"><button class="tback" id="spBack">BACK</button></div><div class="oscr">
     <div class="oblk"><h1>${M.t}</h1><p>${M.d}</p>
-      <div class="orow" title="What to race in."><label>mode</label><button class="ospin" id="h2hMode">${LV_MODES.find(m => m[0] === LV.kind)[1]}</button></div>
-      <div class="orow" title="The first player to reach this wins."><label>goal</label><button class="ospin" id="h2hGoal">${lvGoalTxt(LV.kind, LV.goal[LV.kind])}</button></div>
+      <div class="h2h-tabs">${LV_MODES.map(([id, n]) => `<button class="obtn${id === k ? ' on' : ''}" data-k="${id}">${n}</button>`).join('')}</div>
+      <p>${LV_DESC[k]}</p>
+      ${k === '40l' ? `<div class="orow" title="The first player to clear this many lines wins."><label>lines to clear</label><button class="ospin" id="h2hGoal">${LV.goal['40l']} LINES</button></div>` : ''}
     </div>
-    <div class="oblk starter">${LV.kind === '40l' ? `<div class="omusic" id="spMusic" title="Click: next song · right-click: previous">${sName}</div>` : '<div class="omusic" style="visibility:hidden"></div>'}<button class="ostart" id="spStart">START</button></div>
-    <div class="oblk"><h1>CONTROLS</h1><div class="obtr"><button class="obtn" id="h2hDef" title="Reset both players to the default keys.">DEFAULT</button></div>
+    <div class="oblk starter">${k === '40l' ? `<div class="omusic" id="spMusic" title="Click: next song · right-click: previous">${sName}</div>` : '<div class="omusic" style="visibility:hidden"></div>'}<button class="ostart" id="spStart">START</button></div>
+    <div class="oblk coll${LV.keysOpen ? '' : ' collapsed'}" id="h2hCtl"><h1 title="Set each player's keys">CONTROLS</h1><div class="obtr"><button class="obtn" id="h2hDef" title="Reset both players to the default keys.">DEFAULT</button></div>
       <p>click a key, then press the new one. backspace clears it.<br>handling (ARR / DAS / SDF) follows your CONFIG.</p>
       <div class="h2h-keys">${keyCol(1)}${keyCol(2)}</div>
-    </div></div>`;
+    </div>
+    ${k === 'zenith' ? '<div id="h2hModHost"></div>' : ''}</div>`;
+  if (k === 'zenith') h2hMods(true);
   $('spBack').onclick = () => { LV.listen = null; setScreen('multisel'); };
   $('spStart').onclick = () => { LV.listen = null; lvStart(); };
-  const cyc = (list, cur, d) => { const i = list.indexOf(cur); return list[((i < 0 ? 0 : i) + d + list.length) % list.length]; };
-  const mode = $('h2hMode'), goal = $('h2hGoal');
-  const stepM = d => { LV.kind = cyc(LV_MODES.map(m => m[0]), LV.kind, d); lvSave(); sfxEv('menutap', 'menutap'); renderH2HPre(); };
-  const stepG = d => { const L = LV_GOALS[LV.kind].slice(); if (!L.includes(LV.goal[LV.kind])) L.push(LV.goal[LV.kind]), L.sort((a, b) => a - b);
-    LV.goal[LV.kind] = cyc(L, LV.goal[LV.kind], d); lvSave(); sfxEv('menutap', 'menutap'); goal.textContent = lvGoalTxt(LV.kind, LV.goal[LV.kind]); };
-  mode.onclick = () => stepM(1); mode.oncontextmenu = e => { e.preventDefault(); stepM(-1); };
-  goal.onclick = () => stepG(1); goal.oncontextmenu = e => { e.preventDefault(); stepG(-1); };
+  el.querySelectorAll('.h2h-tabs .obtn').forEach(b => b.onclick = () => { if (LV.kind === b.dataset.k) return; LV.kind = b.dataset.k; lvSave(); sfxEv('menutap', 'menutap'); renderH2HPre(); });
+  const goal = $('h2hGoal');
+  if (goal){ const stepG = d => { const L = LV_GOALS['40l'].slice(); if (!L.includes(LV.goal['40l'])) L.push(LV.goal['40l']), L.sort((a, b) => a - b);
+      const i = L.indexOf(LV.goal['40l']); LV.goal['40l'] = L[(i + d + L.length) % L.length]; lvSave(); sfxEv('menutap', 'menutap'); goal.textContent = LV.goal['40l'] + ' LINES'; };
+    goal.onclick = () => stepG(1); goal.oncontextmenu = e => { e.preventDefault(); stepG(-1); }; }
+  $('h2hCtl').querySelector('h1').onclick = () => { LV.keysOpen = !LV.keysOpen; $('h2hCtl').classList.toggle('collapsed', !LV.keysOpen); };
   $('h2hDef').onclick = () => { LV.keys = JSON.parse(JSON.stringify(LOCAL_KEYS)); LV.listen = null; lvSave(); sfxEv('menutap', 'menutap'); renderH2HPre(); };
-  el.querySelectorAll('.h2h-keys .ospin').forEach(b => b.onclick = () => { LV.listen = { p: +b.dataset.p, a: b.dataset.a }; renderH2HPre(); });
+  el.querySelectorAll('.h2h-keys .ospin').forEach(b => b.onclick = () => { LV.listen = { p: +b.dataset.p, a: b.dataset.a }; LV.keysOpen = true; renderH2HPre(); });
   const mus = $('spMusic');
   if (mus){ const step = d => { const i = songs.findIndex(x => x[0] === o.song); const n = songs[(Math.max(0, i) + d + songs.length) % songs.length]; o.song = n[0]; soloOptSet('h2h', o); mus.textContent = n[1]; sfxEv('menutap', 'menutap'); };
     mus.onclick = () => step(1); mus.oncontextmenu = e => { e.preventDefault(); step(-1); }; }
@@ -18140,7 +18165,8 @@ function lvSend(p, m){ const w = lvWin(p); if (w) try { w.postMessage(m, '*'); }
 function lvStart(){
   lvSave(); $('localvs').classList.remove('hidden'); bgmFade(300);                                // 外層的選單音樂收掉，音樂交給 1P 那邊
   LV.st = 'play'; $('localvs').dataset.st = 'play'; $('lvRes').classList.add('hidden'); LV.decided = false; LV.res = {}; LV.prog = {};
-  const go = () => { $('lvLoad').classList.add('hidden'); const song = LV.kind === '40l' ? soloOpt('h2h').song : undefined; for (const p of [1, 2]) lvSend(p, { t: 'start', kind: LV.kind, goal: LV.goal[LV.kind], keys: LV.keys[p], song }); };
+  const go = () => { $('lvLoad').classList.add('hidden'); const song = LV.kind === '40l' ? soloOpt('h2h').song : undefined, mods = [...pickedMods].filter(m => !['world', 'duo', 'sun'].includes(m));
+    for (const p of [1, 2]) lvSend(p, { t: 'start', kind: LV.kind, goal: LV.goal['40l'], keys: LV.keys[p], song, mods }); };
   if (LV.ready[1] && LV.ready[2]) return go();
   $('lvLoad').classList.remove('hidden'); LV.pend = go;
   const base = location.href.split('#')[0].split('?')[0];
@@ -18148,10 +18174,10 @@ function lvStart(){
 }
 function lvDecide(winner, why){
   if (LV.decided) return; LV.decided = true;
-  for (const p of [1, 2]) lvSend(p, { t: 'stop', res: p === winner ? 'win' : 'lose' });
+  for (const p of [1, 2]) lvSend(p, { t: 'stop', res: !winner ? 'draw' : p === winner ? 'win' : 'lose' });
   const fmtP = p => { const r = LV.res[p], v = r ? r.v : LV.prog[p] || 0; const val = LV.kind === '40l' ? `${Math.floor(v)}/${LV.goal['40l']} LINES` : LV.kind === 'blitz' ? `${Math.floor(v).toLocaleString('en-US')} PTS` : `${(+v).toFixed(1)}m`;
-    return `${p}P ${r && r.done ? raceFmt(r.secs) : r ? 'TOPPED OUT · ' + val : val}`; };
-  setTimeout(() => { $('lvWin').textContent = `${winner}P WINS`; $('lvSub').textContent = `${why} · ${fmtP(1)} · ${fmtP(2)}`; $('lvRes').classList.remove('hidden'); }, 1200);
+    return LV.kind === '40l' ? `${p}P ${r && r.done ? raceFmt(r.secs) : r ? 'TOPPED OUT · ' + val : val}` : `${p}P ${val}`; };
+  setTimeout(() => { $('lvWin').textContent = winner ? `${winner}P WINS` : 'DRAW'; $('lvSub').textContent = `${why} · ${fmtP(1)} · ${fmtP(2)}`; $('lvRes').classList.remove('hidden'); }, 1200);
 }
 addEventListener('message', e => {
   if (LOCAL_P || LV.st === 'off' || !LV.st) return; const m = e.data || {}; const p = m.p; if (p !== 1 && p !== 2) return;
@@ -18159,7 +18185,9 @@ addEventListener('message', e => {
   if (m.t === 'ready'){ LV.ready[p] = true; if (LV.ready[1] && LV.ready[2] && LV.pend){ const f = LV.pend; LV.pend = null; f(); } }
   else if (m.t === 'prog'){ LV.prog[p] = m.v; lvSend(3 - p, { t: 'opp', v: m.v }); }
   else if (m.t === 'done'){ LV.res[p] = m; lvSend(3 - p, { t: 'opp', v: m.v, fin: m.done ? m.secs : null, dead: m.done ? null : m.secs });
-    if (m.done) lvDecide(p, 'FIRST TO THE GOAL'); else lvDecide(3 - p, `${p}P TOPPED OUT`); }
+    if (LV.kind === '40l'){ if (m.done) lvDecide(p, 'FIRST TO CLEAR ' + LV.goal['40l'] + ' LINES'); else lvDecide(3 - p, `${p}P TOPPED OUT`); }
+    else if (LV.res[1] && LV.res[2]){ const a = +LV.res[1].v || 0, b = +LV.res[2].v || 0;   // BLITZ／QP：兩個人都打完才比
+      lvDecide(a === b ? 0 : a > b ? 1 : 2, LV.kind === 'blitz' ? 'HIGHER SCORE' : 'HIGHER ALTITUDE'); } }
 });
 if (!LOCAL_P){
   $('goLocalVs').onclick = lvOpen;
@@ -18193,17 +18221,18 @@ if (LOCAL_P){
     if (m.t === 'start'){
       if (m.keys) LOCAL_CUR = m.keys;
       if (climb){ climb.over = true; active = null; climb = null; }
-      const race = { kind: m.kind, goal: m.goal, local: true, players: [{ name: LOCAL_P === 1 ? '2P' : '1P', remote: true, pps: 0, apm: 0 }] };
-      if (m.kind === 'zenith') startClimb('qp', { custom: { ...loadCustom(), tower: true, climb: true, garbage: true, mods: [], obj: 'NONE', surv: 'NONE', floor: 1, mission: 'ZENITH RACE' }, bgm: null, race });
+      const cmp = m.kind !== '40l';                                                // 40L 是競速；BLITZ 比分數、QP 比高度（各自照原本規則打到結束）
+      const race = { kind: m.kind, goal: cmp ? 0 : m.goal, cmp, local: true, players: [{ name: LOCAL_P === 1 ? '2P' : '1P', remote: true, pps: 0, apm: 0 }] };
+      if (m.kind === 'zenith'){ pickedMods = new Set(m.mods || []); startClimb('qp', { race }); }
       else startClimb('practice', { sub: m.kind, race, song: m.song });
     } else if (m.t === 'opp'){
       const R = climb && climb.race; const b = R && R.bots[0]; if (!b) return;
       b.v = m.v; if (m.fin != null && b.fin == null) b.fin = m.fin; if (m.dead != null && b.dead == null) b.dead = m.dead; raceHud();
     } else if (m.t === 'stop'){
-      if (!climb) return; const win = m.res === 'win';
+      if (!climb) return; const win = m.res === 'win', draw0 = m.res === 'draw';
       if (!climb.over){ climb.over = true; active = null; }
       sfxEv(win ? 'victory' : 'topout', win ? 'victory' : 'topout', 'gameover');
-      clearMsg = { lines: [{ text: win ? 'YOU WIN' : 'YOU LOSE', color: win ? '#f7d33e' : '#ef4b4b', size: 'lg' }], t: performance.now(), keep: true }; draw();
+      clearMsg = { lines: [{ text: draw0 ? 'DRAW' : win ? 'YOU WIN' : 'YOU LOSE', color: draw0 ? '#eef2f7' : win ? '#f7d33e' : '#ef4b4b', size: 'lg' }], t: performance.now(), keep: true }; draw();
     } else if (m.t === 'quit'){ if (climb){ climb.over = true; active = null; } }
     else if (m.t === 'key'){ try { document.body.dispatchEvent(new KeyboardEvent(m.type, { code: m.code, key: m.key, bubbles: true, cancelable: true })); } catch(err){} }
   });
