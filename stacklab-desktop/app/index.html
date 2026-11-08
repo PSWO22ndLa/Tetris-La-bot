@@ -4254,6 +4254,7 @@ function zmLobby(){
 }
 // 樓層：F1 是同一首疊 f1ex／f1rev；其他樓逆位換 -rev 版
 function zmFloor(n){
+  if (LOCAL_P && climb && climb.race && climb.race.cmp){ const b = climb.race.bots[0]; if (b) n = Math.max(n, floorOf(b.v || 0).n); }   // RIVALS（QP）：音樂跟兩人裡比較高的那層
   n = zFl(n);                                                            // THE OBSERVATORY 沒有自己的曲 → 延續 F9；頂樓放官方 F10 曲
   const rev = qpRevMusic(), ex = qpHas('expert') || qpHas('tyrant');
   if (n <= 1) zmPlay('f1' + zmTone(), [{ file:zmT('f1'), vol:1 }, { file:zmT('f1ex'), vol:ex ? 1 : 0 }, { file:zmT('f1rev'), vol:rev ? 1 : 0 }], 'f1',
@@ -18239,8 +18240,10 @@ if (LOCAL_P){
     } else if (m.t === 'opp'){
       const R = climb && climb.race; const b = R && R.bots[0]; if (!b) return;
       b.v = m.v; if (m.fin != null && b.fin == null) b.fin = m.fin; if (m.dead != null && b.dead == null) b.dead = m.dead; raceHud();
+      if (R.kind === 'zenith' && !climb.hyper){ const f = Math.max(floorOf(climb.alt || 0).n, floorOf(b.v || 0).n); if (f !== R.musF){ R.musF = f; zmFloor(f); } }   // 對手爬得比較高 → 換成他那層的音樂（你已經死了也一樣跟著）
     } else if (m.t === 'stop'){
       if (!climb) return; const win = m.res === 'win', draw0 = m.res === 'draw';
+      if (climb.kind === 'qp') try { zmStop(); } catch(e){}                                   // 兩個人都打完才停 QP 音樂
       if (!climb.over){ climb.over = true; active = null; }
       sfxEv(win ? 'victory' : 'topout', win ? 'victory' : 'topout', 'gameover');
       clearMsg = { lines: [{ text: draw0 ? 'DRAW' : win ? 'YOU WIN' : 'YOU LOSE', color: draw0 ? '#eef2f7' : win ? '#f7d33e' : '#ef4b4b', size: 'lg' }], t: performance.now(), keep: true }; draw();
