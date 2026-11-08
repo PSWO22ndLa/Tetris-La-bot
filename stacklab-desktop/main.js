@@ -32,6 +32,20 @@ async function tio(req, u){
   } catch (e) { return new Response(null, { status: 504 }); }
 }
 
+// 網站下載時使用者可以順便存一份「自己瀏覽器裡的」素材包（StackLab-*.slpack）；這裡從「下載」資料夾找最新的一份給頁面匯入
+async function packFromDownloads(req){
+  try {
+    const dir = app.getPath('downloads');
+    const list = (await fsp.readdir(dir)).filter(n => /^StackLab.*\.slpack$/i.test(n));
+    let best = null;
+    for (const n of list){ const st = await fsp.stat(path.join(dir, n)); if (!best || st.mtimeMs > best.t) best = { n, t: st.mtimeMs, size: st.size }; }
+    if (!best) return new Response(null, { status: 404 });
+    const headers = { 'content-type': 'application/octet-stream', 'x-pack-time': String(Math.floor(best.t)), 'x-pack-name': encodeURIComponent(best.n), 'content-length': String(best.size) };
+    if (req.method === 'HEAD') return new Response(null, { headers });
+    return new Response(await fsp.readFile(path.join(dir, best.n)), { headers });
+  } catch (e) { return new Response(null, { status: 404 }); }
+}
+
 function createWindow(){
   const win = new BrowserWindow({
     width: 1280, height: 800, minWidth: 360, minHeight: 480, backgroundColor: '#0b0d12', title: 'Stack Lab',
@@ -55,6 +69,7 @@ app.whenReady().then(() => {
     const u = new URL(req.url);
     if (u.hostname !== HOST) return net.fetch(req, { bypassCustomProtocolHandlers: true }).catch(() => new Response(null, { status: 502 }));   // 沒網路：回錯誤碼，不要丟例外
     if (u.pathname.startsWith('/tio/')) return tio(req, u);
+    if (u.pathname === '/__pack') return packFromDownloads(req);
     let p = decodeURIComponent(u.pathname); if (p === '/' || p === '') p = '/index.html';
     const f = path.join(APP_DIR, path.normalize(p).replace(/^(\.\.[\\/])+/, ''));
     if (!f.startsWith(APP_DIR) || !fs.existsSync(f)) return new Response('not found', { status: 404 });

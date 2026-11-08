@@ -1431,6 +1431,12 @@ document.documentElement.classList.add('booting'); addEventListener('load', func
   .dlexe b{ font-size:1.02em; font-weight:900; letter-spacing:.02em; color:#e2e2ff; }
   .dlexe small{ font-size:.72em; font-weight:700; color:#8a8ab8; letter-spacing:.03em; }
   body.desktopapp .dlexe{ display:none !important; }
+  #dlDlg{ position:fixed; inset:0; z-index:9500; background:rgba(0,0,0,.7); display:grid; place-items:center; padding:1em; }
+  #dlDlg.hidden{ display:none; }
+  #dlDlg .oblk{ width:min(40em, 100%); font-size:var(--ofs); margin:0; box-sizing:border-box; }
+  #dlDlg .oblk > h1{ font-size:2.2em; } #dlDlg .ck{ font-size:1.05em; color:var(--h1, #dfe6f0); margin-top:.4em; } #dlDlg .ck small{ opacity:.7; font-size:.85em; }
+  #dlDlg .dl-note{ font-size:.85em !important; opacity:.75; margin:.1em 0 .4em 2.6em !important; }
+  #dlDlg .lv-btns{ justify-content:flex-start; margin-top:1em; }
   .achsheet{ display:block; background-size:800% 800%; opacity:.8; filter:invert(1); pointer-events:none; }       /* 官方 .achievement_icon_inner */
   .hexmed .achsheet{ width:calc(var(--hs) * .5714); height:calc(var(--hs) * .5714); }
   .hexmed:not(.img) .achsheet{ filter:none; opacity:.85; }
@@ -3111,6 +3117,13 @@ document.documentElement.classList.add('booting'); addEventListener('load', func
     <div id="startroom" class="ns">START<div id="sr_playercount">0 PLAYERS</div></div>
   </div>
 </section>
+<div id="dlDlg" class="hidden" role="dialog" aria-modal="true"><div class="oblk">
+  <h1>STACK LAB FOR WINDOWS</h1><p>portable .exe · no install needed · F11 for fullscreen</p>
+  <label class="ck"><input type="checkbox" id="dlTex" checked><i></i><span>ALSO SAVE MY CURRENT TEXTURES &amp; SOUNDS <small id="dlTexN"></small></span></label>
+  <p class="dl-note">they come from <b>your own browser</b> (whatever you fetched from TETR.IO here). the app finds the file in your Downloads folder on first launch.</p>
+  <label class="ck"><input type="checkbox" id="dlCfg"><i></i><span>ALSO SAVE MY SETTINGS, CONTROLS &amp; PROGRESS</span></label>
+  <div class="lv-btns"><button class="obtn" id="dlGo">DOWNLOAD</button><button class="obtn" id="dlNo">CANCEL</button></div>
+</div></div>
 <div id="localvs" class="hidden">
   <div id="lvPlay"><div class="lv-f"><b>1P</b><iframe id="lvF1" tabindex="-1" title="1P"></iframe></div><div class="lv-f"><b>2P</b><iframe id="lvF2" tabindex="-1" title="2P"></iframe></div>
     <div id="lvLoad">LOADING…</div>
@@ -3545,6 +3558,12 @@ document.documentElement.classList.add('booting'); addEventListener('load', func
             <details class="sfx-list" id="sfxMapBox"><summary>SOUND MAP — PICK WHICH SOUND EACH EVENT PLAYS</summary>
               <div id="sfxMapRows"></div><div class="sfx-btns"><button id="sfxMapReset">RESET SOUND MAP</button></div></details>
             <details class="sfx-list"><summary id="sfxListSum">SOUND LIST</summary><div id="sfxNames"></div></details>
+          </div>
+          <div class="ap">
+            <div class="ap-h"><div><label>TEXTURE PACK</label><p id="packState">SAVE EVERYTHING YOU FETCHED INTO ONE FILE</p></div></div>
+            <div class="sfx-btns"><button id="packExport">EXPORT PACK</button><button id="packImport">IMPORT PACK</button><input type="file" id="packFile" accept=".slpack" hidden></div>
+            <p class="acct-note">A .slpack file holds the textures, backgrounds, fonts and sounds already in THIS browser (and, if you tick it, your settings).<br>Import it on another device or in the desktop app; the desktop app also picks one up from your Downloads folder by itself.</p>
+            <label class="ck"><input type="checkbox" id="packWithCfg"><i></i><span>INCLUDE SETTINGS, CONTROLS &amp; PROGRESS</span></label>
           </div>
         </div>
       </section>
@@ -11352,9 +11371,95 @@ function achNotify(a, p, prevV, prevAt){
     onclick: close => { close(); if (!inGame()){ setScreen('achv'); try { renderAch(); const r = document.querySelector(`#achList .arow[data-id="${a.id}"]`); if (r) r.scrollIntoView({ block: 'center' }); } catch(e){} } } });
   sfxEv('achievement', tier === 'i' || tier >= 5 ? 'achievement_3' : tier >= 3 ? 'achievement_2' : 'achievement_1', 'achievement_1');
 }
+// ── 素材包（.slpack）：把「這個瀏覽器裡已經抓到的」TETR.IO 素材打包成一個檔；匯入時原樣寫回。
+//    格式："SLPK1\n" | u32 header 長度 | header JSON | 各筆資料依序接在後面
+const PACK_DBS = [['tp-assets', 'a'], ['tp-sfx', 'rsd']];
+const PACK_TEX_KEY = (k, v) => k === 'bp:skin' || k.startsWith('bp:boardskin') || k.startsWith('bp:font') || (v && v.length > 2000 && /^data:|"data:image/.test(v));
+function idbAll(name, st){
+  return new Promise(res => { if (!window.indexedDB) return res([]); const q = indexedDB.open(name, 1);
+    q.onupgradeneeded = () => q.result.createObjectStore(st);
+    q.onerror = () => res([]);
+    q.onsuccess = () => { const db = q.result, out = []; try { const tx = db.transaction(st, 'readonly'), c = tx.objectStore(st).openCursor();
+      c.onsuccess = () => { const cur = c.result; if (cur){ out.push([cur.key, cur.value]); cur.continue(); } else res(out); }; c.onerror = () => res(out); } catch(e){ res(out); } }; });
+}
+function idbPut(name, st, k, v){
+  return new Promise((res, rej) => { const q = indexedDB.open(name, 1); q.onupgradeneeded = () => q.result.createObjectStore(st);
+    q.onerror = () => rej(q.error); q.onsuccess = () => { const tx = q.result.transaction(st, 'readwrite'); tx.objectStore(st).put(v, k); tx.oncomplete = () => res(); tx.onerror = () => rej(tx.error); }; });
+}
+async function packBuild(tex, cfg){
+  const enc = new TextEncoder(), items = [], parts = [], ls = {};
+  if (tex) for (const [db, st] of PACK_DBS) for (const [k, v] of await idbAll(db, st)){
+    let t, b;
+    if (typeof v === 'string'){ t = 's'; b = enc.encode(v); }
+    else if (v instanceof ArrayBuffer){ t = 'b'; b = new Uint8Array(v); }
+    else if (ArrayBuffer.isView(v)){ t = 'b'; b = new Uint8Array(v.buffer, v.byteOffset, v.byteLength); }
+    else if (v instanceof Blob){ t = 'blob'; b = v; }
+    else { t = 'j'; b = enc.encode(JSON.stringify(v)); }
+    items.push({ db, st, k, t, n: b.size != null ? b.size : b.byteLength, m: v instanceof Blob ? v.type : undefined }); parts.push(b);
+  }
+  try { for (let i = 0; i < localStorage.length; i++){ const k = localStorage.key(i); if (!k || !k.startsWith('bp:') || k === 'bp:packTime') continue; const v = localStorage.getItem(k);
+    if (PACK_TEX_KEY(k, v) ? tex : cfg) ls[k] = v; } } catch(e){}
+  const hdr = enc.encode(JSON.stringify({ v: 1, made: Date.now(), items, ls })), len = new Uint8Array(4); new DataView(len.buffer).setUint32(0, hdr.byteLength, true);
+  return { blob: new Blob([enc.encode('SLPK1\n'), len, hdr, ...parts], { type: 'application/octet-stream' }), n: items.length + Object.keys(ls).length };
+}
+async function packImport(buf){
+  const u8 = new Uint8Array(buf), dec = new TextDecoder();
+  if (dec.decode(u8.subarray(0, 6)) !== 'SLPK1\n') throw new Error('not a Stack Lab pack');
+  const hl = new DataView(buf, 6, 4).getUint32(0, true), H = JSON.parse(dec.decode(u8.subarray(10, 10 + hl)));
+  let off = 10 + hl;
+  for (const it of H.items){ const b = u8.slice(off, off + it.n); off += it.n;
+    const v = it.t === 's' ? dec.decode(b) : it.t === 'b' ? b.buffer : it.t === 'blob' ? new Blob([b], { type: it.m || '' }) : JSON.parse(dec.decode(b));
+    if (PACK_DBS.some(([d, s]) => d === it.db && s === it.st)) await idbPut(it.db, it.st, it.k, v); }
+  for (const [k, v] of Object.entries(H.ls || {})) try { localStorage.setItem(k, v); } catch(e){}
+  return H.items.length + Object.keys(H.ls || {}).length;
+}
+const fmtMB = n => (n / 1048576).toFixed(n > 1048576 * 10 ? 0 : 1) + ' MB';
+function packSave(blob, name){ const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 4000); }
+async function packExportNow(cfg){
+  $('packState').textContent = 'PACKING…';
+  const { blob, n } = await packBuild(true, cfg);
+  if (!n){ $('packState').textContent = 'NOTHING TO PACK YET: FETCH FROM TETR.IO FIRST'; return; }
+  packSave(blob, 'StackLab-textures.slpack'); $('packState').textContent = `SAVED ${n} ITEMS · ${fmtMB(blob.size)}`;
+}
+async function packImportFile(f, auto){
+  try { $('packState') && ($('packState').textContent = 'IMPORTING…'); const n = await packImport(await f.arrayBuffer());
+    notice(`IMPORTED ${n} ITEMS — RELOADING`); setTimeout(() => location.reload(), 700); }
+  catch(e){ notice('COULD NOT IMPORT: ' + (e.message || e)); if ($('packState')) $('packState').textContent = 'IMPORT FAILED'; }
+}
+// 下載桌面版：先問要不要連同「這個瀏覽器裡的」素材一起存（存的是使用者自己的東西，App 第一次開會從「下載」資料夾自己讀）
+async function dlOpen(e){
+  if (e) e.preventDefault();
+  $('dlDlg').classList.remove('hidden'); $('dlTexN').textContent = '(checking…)';
+  const a = await idbAll('tp-assets', 'a'), b = await idbAll('tp-sfx', 'rsd'), n = a.length + b.length;
+  let sz = 0; for (const [, v] of [...a, ...b]) sz += typeof v === 'string' ? v.length : v && (v.byteLength || v.size) || 0;
+  $('dlTexN').textContent = n ? `(${n} files · about ${fmtMB(sz)})` : '(nothing fetched yet)'; $('dlTex').checked = n > 0; $('dlTex').disabled = !n;
+}
+if (!LOCAL_P){
+  $('dlNo').onclick = () => $('dlDlg').classList.add('hidden');
+  $('dlDlg').onclick = e => { if (e.target === $('dlDlg')) $('dlDlg').classList.add('hidden'); };
+  $('dlGo').onclick = async () => {
+    const tex = $('dlTex').checked && !$('dlTex').disabled, cfg = $('dlCfg').checked;
+    $('dlGo').disabled = true; $('dlGo').textContent = tex || cfg ? 'PACKING…' : 'DOWNLOADING…';
+    if (tex || cfg){ try { const { blob } = await packBuild(tex, cfg); packSave(blob, 'StackLab-textures.slpack'); } catch(err){ notice('COULD NOT PACK: ' + err.message); } }
+    setTimeout(() => { const f = document.createElement('iframe'); f.hidden = true; f.src = DESKTOP_EXE_URL; document.body.appendChild(f); setTimeout(() => f.remove(), 60000); }, 600);   // exe 用隱藏 iframe 下載，頁面不會被換掉
+    setTimeout(() => { $('dlGo').disabled = false; $('dlGo').textContent = 'DOWNLOAD'; $('dlDlg').classList.add('hidden'); }, 1200);
+  };
+  $('packExport').onclick = () => packExportNow($('packWithCfg').checked);
+  $('packImport').onclick = () => $('packFile').click();
+  $('packFile').onchange = () => { const f = $('packFile').files[0]; if (f) packImportFile(f); $('packFile').value = ''; };
+}
+// 桌面版：「下載」資料夾裡有比上次匯入更新的 StackLab-*.slpack → 問要不要匯入
+if (!LOCAL_P && location.hostname === 'stacklab.invalid') setTimeout(async () => {
+  try { const h = await fetch('/__pack', { method: 'HEAD' }); if (!h.ok) return;
+    const t = +h.headers.get('x-pack-time') || 0, last = +(store.get('bp:packTime') || 0); if (!t || t <= last) return;
+    store.set('bp:packTime', String(t));
+    if (!confirm(`Found a texture pack in your Downloads folder (${decodeURIComponent(h.headers.get('x-pack-name') || 'StackLab-textures.slpack')}).\nImport it now?`)) return;
+    const r = await fetch('/__pack'); if (r.ok) packImportFile(await r.blob());
+  } catch(e){}
+}, 1500);
 // 桌面版下載網址：GitHub Actions 編好的 portable exe 放在 Releases（tag：stacklab），每次更新都覆蓋同一個網址
 const DESKTOP_EXE_URL = 'https://github.com/PSWO22ndLa/Tetris-La-bot/releases/download/stacklab/StackLab-portable.exe';
-(() => { const a = document.getElementById('dlExe'); if (a) a.href = DESKTOP_EXE_URL;
+(() => { const a = document.getElementById('dlExe'); if (a){ a.href = DESKTOP_EXE_URL; a.removeAttribute('download'); a.onclick = dlOpen; }
   if (location.hostname === 'stacklab.invalid') document.body.classList.add('desktopapp'); })();
 let featPick = -1;                                     // 正在選第幾個展示格
 // 官方 #tetra_achievement_case 固定 950×180 px；畫面不夠寬就整個等比縮
