@@ -22,11 +22,13 @@ jobs:
         with:
           node-version: 22
       - run: pnpm install --no-frozen-lockfile
-      - run: pnpm exec electron-builder --win portable --x64 --publish never
+      - run: pnpm exec electron-builder --win --x64 --publish never
       - uses: softprops/action-gh-release@v2
         with:
           tag_name: stacklab
           name: Stack Lab Desktop
-          body: Gridless TETR.IO-style simulator — Windows portable build (no install needed).
-          files: stacklab-desktop/dist/StackLab-portable.exe
+          body: Gridless TETR.IO-style simulator for Windows. StackLab-Setup.exe installs it and puts a shortcut on your desktop; StackLab-portable.exe runs without installing.
+          files: |
+            stacklab-desktop/dist/StackLab-Setup.exe
+            stacklab-desktop/dist/StackLab-portable.exe
           make_latest: false

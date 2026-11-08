@@ -2871,7 +2871,7 @@ document.documentElement.classList.add('booting'); addEventListener('load', func
     <button class="tbar" id="goChannel" data-logo="4CN" style="--bg:#335a31;--ti:#d0f6bc;--su:#9cc98a;--l1:#5aa83e;--l2:#4ad06a"><span class="tlogo" aria-hidden="true"></span><b>TETRA CHANNEL</b><small>leaderboards, achievements, replays and more</small></button>
     <button class="tbar" id="goConfig" data-logo="CFG" style="--bg:#273c6c;--ti:#c3d6ff;--su:#8ea6d8;--l1:#2f62dc;--l2:#3ea3e6"><span class="tlogo" aria-hidden="true"></span><b>CONFIG</b><small>tweak your STACK LAB experience</small></button>
     <button class="tbar" id="goAbout" data-logo="ABT" style="--bg:#2a2a2c;--ti:#e4e4e6;--su:#a8a8ac;--l1:#6c6c70;--l2:#9a9aa0"><span class="tlogo" aria-hidden="true"></span><b>ABOUT</b><small>all about STACK LAB</small></button>
-    <a id="dlExe" class="dlexe" href="#" target="_blank" rel="noopener" download><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v11m0 0l-4.5-4.5M12 14l4.5-4.5M4 17v3h16v-3" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="square"/></svg><span><b>DOWNLOAD FOR WINDOWS</b><small>STACK LAB DESKTOP · .EXE · 免安裝</small></span></a>
+    <a id="dlExe" class="dlexe" href="#" target="_blank" rel="noopener" download><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v11m0 0l-4.5-4.5M12 14l4.5-4.5M4 17v3h16v-3" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="square"/></svg><span><b>DOWNLOAD FOR WINDOWS</b><small>STACK LAB DESKTOP · .EXE INSTALLER</small></span></a>
   </div>
 </section>
 
@@ -3118,7 +3118,7 @@ document.documentElement.classList.add('booting'); addEventListener('load', func
   </div>
 </section>
 <div id="dlDlg" class="hidden" role="dialog" aria-modal="true"><div class="oblk">
-  <h1>STACK LAB FOR WINDOWS</h1><p>portable .exe · no install needed · F11 for fullscreen</p>
+  <h1>STACK LAB FOR WINDOWS</h1><p>installs in a few seconds and puts STACK LAB on your desktop · F11 for fullscreen</p>
   <label class="ck"><input type="checkbox" id="dlTex" checked><i></i><span>ALSO SAVE MY CURRENT TEXTURES &amp; SOUNDS <small id="dlTexN"></small></span></label>
   <p class="dl-note">they come from <b>your own browser</b> (whatever you fetched from TETR.IO here). the app finds the file in your Downloads folder on first launch.</p>
   <label class="ck"><input type="checkbox" id="dlCfg"><i></i><span>ALSO SAVE MY SETTINGS, CONTROLS &amp; PROGRESS</span></label>
@@ -11458,7 +11458,7 @@ if (!LOCAL_P && location.hostname === 'stacklab.invalid') setTimeout(async () =>
   } catch(e){}
 }, 1500);
 // 桌面版下載網址：GitHub Actions 編好的 portable exe 放在 Releases（tag：stacklab），每次更新都覆蓋同一個網址
-const DESKTOP_EXE_URL = 'https://github.com/PSWO22ndLa/Tetris-La-bot/releases/download/stacklab/StackLab-portable.exe';
+const DESKTOP_EXE_URL = 'https://github.com/PSWO22ndLa/Tetris-La-bot/releases/download/stacklab/StackLab-Setup.exe';
 (() => { const a = document.getElementById('dlExe'); if (a){ a.href = DESKTOP_EXE_URL; a.removeAttribute('download'); a.onclick = dlOpen; }
   if (location.hostname === 'stacklab.invalid') document.body.classList.add('desktopapp'); })();
 let featPick = -1;                                     // 正在選第幾個展示格

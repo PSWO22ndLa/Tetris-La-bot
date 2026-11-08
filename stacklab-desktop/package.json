@@ -25,6 +25,12 @@
     "win": {
       "target": [
         {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
           "target": "portable",
           "arch": [
             "x64"
@@ -38,6 +44,16 @@
     },
     "directories": {
       "output": "dist"
+    },
+    "nsis": {
+      "oneClick": true,
+      "perMachine": false,
+      "createDesktopShortcut": "always",
+      "createStartMenuShortcut": true,
+      "shortcutName": "Stack Lab",
+      "runAfterFinish": true,
+      "deleteAppDataOnUninstall": false,
+      "artifactName": "StackLab-Setup.exe"
     }
   }
 }
