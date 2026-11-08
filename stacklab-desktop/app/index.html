@@ -11714,7 +11714,10 @@ function endClimb(reason){
     say('TOPPED OUT · BOARD RESET'); spawnNext(); draw(); return;
   }
   sfxEv('topout', 'topout', 'gameover');
-  if (ZM.key) zmStop();
+  // RIVALS（QP）：音樂只在 1P 那邊放，自己先死也不能停 → 繼續跟對手的樓層，等外層送 stop（兩人都打完）才停
+  const rivalsQp = LOCAL_P && climb.kind === 'qp' && climb.race && climb.race.cmp && !(climb.race.bots[0] && climb.race.bots[0].dead != null);
+  if (ZM.key && !rivalsQp) zmStop();
+  else if (rivalsQp && climb.hyper){ climb.hyper = false; const b = climb.race.bots[0], f = Math.max(floorOf(climb.alt || 0).n, floorOf((b && b.v) || 0).n); climb.race.musF = f; zmFloor(f); }   // 自己死了 hyperspeed 也沒了 → 回到兩人較高那層
   for (let i = 0; i < 14; i++) fxSpawn('smoke', fxR(0, W), H - VISIBLE + fxR(0, 6), { vx: fxR(-1, 1), vy: fxR(-2, -.5), max: fxR(1000, 1600), size: fxR(1.5, 3), grow: 1, add: false, a: .7 });
   climb.over = true; active = null;
   say(`${climb.alt.toFixed(1)}m · F${floorOf(climb.alt).n} · ${reason}`);
