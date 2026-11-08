@@ -3766,6 +3766,7 @@ document.documentElement.classList.add('booting'); addEventListener('load', func
 
 <div id="foot"></div>
 
+<script id="srcSnap">window.__SRC_HEAD = document.documentElement.outerHTML; addEventListener('DOMContentLoaded', () => { const a = [...document.scripts], i = a.findIndex(x => x.id === 'srcSnap'); window.__SRC_TAIL = a.slice(i + 1).filter(x => !x.src).map(x => x.outerHTML).join('\n'); });   /* HEAD TO HEAD：用網址開不了自己（App 預覽、file://）時，拿這份原始碼塞進 iframe 的 srcdoc */</script>
 <script>
 /* 啟動錯誤顯示：主程式一旦出錯（連語法錯誤都算），畫面上直接列出錯誤訊息和行號，手機上不用開 console 也看得到 */
 (function(){
@@ -3909,7 +3910,7 @@ const BGM = { el: null, cur: null, want: null, bad: new Set() };
 try { if (!localStorage.getItem('bp:volv2')){ const o = localStorage.getItem('bp:bgmvol'); if (o !== null) localStorage.setItem('bp:bgmvol', String(Math.round(Math.pow(+o / 100, 2) * 100))); localStorage.setItem('bp:volv2', '1'); } } catch(e){}
 const bgmVolRaw = () => { try { const v = localStorage.getItem('bp:bgmvol'); return v === null ? 100 : +v; } catch(e){ return 100; } };
 const bgmVol = () => Math.max(0, Math.min(1.5, bgmVolRaw() / 100));   // 官方 MUSIC 0–150%（線性），預設 100%
-const LOCAL_P = (() => { const m = /[?&]local=([12])/.exec(location.search); return m && window.parent !== window ? +m[1] : 0; })();   // 同一台電腦 2P：每位玩家是一個 iframe
+const LOCAL_P = (() => { const m = /[?&]local=([12])/.exec(location.search), v = window.__LOCAL_P || (m ? +m[1] : 0); return v && window.parent !== window ? v : 0; })();   // 同一台電腦 2P：每位玩家是一個 iframe
 const bgmOn = () => { if (LOCAL_P === 2) return false; try { return localStorage.getItem('bp:bgm') !== '0'; } catch(e){ return true; } };
 const musicOff = () => { try { return new Set(JSON.parse(localStorage.getItem('bp:musicoff') || '[]')); } catch(e){ return new Set(); } };
 const bgmPick = list => { const ok = list.filter(id => !BGM.bad.has(id)); if (!ok.length) return null;
@@ -18130,7 +18131,7 @@ function renderH2HPre(){
   const keyCol = p => `<div><h2>${p}P</h2>${LV_ACT.map(([a, n]) => { const on = LV.listen && LV.listen.p === p && LV.listen.a === a;
     return `<div class="orow"><label>${n.toLowerCase()}</label><button class="ospin${on ? ' listen' : ''}" data-p="${p}" data-a="${a}">${on ? 'PRESS A KEY…' : (LV.keys[p][a] || []).map(c => keyName(c, true)).join(' / ') || '—'}</button></div>`; }).join('')}</div>`;
   el.innerHTML = `<div class="homebar"><button class="tback" id="spBack">BACK</button></div><div class="oscr">
-    <div class="oblk"><h1>${M.t}</h1><p>${M.d}</p>
+    <div class="oblk"><h1>${M.t}</h1><p>${M.d}</p>${matchMedia('(hover: none)').matches ? '<p style="color:#ffb36b">⚠ needs a physical keyboard: both players share one keyboard (PC / desktop app).</p>' : ''}
       <div class="h2h-tabs">${LV_MODES.map(([id, n]) => `<button class="obtn${id === k ? ' on' : ''}" data-k="${id}">${n}</button>`).join('')}</div>
       <p>${LV_DESC[k]}</p>
       ${k === '40l' ? `<div class="orow" title="The first player to clear this many lines wins."><label>lines to clear</label><button class="ospin" id="h2hGoal">${LV.goal['40l']} LINES</button></div>` : ''}
@@ -18159,7 +18160,13 @@ function renderH2HPre(){
 function lvOpen(){ lvLoad(); LV.st = 'setup'; LV.listen = null; openSoloPre('h2h'); }
 function lvClose(){ lvKill(); $('localvs').classList.add('hidden'); LV.st = 'off'; }
 const lvRender = () => { if (screen === 'solopre' && soloPreKind === 'h2h') renderH2HPre(); };
-function lvKill(){ for (const id of ['lvF1', 'lvF2']){ const f = $(id); f.removeAttribute('src'); f.src = 'about:blank'; } LV.ready = {}; }
+function lvSelfHTML(){                                                         // 這一頁自己的原始碼（開站時存的版面＋之後的程式）
+  if (lvSelfHTML.v) return lvSelfHTML.v;
+  const h = (window.__SRC_HEAD || '').replace(/<\/body>\s*<\/html>\s*$/i, ''), t = window.__SRC_TAIL || '';
+  if (!h || !t) return '';
+  return lvSelfHTML.v = h.replace(/<html([^>]*)\bclass="[^"]*"/, '<html$1') + t + '</body></html>';
+}
+function lvKill(){ for (const id of ['lvF1', 'lvF2']){ const f = $(id); f.removeAttribute('srcdoc'); f.src = 'about:blank'; } LV.ready = {}; clearTimeout(LV.fbT); }
 const lvWin = p => { const f = $('lvF' + p); return f && f.contentWindow; };
 function lvSend(p, m){ const w = lvWin(p); if (w) try { w.postMessage(m, '*'); } catch(e){} }
 function lvStart(){
@@ -18169,8 +18176,12 @@ function lvStart(){
     for (const p of [1, 2]) lvSend(p, { t: 'start', kind: LV.kind, goal: LV.goal['40l'], keys: LV.keys[p], song, mods }); };
   if (LV.ready[1] && LV.ready[2]) return go();
   $('lvLoad').classList.remove('hidden'); LV.pend = go;
-  const base = location.href.split('#')[0].split('?')[0];
-  $('lvF1').src = base + '?local=1'; $('lvF2').src = base + '?local=2';
+  const viaDoc = () => { const H = lvSelfHTML(); if (!H) return false; for (const p of [1, 2]){ const f = $('lvF' + p); f.removeAttribute('src'); f.srcdoc = `<script>window.__LOCAL_P=${p}<\/script>` + H; } return true; };
+  if (/^https?:$/.test(location.protocol)){
+    const base = location.href.split('#')[0].split('?')[0];
+    $('lvF1').src = base + '?local=1'; $('lvF2').src = base + '?local=2';
+    clearTimeout(LV.fbT); LV.fbT = setTimeout(() => { if (LV.st === 'play' && !(LV.ready[1] && LV.ready[2])){ LV.ready = {}; viaDoc(); } }, 12000);   // 網址開不了 → 改用原始碼
+  } else if (!viaDoc()){ $('lvLoad').textContent = 'COULD NOT START HERE: OPEN THE GAME FROM THE WEBSITE OR THE DESKTOP APP'; }
 }
 function lvDecide(winner, why){
   if (LV.decided) return; LV.decided = true;
