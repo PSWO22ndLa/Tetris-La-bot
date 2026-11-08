@@ -1,6 +1,6 @@
 // Stack Lab 桌面版：頁面掛在假網域 https://stacklab.invalid/，跟 Vercel 上一樣有同網域的 /tio/* → tetr.io 轉發
 // （頁面程式完全不用改）；/tio/res/* 抓過一次就存在使用者資料夾，之後離線也能用
-const { app, BrowserWindow, protocol, net, shell, Menu } = require('electron');
+const { app, BrowserWindow, protocol, net, shell, Menu, session, screen } = require('electron');
 const path = require('path'), fs = require('fs'), fsp = fs.promises, { pathToFileURL } = require('url');
 
 const HOST = 'stacklab.invalid';                       // .invalid 是保留網域，永遠不會真的連出去
@@ -46,9 +46,24 @@ async function packFromDownloads(req){
   } catch (e) { return new Response(null, { status: 404 }); }
 }
 
+// 視窗大小／位置／全螢幕記起來（下次開一樣）
+const WIN_STATE = () => path.join(app.getPath('userData'), 'window-state.json');
+function loadWinState(){ try { return JSON.parse(fs.readFileSync(WIN_STATE(), 'utf8')); } catch (e) { return {}; } }
+function saveWinState(win){
+  try { if (win.isDestroyed()) return; const st = { ...(win.isMaximized() || win.isFullScreen() ? loadWinState() : win.getBounds()), max: win.isMaximized(), full: win.isFullScreen() };
+    fs.writeFileSync(WIN_STATE(), JSON.stringify(st)); } catch (e) {}
+}
+// 設定都存在頁面的 localStorage；Chromium 會延後寫進硬碟，關 App 太快可能來不及 → 關之前、失焦時、每 15 秒都強制寫一次
+const flushStorage = () => { try { session.defaultSession.flushStorageData(); } catch (e) {} };
+
 function createWindow(){
+  const ws = loadWinState();
+  // 上次的位置如果已經不在任何螢幕上（拔掉外接螢幕）→ 不用那個位置，交給系統置中
+  try { if (ws.x != null && ws.y != null){ const r = { x: ws.x, y: ws.y, width: ws.width || 1280, height: ws.height || 800 };
+    const ok = screen.getAllDisplays().some(d => { const w = d.workArea; return r.x < w.x + w.width - 80 && r.x + r.width > w.x + 80 && r.y < w.y + w.height - 60 && r.y + 40 > w.y; });
+    if (!ok){ delete ws.x; delete ws.y; } } } catch (e) { delete ws.x; delete ws.y; }
   const win = new BrowserWindow({
-    width: 1280, height: 800, minWidth: 360, minHeight: 480, backgroundColor: '#0b0d12', title: 'Stack Lab',
+    width: ws.width || 1280, height: ws.height || 800, x: ws.x, y: ws.y, minWidth: 360, minHeight: 480, backgroundColor: '#0b0d12', title: 'Stack Lab',
     autoHideMenuBar: true, icon: path.join(APP_DIR, 'icon.png'),
     webPreferences: { contextIsolation: true, sandbox: true, backgroundThrottling: false },
   });
@@ -60,6 +75,12 @@ function createWindow(){
   win.webContents.on('before-input-event', (e, i) => {
     if (i.type === 'keyDown' && i.key === 'F11'){ win.setFullScreen(!win.isFullScreen()); e.preventDefault(); }
   });
+  if (ws.max) win.maximize();
+  if (ws.full) win.setFullScreen(true);
+  let t = null; const later = () => { clearTimeout(t); t = setTimeout(() => saveWinState(win), 400); };
+  win.on('resize', later); win.on('move', later); win.on('enter-full-screen', later); win.on('leave-full-screen', later);
+  win.on('close', () => { saveWinState(win); flushStorage(); });
+  win.on('blur', flushStorage);
   win.loadURL(`https://${HOST}/`);
 }
 
@@ -78,4 +99,6 @@ app.whenReady().then(() => {
   createWindow();
   app.on('second-instance', () => { const w = BrowserWindow.getAllWindows()[0]; if (w){ if (w.isMinimized()) w.restore(); w.focus(); } });
 });
-app.on('window-all-closed', () => app.quit());
+app.on('before-quit', flushStorage);
+setInterval(flushStorage, 15000);
+app.on('window-all-closed', () => { flushStorage(); app.quit(); });
