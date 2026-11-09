@@ -32,6 +32,24 @@ async function tio(req, u){
   } catch (e) { return new Response(null, { status: 504 }); }
 }
 
+// TETR.IO PLUS 素材站（you.have.fail/tetrioplus）：頁面讀目錄清單、預覽、下載皮膚都走這裡（同網域，不受 CORS 限制）；圖檔存到硬碟快取
+async function plus(req, u){
+  const rest = u.pathname.slice('/plus/'.length);
+  const target = 'https://you.have.fail/tetrioplus/' + rest + u.search;
+  const cacheable = /\.(png|webp|jpg|svg|gif|json)$/i.test(rest);
+  const rel = path.normalize(decodeURIComponent(rest)).replace(/^(\.\.[\\/])+/, '');
+  const file = path.join(CACHE(), 'plus', rel);
+  if (cacheable && file.startsWith(path.join(CACHE(), 'plus')) && fs.existsSync(file))
+    return new Response(await fsp.readFile(file), { headers: { 'content-type': mimeOf(file), 'access-control-allow-origin': '*' } });
+  try {
+    const r = await net.fetch(target, { bypassCustomProtocolHandlers: true });
+    if (!r.ok) return new Response(null, { status: r.status });
+    const buf = Buffer.from(await r.arrayBuffer());
+    if (cacheable && file.startsWith(path.join(CACHE(), 'plus'))) fsp.mkdir(path.dirname(file), { recursive: true }).then(() => fsp.writeFile(file, buf)).catch(() => {});
+    return new Response(buf, { headers: { 'content-type': r.headers.get('content-type') || mimeOf(file), 'access-control-allow-origin': '*' } });
+  } catch (e) { return new Response(null, { status: 504 }); }
+}
+
 // 網站下載時使用者可以順便存一份「自己瀏覽器裡的」素材包（StackLab-*.slpack）；這裡從「下載」資料夾找最新的一份給頁面匯入
 async function packFromDownloads(req){
   try {
@@ -90,6 +108,7 @@ app.whenReady().then(() => {
     const u = new URL(req.url);
     if (u.hostname !== HOST) return net.fetch(req, { bypassCustomProtocolHandlers: true }).catch(() => new Response(null, { status: 502 }));   // 沒網路：回錯誤碼，不要丟例外
     if (u.pathname.startsWith('/tio/')) return tio(req, u);
+    if (u.pathname.startsWith('/plus/')) return plus(req, u);
     if (u.pathname === '/__pack') return packFromDownloads(req);
     let p = decodeURIComponent(u.pathname); if (p === '/' || p === '') p = '/index.html';
     const f = path.join(APP_DIR, path.normalize(p).replace(/^(\.\.[\\/])+/, ''));

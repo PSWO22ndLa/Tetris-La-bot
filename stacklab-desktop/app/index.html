@@ -1432,6 +1432,18 @@ document.documentElement.classList.add('booting'); addEventListener('load', func
   .dlexe small{ font-size:.72em; font-weight:700; color:#8a8ab8; letter-spacing:.03em; }
   body.desktopapp .dlexe{ display:none !important; }
   #home .dlexe{ margin-bottom:4.2em; }                                  /* 底下的狀態列會蓋住 → 留空間 */
+  #plusDlg{ position:fixed; inset:0; z-index:9500; background:rgba(0,0,0,.7); display:grid; place-items:center; padding:1em; }
+  #plusDlg.hidden{ display:none; }
+  #plusDlg .oblk{ width:min(62em, 100%); max-height:calc(100vh - 2em); display:flex; flex-direction:column; font-size:var(--ofs); margin:0; box-sizing:border-box; }
+  #plusDlg .oblk > h1{ font-size:2.2em; } #plusDlg a{ color:inherit; }
+  #plusDlg .plus-bar{ display:flex; gap:.4em; margin:.4em 0; } #plusDlg .plus-bar input{ flex:1; min-width:0; font:inherit; font-size:1.1em; padding:.35em .6em; background:#0006; color:#fff; border:1px solid #fff3; }
+  #plusDlg .plus-state{ font-size:.85em !important; opacity:.75; margin:.2em 0 .5em !important; }
+  #plusDlg .plus-grid{ flex:1; min-height:12em; overflow:auto; display:grid; grid-template-columns:repeat(auto-fill, minmax(13em, 1fr)); gap:.5em; align-content:start; }
+  #plusDlg .plus-card{ display:flex; flex-direction:column; align-items:stretch; gap:.2em; padding:.5em; background:#0005; border:1px solid #fff2; color:inherit; font:inherit; cursor:pointer; text-align:left; }
+  #plusDlg .plus-card:hover{ background:#fff1; border-color:#fff6; }
+  #plusDlg .plus-card img{ width:100%; height:3.2em; object-fit:contain; object-position:left center; image-rendering:auto; background:#0008; }
+  #plusDlg .plus-card b{ font-size:1em; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; } #plusDlg .plus-card small{ font-size:.8em; opacity:.6; }
+  #plusDlg .plus-empty{ opacity:.6; }
   #dlDlg{ position:fixed; inset:0; z-index:9500; background:rgba(0,0,0,.7); display:grid; place-items:center; padding:1em; }
   #dlDlg.hidden{ display:none; }
   #dlDlg .oblk{ width:min(40em, 100%); font-size:var(--ofs); margin:0; box-sizing:border-box; }
@@ -3154,6 +3166,13 @@ document.documentElement.classList.add('booting'); addEventListener('load', func
     <div id="startroom" class="ns">START<div id="sr_playercount">0 PLAYERS</div></div>
   </div>
 </section>
+<div id="plusDlg" class="hidden" role="dialog" aria-modal="true"><div class="oblk">
+  <h1>TETR.IO PLUS SKINS</h1>
+  <p>Block skins from the TETR.IO PLUS library by UniQMG (<a href="https://you.have.fail/tetrioplus/" target="_blank" rel="noopener">you.have.fail/tetrioplus</a>). Click one to use it.</p>
+  <div class="plus-bar"><input id="plusQ" type="search" placeholder="search name, author, tag…" autocomplete="off"><button id="plusReload" class="obtn">RELOAD</button><button id="plusClose" class="obtn">CLOSE</button></div>
+  <p id="plusState" class="plus-state"></p>
+  <div id="plusGrid" class="plus-grid"></div>
+</div></div>
 <div id="dlDlg" class="hidden" role="dialog" aria-modal="true"><div class="oblk">
   <h1>STACK LAB FOR WINDOWS</h1><p>installs in a few seconds and puts STACK LAB on your desktop · F11 for fullscreen</p>
   <label class="ck"><input type="checkbox" id="dlTex" checked><i></i><span>ALSO SAVE MY CURRENT TEXTURES &amp; SOUNDS <small id="dlTexN"></small></span></label>
@@ -3529,7 +3548,7 @@ document.documentElement.classList.add('booting'); addEventListener('load', func
           <p class="acct-note" id="labotNNNote"></p>
           <div class="fonts" id="fontSlots"></div>
           <p class="acct-note">LOAD fetches the TETR.IO font straight from tetr.io (paths from tetr.io/css/tetrio.css). Stored on this device only.</p>
-          <div class="crow file"><span class="lbl">BLOCK SKIN</span><input type="file" id="skinFile" accept="image/*"><button id="skinFetch" class="skinfetch">FETCH</button></div>
+          <div class="crow file"><span class="lbl">BLOCK SKIN</span><input type="file" id="skinFile" accept="image/*"><button id="skinFetch" class="skinfetch">FETCH</button><button id="skinPlus" class="skinfetch" title="Browse the TETR.IO PLUS skin library (you.have.fail/tetrioplus)">TETR.IO PLUS</button></div>
       <div class="crow"><span class="lbl">TILE</span><div class="val in"><input type="number" id="skinTile" value="32" min="4" max="256" step="1"><i>PX</i></div></div>
       <div class="crow"><span class="lbl">GAP</span><div class="val in"><input type="number" id="skinGap" value="0" min="0" max="16" step="1"><i>PX</i></div></div>
       <div class="crow"><span class="lbl">ORIGIN X</span><div class="val in"><input type="number" id="skinOffX" value="0" min="0" max="4096" step="1"><i>PX</i></div></div>
@@ -11548,6 +11567,78 @@ if (!LOCAL_P){
   $('packExport').onclick = () => packExportNow($('packWithCfg').checked);
   $('packImport').onclick = () => $('packFile').click();
   $('packFile').onchange = () => { const f = $('packFile').files[0]; if (f) packImportFile(f); $('packFile').value = ''; };
+}
+/* ── TETR.IO PLUS 皮膚庫（you.have.fail/tetrioplus，UniQMG 整理的 130+ 套方塊皮膚）
+   清單：讀伺服器的目錄頁 data/content/skin/<作者>/<檔名>.png(.json)；一個作者一個請求，邊讀邊顯示，清單快取一天
+   連線：桌面版／有 /plus 轉發的網域走同網域 /plus/（沒有 CORS 問題）；其他情況直接連對方網站（對方不給跨網域就讀不到，會提示改用桌面版）
+   套用：下載 png → 轉 data URL → 原本的自動偵測（applySkinFile）；只收 tetrioraster／connected 這類單張圖，動畫和 SVG 版先不收 */
+const PLUS = { base: null, list: null, busy: false, q: '' };
+const PLUS_DIRECT = 'https://you.have.fail/tetrioplus/';
+async function plusFetch(rel, as){
+  const bases = PLUS.base ? [PLUS.base] : (location.protocol.startsWith('http') ? ['/plus/', PLUS_DIRECT] : [PLUS_DIRECT]);
+  let err;
+  for (const b of bases){
+    try { const r = await fetch(b + rel, { cache: 'no-cache' }); if (!r.ok) throw new Error('HTTP ' + r.status);
+      PLUS.base = b; return as === 'blob' ? await r.blob() : as === 'json' ? await r.json() : await r.text(); }
+    catch(e){ err = e; }
+  }
+  throw err || new Error('offline');
+}
+const plusDirs = html => [...String(html).matchAll(/href="([^"?/][^"]*)"/g)].map(m => decodeURIComponent(m[1])).filter(h => h !== '../');
+async function plusLoad(force){
+  if (PLUS.busy) return; PLUS.busy = true;
+  const st = $('plusState');
+  try {
+    if (!force){ try { const c = JSON.parse(store.get('bp:plusList') || 'null'); if (c && Date.now() - c.t < 864e5 && c.list && c.list.length){ PLUS.list = c.list; plusRender(); st.textContent = `${c.list.length} SKINS`; return; } } catch(e){} }
+    st.textContent = 'LOADING THE SKIN LIST…';
+    const authors = plusDirs(await plusFetch('data/content/skin/')).filter(h => h.endsWith('/'));
+    PLUS.list = []; let done = 0;
+    const one = async a => {
+      try {
+        const files = plusDirs(await plusFetch('data/content/skin/' + a));
+        const metas = files.filter(f => /\.(png|webp)\.json$/i.test(f));
+        for (const m of metas){
+          const img = m.replace(/\.json$/i, ''); let j = {};
+          try { j = await plusFetch('data/content/skin/' + a + m, 'json'); } catch(e){}
+          const fmt = String(j.format || '').toLowerCase();
+          if (fmt && !/raster|connected|png/.test(fmt)) continue;          // 動畫／SVG 版先不收
+          PLUS.list.push({ a: a.replace(/\/$/, ''), f: img, n: j.name || img.replace(/\.(png|webp)$/i, ''), d: String(j.description || '').slice(0, 140), fmt, tags: (j.tags || []).map(t => t.tag || t).join(' ') });
+        }
+      } catch(e){}
+      st.textContent = `LOADING… ${++done}/${authors.length} AUTHORS · ${PLUS.list.length} SKINS`;
+      if (done % 8 === 0) plusRender();
+    };
+    for (let i = 0; i < authors.length; i += 6) await Promise.all(authors.slice(i, i + 6).map(one));
+    PLUS.list.sort((x, y) => x.a.localeCompare(y.a) || x.n.localeCompare(y.n));
+    try { store.set('bp:plusList', JSON.stringify({ t: Date.now(), list: PLUS.list })); } catch(e){}
+    st.textContent = `${PLUS.list.length} SKINS`; plusRender();
+  } catch(e){
+    st.textContent = location.hostname === 'stacklab.invalid' ? 'COULD NOT REACH YOU.HAVE.FAIL: CHECK YOUR CONNECTION' : 'THE SKIN SITE BLOCKS THIS PAGE (NO CORS): USE THE DESKTOP APP, OR DOWNLOAD A PNG THERE AND LOAD IT WITH BLOCK SKIN';
+  } finally { PLUS.busy = false; }
+}
+function plusRender(){
+  const q = PLUS.q.trim().toLowerCase(), L = (PLUS.list || []).filter(s => !q || (s.n + ' ' + s.a + ' ' + s.tags + ' ' + s.d).toLowerCase().includes(q));
+  const base = PLUS.base || PLUS_DIRECT;
+  $('plusGrid').innerHTML = L.slice(0, 400).map((s, i) => `<button class="plus-card" data-i="${PLUS.list.indexOf(s)}" title="${mpEsc(s.d)}"><img loading="lazy" alt="" src="${base}data/content/skin/${encodeURIComponent(s.a)}/${encodeURIComponent(s.f)}" onerror="this.style.visibility='hidden'"><b>${mpEsc(s.n)}</b><small>${mpEsc(s.a)}</small></button>`).join('')
+    || `<p class="plus-empty">${PLUS.list ? 'NO SKINS MATCH' : ''}</p>`;
+}
+async function plusApply(s){
+  const st = $('plusState'); st.textContent = `DOWNLOADING ${s.n.toUpperCase()}…`;
+  try {
+    const blob = await plusFetch(`data/content/skin/${encodeURIComponent(s.a)}/${encodeURIComponent(s.f)}`, 'blob');
+    const src = await fileToDataURL(blob);
+    await new Promise(r => applySkinFile(src, r));
+    sfxEv('menuconfirm', 'menuconfirm'); notice(`SKIN APPLIED · ${s.n.toUpperCase()} BY ${s.a.toUpperCase()}`); st.textContent = `APPLIED: ${s.n.toUpperCase()} · ${s.a.toUpperCase()}`;
+  } catch(e){ st.textContent = 'COULD NOT DOWNLOAD THAT SKIN: ' + e.message; }
+}
+function plusOpen(){ $('plusDlg').classList.remove('hidden'); sfxEv('menuconfirm', 'menuconfirm', .7); if (!PLUS.list) plusLoad(false); else plusRender(); setTimeout(() => $('plusQ').focus(), 50); }
+if (!LOCAL_P && $('plusDlg')){
+  $('skinPlus').onclick = plusOpen;
+  $('plusClose').onclick = () => $('plusDlg').classList.add('hidden');
+  $('plusDlg').onclick = e => { if (e.target === $('plusDlg')) $('plusDlg').classList.add('hidden'); };
+  $('plusReload').onclick = () => plusLoad(true);
+  $('plusQ').oninput = () => { PLUS.q = $('plusQ').value; plusRender(); };
+  $('plusGrid').onclick = e => { const b = e.target.closest('.plus-card'); if (b) plusApply(PLUS.list[+b.dataset.i]); };
 }
 // 桌面版：「下載」資料夾裡有比上次匯入更新的 StackLab-*.slpack → 問要不要匯入
 if (!LOCAL_P && location.hostname === 'stacklab.invalid') setTimeout(async () => {
