@@ -8386,7 +8386,8 @@ function drawFrame(){
   const VT = VIEW_TOP();
   const totalH = (H - VT + GUTB()) * cell;
   // 效能：主畫布每幀整張重畫。上限 2x，而且實際像素最多約 2.5MP（電腦大螢幕＋高 DPI 時不會一幀畫好幾百萬像素）
-  const dpr = opt('oLowRes') ? .5 : fxOn() ? Math.max(1, Math.min(2, window.devicePixelRatio || 1, Math.sqrt(2.5e6 / Math.max(1, totalW * totalH)))) : 1;   // 特效關：畫布用 1 倍解析度
+  // RIVALS：同一個畫面要畫兩個完整遊戲 → 每邊固定 1 倍（實測跟單人 QP 一樣順；2 倍時兩邊加起來掉一半幀數）
+  const dpr = opt('oLowRes') ? .5 : fxOn() ? Math.max(1, Math.min(LOCAL_P ? 1 : 2, window.devicePixelRatio || 1, Math.sqrt((LOCAL_P ? 1.2e6 : 2.5e6) / Math.max(1, totalW * totalH)))) : 1;   // 特效關：畫布用 1 倍解析度
   const cw = Math.round(totalW*dpr), ch = Math.round(totalH*dpr);
   if (cv.width !== cw || cv.height !== ch || cv._cssW !== totalW || cv._cssH !== totalH){         // 效能：尺寸沒變就不重設畫布
     cv.style.width = totalW+'px'; cv.style.height = totalH+'px'; cv._cssW = totalW; cv._cssH = totalH;
@@ -15336,13 +15337,13 @@ function qplLoop(t){
   const resOn = document.body.classList.contains('qpres') || document.body.classList.contains('qpg');
   if ((screen !== 'modsel' && !resOn) || document.hidden){ QPL.last = 0; return; }
   const det = uiDetail(), dt = QPL.last ? Math.min(100, t - QPL.last) : 16;
-  const minGap = det >= 2 ? 0 : det === 1 ? 45 : 250;                        // 畫面更新上限：HIGH 跟螢幕、MEDIUM ~22fps、LOW 4fps
+  const minGap = LOCAL_P ? 500 : det >= 2 ? 0 : det === 1 ? 45 : 250;        // 畫面更新上限：HIGH 跟螢幕、MEDIUM ~22fps、LOW 4fps；RIVALS 看不到排行榜 → 一秒兩次就好
   if (!QPL.last || t - QPL.last >= minGap){
     QPL.last = t;
     qplStep(dt);
     if (QPL.specOn && QPL.followWait && performance.now() >= QPL.followWait){ QPL.followWait = 0; const f = QPL.following && QPL.players.find(p => p.name === QPL.following); if (f) qplSpecNew(f); }   // 官方 AddGame：追蹤的人開新局 → 自動看他
     if (QPL.specOn && QPL.spec) qplSpecTick(QPL.spec, dt);
-    if (screen === 'modsel') qplDraw(); qplRenderLb();
+    if (screen === 'modsel') qplDraw(); if (!LOCAL_P) qplRenderLb();
   }
   QPL.raf = requestAnimationFrame(qplLoop);
 }
