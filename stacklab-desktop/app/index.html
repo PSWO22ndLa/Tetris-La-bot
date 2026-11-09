@@ -2574,6 +2574,7 @@ document.documentElement.classList.add('booting'); addEventListener('load', func
   #lvRes{ --pn:#4a1c13; --pb:#8b3a25; --bx:#3c150e; --lb:#e3906d; --tx:#ffe1d3; --dm:#7a3a28; --sb:#c07a60; --gl:#ff9e70;
     position:absolute; inset:0; z-index:5; display:grid; grid-template-columns:1fr 1fr; grid-template-rows:auto auto; align-content:start; overflow:auto; font-family:var(--t-font); background:rgba(3,3,5,.72); }
   #lvRes[data-k="40l"]{ --pn:#382b22; --pb:#6b4f3c; --bx:#2a201a; --lb:#c99272; --tx:#f6e3d4; --dm:#6a4c39; --sb:#a97553; --gl:#e6b48c; }
+  #lvRes[data-k="league"]{ --pn:#4a1f24; --pb:#8a2f3a; --bx:#35141a; --lb:#e09aa4; --tx:#ffe2e6; --dm:#7a3640; --sb:#c9818b; --gl:#ff8f9e; }
   #lvRes[data-k="blitz"]{ --pn:#4e2c2c; --pb:#8a3b3b; --bx:#3a1f1f; --lb:#e09f9f; --tx:#ffe4e4; --dm:#7d3c3c; --sb:#c98585; --gl:#ff9a9a; }
   #lvRes.hidden{ display:none; }
   #lvRes .lvr-side{ display:flex; align-items:flex-start; justify-content:center; padding:16px 10px 0; }
@@ -4819,7 +4820,7 @@ function drawCell(c, v, px, py, s){
 const GUTL = () => (mode === 'sim' ? (genBoard() ? 6.2 + (genBar1() ? .8 : 0) : boardSkinOn() ? (typeof sideScale === 'function' && sideScale() < 1 ? 1.05 + 7.6 * sideScale() :   /* 主框左緣固定外推 0.86 格，HOLD＋側欄才跟著縮 */ typeof DUO_FULL === 'function' && DUO_FULL() ? 8.5 : 6.5) : climb && climb.snow && W < 10 ? 3.2 : 5) : 0);   // 左側：HOLD + 消行提示
 const GUTR0 = () => (mode === 'sim' ? (genBoard() ? 5.4 + (genBar2() ? .8 : 0) : boardSkinOn() ? (typeof sideScale === 'function' && sideScale() < 1 ? 1.05 + 6.1 * sideScale() : 5.2) : climb && climb.snow && W < 10 ? 3.2 : 5) : 0);   // 右側：NEXT
 // 電腦版 DUO：隊友盤面跟你一樣大、並排在 NEXT 右邊（再加一欄放它的 HOLD／NEXT 小圖）
-const duoWide = () => mode === 'sim' && !!(climb && (climb.duo || climb.kind === 'league')) && (climb.duo || opt('oSideBySide')) && W === 10 && (climb.kind === 'league' || (typeof padOn === 'function' && !padOn()));   // 官方 TL 不分電腦手機都是兩套盤面並排（整個舞台縮小）
+const duoWide = () => mode === 'sim' && !!(climb && (climb.duo || (climb.kind === 'league' && !(climb.opp && climb.opp.remote)))) && (climb.duo || opt('oSideBySide')) && W === 10 && (climb.kind === 'league' || (typeof padOn === 'function' && !padOn()));   // 官方 TL 不分電腦手機都是兩套盤面並排（整個舞台縮小）
 const DUO_FULL = () => typeof duoWide === 'function' && duoWide() && typeof TIO_X !== 'undefined' && climb && (climb.kind === 'league' ? !!(boardSkins && boardSkins.normal) : !!(TIO_X.duoR || TIO_X.exDuoR || TIO_X.revDuoR) && boardSkins && (boardSkins.normal || boardSkins.expert || TIO_X.duoL));
 // TL 電腦版（照實機 TL 錄影）：對手是一整套一般盤面（自己的 HOLD＋盤面＋NEXT），排在你的 NEXT 右邊；不是 Duo 那種共用框
 const tlSkin = () => !!(climb && climb.kind === 'league' && duoWide() && boardSkinOn());
@@ -8527,7 +8528,7 @@ function drawFrame(){
     if (climb && climb.undoFx) drawUndoFx();
     { const n = performance.now(); hsUiTick(Math.min(100, n - (HS_UI.lastNow || n))); HS_UI.lastNow = n; }                                                  // 官方 HYPERSPEED 介面（DOM 疊層）
     ctx.restore(); ctx.save(); if (meFall) dangerNow = false;       // 你輸了掉出畫面的那段變形只套在你自己的盤面上
-    if (climb && climb.kind === 'league') drawOppBoard();
+    if (climb && climb.kind === 'league' && !(climb.opp && climb.opp.remote)) drawOppBoard();
     if (climb && climb.duo) drawOppBoard(climb.duo, true);
     if (climb) drawB2BBurst();                                  // 最後畫：TL 對手盤面在左邊，不能蓋掉
   }
@@ -10141,7 +10142,7 @@ function startClimb(kind = 'qp', opts = {}){
     fatigue:0, gmul:1, permanent:0, lastAction:'', woundLeft:0, over:false, flash:0,
     opp: kind === 'league' ? (() => {
       const k = opts.opp || TL_RANKS.find(x => x.r === opts.rank) || TL_RANKS[7];      // opts.opp：TETRA CHANNEL 抓到的真實玩家數據
-      return { rank:k, name:opts.oppName || '', apm:k.apm, pps:k.pps, dspm:rankDspm(k), height:0, base:2 + Math.random()*3, pending:[], score:0 };
+      return { rank:k, name:opts.oppName || '', apm:k.apm, pps:k.pps, dspm:rankDspm(k), height:0, base:2 + Math.random()*3, pending:[], score:0, remote: !!opts.lv };
     })() : null,
     garbCleared: 0, rolling:[], rollT:0,
     sub: kind === 'practice' ? (opts.sub || 'zen') : null, tut: kind === 'practice' && opts.sub === 'tut' ? tutState(opts.lesson, opts.round) : null, score:0, blvl:1, blLines:0,
@@ -11901,6 +11902,10 @@ function renderPlayers(){  const p = loadProfile(), r = tlRankOf(p);
 function endClimb(reason){
   if (!climb || climb.over) return;
   if (climb.smashT && performance.now() - climb.smashT < 120) sfxEv('smash', 'garbagesmash');   // 官方：垃圾頂上來把方塊擠死 → garbagesmash
+  if (climb.kind === 'league' && climb.opp && climb.opp.remote){     // RIVALS TL：先停住，等外層判定（兩邊幾乎同時死時才不會兩邊都算輸）
+    climb.over = true; active = null; sfxEv('topout', 'topout'); draw();
+    try { parent.postMessage({ t: 'ko', p: LOCAL_P, r: climb.me.score + climb.opp.score }, '*'); } catch(e){}
+    return; }
   if (climb.kind === 'league'){ roundEnd('opp'); return; }
   if (climb.race){ raceEnd(false, reason); return; }
   if (climb.duo && !climb.downed && duoMeDown(reason)) return;     // DUO：隊友還活著 → 倒下等復活
@@ -12385,6 +12390,8 @@ function climbSend(attack){
     if (climb.hearts && climb.duo && out > 0) heartsSend(true, out);
     if (cancelled > 0) duoPrEv('cancel', cancelled);
     if (cancelled > 0) cstreakAdd(cancelled);
+  } else if (climb.kind === 'league' && out > 0 && climb.opp.remote){
+    try { parent.postMessage({ t: 'atk', p: LOCAL_P, n: out }, '*'); } catch(e){}
   } else if (climb.kind === 'league' && out > 0){
     climb.opp.pending.push({ lines: out, t: performance.now() });   // 打過去的垃圾也要等延遲才進場
     windupShow(out, climb.opp);                                      // ≥ 8 行：對手盤面上也出驚嘆號
@@ -12766,6 +12773,7 @@ function leagueTick(dt){
   // 官方 tetra league preset：g 0.02、gmargin 7200 frames（2 分鐘）後每秒 +0.0035（⚠️ 單位當每秒）；garbagemargin 10800（3 分鐘）後垃圾倍率每秒 +0.008
   { const t = climb.elapsed / 1000; climb.gravity = Math.min(20, 0.02 + Math.max(0, t - 120) * 0.0035); climb.tlGm = 1 + Math.max(0, t - 180) * 0.008; }
   // 對手吃進已經等滿延遲的垃圾
+  if (!o.remote){                                                     // RIVALS TL：對手是另一個真人，不跑電腦對手
   if (!o.bd) botInit(o);
   o.clock += dt;
   if (W === 10) tlLbTick(o, dt);                                     // 會技巧的對手（La bot 搜尋：HOLD、T-Spin、B2B、開局庫）
@@ -12801,6 +12809,7 @@ function leagueTick(dt){
       if (o.pending[0].lines <= 0) o.pending.shift();
     }
     if (size > 0){ climbReceive(size); sfxEv('impact', 'impact'); }    // 實機錄影：對手攻擊打進你的垃圾條時有 impact（跟 damage 一起出現）
+  }
   }
   }
   if (climb.windup){
@@ -12874,7 +12883,7 @@ function tlResults(){
   const me = climb.me, o = climb.opp, T = me.tot || { sent:0, garb:0, pieces:0, secs:1 }, U = me.otot || { sent:0, garb:0, pieces:0, secs:1 };
   // 官方 .leagueplayer_extra：白色粗體數字＋色字單位
   const st = t => { const s = Math.max(1, t.secs); return `<span>${(t.sent / s * 60).toFixed(2)}</span> APM · <span>${(t.pieces / s).toFixed(2)}</span> PPS · <span>${((t.sent + t.garb) * 100 / s).toFixed(2)}</span> VS`; };
-  const myName = tlEsc(loadProfile().name), opName = tlEsc(climb.opts.oppName || o.name || 'OPPONENT'), win = me.score > o.score;
+  const myName = climb.opts.lv ? LOCAL_P + "P" : tlEsc(loadProfile().name), opName = tlEsc(climb.opts.oppName || o.name || 'OPPONENT'), win = me.score > o.score;
   const L = TL_LAST, m = tlMyTR();
   const trNow = m.tr != null ? m.tr : null, d = L && L.placed && !L.justPlaced ? Math.round(L.d) : 0;
   const rk = m.r ? m.r.r : null, top = m.r && m.r.top != null ? m.r.top : null;
@@ -12915,7 +12924,7 @@ function roundEnd(winner){
   const won = winner === 'me';
   const secs = Math.max(1, climb.elapsed / 1000);
   me.tot = me.tot || { sent:0, garb:0, pieces:0, secs:0 };
-  me.tot.sent += climb.sent; me.tot.garb += climb.garbCleared; me.tot.pieces += climb.pieces; me.tot.secs += secs;
+  me.tot.sent += climb.sent; me.tot.garb += climb.garbCleared; me.tot.pieces += climb.pieces; me.tot.secs += secs; me.tot.lines = (me.tot.lines || 0) + (climb.lines || 0);
   clearMsg = null;                                                                 // 實機局末不在動作文字區寫字（比分畫面／GAME! 才是）
   const T = me.tot;
   const myVS = (T.sent + T.garb) * 100 / T.secs, myRank = rankForVS(myVS);
@@ -12923,7 +12932,7 @@ function roundEnd(winner){
   // 照實機 TL 錄影比對音效（用 TETR.IO 音效包做波形相關性比對）：不管哪一邊頂死，都是 topout＋losestock
   sfxEv('topout', 'topout'); sfxEv('roundloss', 'losestock');
   // 官方 game.end：3 秒後 VICTORY／DEFEAT（Pi lg_victory）＋換歌（asayake-no-taiyou／in-sorrow-and-pains），8 秒後才進 TETRA LEAGUE / RESULTS
-  if (matchOver && !climb.opts.room){ const c0 = climb, w = me.score > o.score; setTimeout(() => { if (climb !== c0) return; sfxEv(w ? 'victory' : 'defeat', w ? 'victory' : 'failure'); bgm(w ? 'asayake-no-taiyou' : 'in-sorrow-and-pains');
+  if (matchOver && !climb.opts.room && !climb.opts.lv){ const c0 = climb, w = me.score > o.score; setTimeout(() => { if (climb !== c0) return; sfxEv(w ? 'victory' : 'defeat', w ? 'victory' : 'failure'); bgm(w ? 'asayake-no-taiyou' : 'in-sorrow-and-pains');
     if (w && !(climb.opts && climb.opts.room)){ setTimeout(() => { document.body.classList.add('shaking'); setTimeout(() => document.body.classList.remove('shaking'), 100); }, 1250); } }, 3000); }
   if (matchOver && !climb.opts.unranked) recordMatch(me.score > o.score, myVS, T.sent / T.secs * 60, T.pieces / T.secs, T.secs, o.rank.tr, o.rank.glicko ? { r: o.rank.glicko, rd: o.rank.rd || 60 } : null);
   say(matchOver
@@ -12932,11 +12941,16 @@ function roundEnd(winner){
   draw();
   me.otot = me.otot || { sent:0, garb:0, pieces:0, secs:0 };
   me.otot.sent += o.sent || 0; me.otot.garb += o.gclr || 0; me.otot.pieces += o.pieces || 0; me.otot.secs += secs;
-  const myName = tlEsc(loadProfile().name), opName = tlEsc(climb.opts.oppName || o.name || 'OPPONENT');
+  const myName = climb.opts.lv ? LOCAL_P + "P" : tlEsc(loadProfile().name), opName = tlEsc(climb.opts.oppName || o.name || 'OPPONENT');
   if (matchOver){
     // 實機（TL FT7 錄影）：最後一局頂死 → 盤面中間大大的黃綠色「GAME!」→ 輸的盤面消失 → 全畫面「VICTORY」（白字轉黃）→ TETRA LEAGUE / RESULTS 結算頁
     climb.tlGone = { who: won ? 'opp' : 'me', t: performance.now() + 200 };       // 實機：輸的盤面歪一邊、往下掉出畫面（框變紅），贏的盤面鏡頭稍微拉近
     { const t0 = performance.now(), me0 = climb, step = () => { if (climb !== me0 || performance.now() - t0 > 1800) return; draw(); requestAnimationFrame(step); }; requestAnimationFrame(step); }   // 局結束後遊戲迴圈停了：掉落動畫自己跑
+    if (climb.opts.lv){                                                          // RIVALS TL：GAME! 之後交給外層的 RIVALS 結算
+      const c0 = climb, st = { pcs: T.pieces, secs: T.secs, lines: T.lines || 0, sent: T.sent, garb: T.garb, score: me.score };
+      tlOv('<div class="game">GAME!</div>', 3000).then(() => { try { parent.postMessage({ t: 'done', p: LOCAL_P, done: true, secs: T.secs, v: me.score, s: st, d: c0 === climb ? lvDetail() : null }, '*'); } catch(e){} });
+      return;
+    }
     if (climb.opts.room){                                                        // 房間 1v1：官方不是 VICTORY／DEFEAT＋TL 結算，而是 WINNER! cut-in → RESULTS（victory 選單）
       const fmT = t => { const m = Math.floor(t / 60), x = t - m * 60; return `${m}:${String(Math.floor(x)).padStart(2, '0')}.${String(Math.floor((x % 1) * 1000)).padStart(3, '0')}`; };
       const ft = Math.max(1, climb.opts.ft | 0), pts = n => `${n} <span>POINT${n === 1 ? '' : 'S'}</span>`, W = me.score > o.score, TS = me.otot, ms = Math.max(1, T.secs), os = Math.max(1, TS.secs);
@@ -13113,7 +13127,7 @@ function waterfall(msg, o = {}){
 const wfSub = t => `<br><span style="font-size:.8em">${t}</span>`;
 function say(msg){ statusEl.dataset.msg = msg; const q = document.getElementById('qpMsg'); if (q && screen === 'modsel') q.textContent = msg; syncUI(); }
 let _pnC = { t: 0, v: 'YOU' };
-function profName(){ const n = performance.now(); if (n - _pnC.t > 1000){ _pnC = { t: n, v: (loadProfile().name || 'YOU').toUpperCase() }; } return _pnC.v; }
+function profName(){ if (LOCAL_P) return LOCAL_P + 'P'; const n = performance.now(); if (n - _pnC.t > 1000){ _pnC = { t: n, v: (loadProfile().name || 'YOU').toUpperCase() }; } return _pnC.v; }
 function qpgSync(){
   const on = !!(climb && climb.kind === 'qp' && !(climb.custom && !climb.custom.tower) && mode === 'sim' && uiDetail() > 0);
   if (document.body.classList.contains('qpg') !== on){ document.body.classList.toggle('qpg', on); if (on && typeof qplStart === 'function'){ qplInit(); qplRenderLb(true); if (!QPL.raf) QPL.raf = requestAnimationFrame(qplLoop); } }
@@ -18570,15 +18584,15 @@ function raceEnd(done, reason){
   if (MP.room){ MP.room.ingame = false; mrSys(won ? 'YOU WON THE RACE!' : `YOU PLACED #${place} OF ${rows.length}`); }
 }
 // ── 同一台電腦 2P（外層）：設定模式／目標／按鍵 → 開兩個 iframe（各自是一份完整的遊戲），鍵盤事件轉給兩邊（各自只認自己的鍵）
-var LV = { st: 'setup', kind: '40l', goal: { '40l': 40, blitz: 100000, zenith: 5 }, keys: null, listen: null, ready: {}, decided: false, res: {}, prog: {} };
+var LV = { st: 'setup', kind: '40l', goal: { '40l': 40, blitz: 100000, zenith: 5, league: 3 }, keys: null, listen: null, ready: {}, decided: false, res: {}, prog: {} };
 const LV_ACT = [['left', 'MOVE LEFT'], ['right', 'MOVE RIGHT'], ['soft', 'SOFT DROP'], ['hard', 'HARD DROP'], ['ccw', 'ROTATE CCW'], ['cw', 'ROTATE CW'], ['flip', 'ROTATE 180'], ['hold', 'HOLD']];
-function lvLoad(){ try { const j = JSON.parse(localStorage.getItem('bp:localvs') || 'null'); if (j){ if (j.pc) LV.pc = j.pc; if (j.kind) LV.kind = j.kind; if (j.goal) Object.assign(LV.goal, j.goal); if (j.keys && j.keys[1] && j.keys[2]) LV.keys = j.keys; } } catch(e){}
+function lvLoad(){ try { const j = JSON.parse(localStorage.getItem('bp:localvs') || 'null'); if (j){ if (j.goal && !j.goal.league) j.goal.league = 3; if (j.pc) LV.pc = j.pc; if (j.kind) LV.kind = j.kind; if (j.goal) Object.assign(LV.goal, j.goal); if (j.keys && j.keys[1] && j.keys[2]) LV.keys = j.keys; } } catch(e){}
   if (!LV.keys) LV.keys = JSON.parse(JSON.stringify(LOCAL_KEYS)); }
 function lvSave(){ try { localStorage.setItem('bp:localvs', JSON.stringify({ kind: LV.kind, goal: LV.goal, keys: LV.keys, pc: LV.pc })); } catch(e){} }
-const LV_GOALS = { '40l': [10, 20, 40, 100, 150], blitz: [20000, 50000, 100000, 200000, 500000, 1000000], zenith: [2, 3, 4, 5, 6, 7, 8, 9, 10] };
-const LV_MODES = [['40l', '40 LINES'], ['blitz', 'BLITZ'], ['zenith', 'QUICK PLAY']];
-const LV_DESC = { '40l': 'a race! the first to clear the lines wins.<br>top out and you lose.', blitz: '2 minutes each. the higher score wins!<br>topping out ends your run early.', zenith: 'scale the ZENITH TOWER side by side. the higher altitude wins!<br>both players use the mods picked below.' };
-const LV_T = k => k === 'zenith' ? 'zenith' : k;
+const LV_GOALS = { league: [1, 2, 3, 4, 5, 7], '40l': [10, 20, 40, 100, 150], blitz: [20000, 50000, 100000, 200000, 500000, 1000000], zenith: [2, 3, 4, 5, 6, 7, 8, 9, 10] };
+const LV_MODES = [['40l', '40 LINES'], ['blitz', 'BLITZ'], ['zenith', 'QUICK PLAY'], ['league', 'TETRA LEAGUE']];
+const LV_DESC = { league: 'a real 1v1: everything you clear is sent to your rival as garbage.<br>top out and you lose the round. first to win the set number of rounds takes the match.', '40l': 'a race! the first to clear the lines wins.<br>top out and you lose.', blitz: '2 minutes each. the higher score wins!<br>topping out ends your run early.', zenith: 'scale the ZENITH TOWER side by side. the higher altitude wins!<br>both players use the mods picked below.' };
+const LV_T = k => k === 'league' ? 'blitz' : k;
 // QP 的 mod 面板：RIVALS 選 QUICK PLAY 時整塊搬到開局頁最下面，離開就搬回 QP 大廳
 var H2H_MODS = { el: null, home: null, next: null };
 function h2hMods(on){
@@ -18632,6 +18646,7 @@ function renderH2HPre(){
       <div class="h2h-tabs">${LV_MODES.map(([id, n]) => `<button class="obtn${id === k ? ' on' : ''}" data-k="${id}">${n}</button>`).join('')}</div>
       <p>${LV_DESC[k]}</p>
       ${k === '40l' ? `<div class="orow" title="The first player to clear this many lines wins."><label>lines to clear</label><button class="ospin" id="h2hGoal">${LV.goal['40l']} LINES</button></div>` : ''}
+      ${k === 'league' ? `<div class="orow" title="Rounds a player has to win to take the match. Click: more · right-click: fewer"><label>first to</label><button class="ospin" id="h2hFt">FT${LV.goal.league}</button></div>` : ''}
     </div>
     <div class="oblk starter">${k === '40l' ? `<div class="omusic" id="spMusic" title="Click: next song · right-click: previous">${sName}</div>` : '<div class="omusic" style="visibility:hidden"></div>'}<button class="ostart" id="spStart">START</button></div>
     <div class="oblk coll${LV.keysOpen ? '' : ' collapsed'}" id="h2hCtl"><h1 title="Set each player's keys">CONTROLS</h1><div class="obtr"><button class="obtn" id="h2hDef" title="Reset both players to the default keys.">DEFAULT</button></div>
@@ -18663,6 +18678,9 @@ function renderH2HPre(){
       const n = skOpts[(Math.max(0, i) + d + skOpts.length) % skOpts.length]; c.skin = n.value; b.textContent = n.label; lvSave(); sfxEv('menutap', 'menutap'); };
     b.onclick = () => step(1); b.oncontextmenu = e => { e.preventDefault(); step(-1); }; });
   el.querySelectorAll('#h2hCtl .h2h-keys .ospin').forEach(b => b.onclick = () => { LV.listen = { p: +b.dataset.p, a: b.dataset.a }; LV.keysOpen = true; renderH2HPre(); });
+  const ftb = $('h2hFt');
+  if (ftb){ const stepF = d => { const L = LV_GOALS.league, i = Math.max(0, L.indexOf(LV.goal.league)); LV.goal.league = L[(i + d + L.length) % L.length]; lvSave(); sfxEv('menutap', 'menutap'); ftb.textContent = 'FT' + LV.goal.league; };
+    ftb.onclick = () => stepF(1); ftb.oncontextmenu = e => { e.preventDefault(); stepF(-1); }; }
   const mus = $('spMusic');
   if (mus){ const step = d => { const i = songs.findIndex(x => x[0] === o.song); const n = songs[(Math.max(0, i) + d + songs.length) % songs.length]; o.song = n[0]; soloOptSet('h2h', o); mus.textContent = n[1]; sfxEv('menutap', 'menutap'); };
     mus.onclick = () => step(1); mus.oncontextmenu = e => { e.preventDefault(); step(-1); }; }
@@ -18684,7 +18702,8 @@ function lvStart(){
   LV.st = 'play'; $('localvs').dataset.st = 'play'; $('lvRes').classList.add('hidden'); LV.decided = false; LV.res = {}; LV.prog = {}; LV.st2 = {}; LV.det = {}; LV.detFull = {};
   const go = async () => { const song = LV.kind === '40l' ? soloOpt('h2h').song : undefined, mods = [...pickedMods].filter(m => !['world', 'duo', 'sun'].includes(m));
     const sk = await Promise.all([lvSkinFor(1), lvSkinFor(2)]); $('lvLoad').classList.add('hidden'); if (LV.st !== 'play') return;
-    for (const p of [1, 2]) lvSend(p, { t: 'start', kind: LV.kind, goal: LV.goal['40l'], keys: LV.keys[p], song, mods, hand: lvPc(p).hand, skin: sk[p - 1] }); };
+    LV.tl = { s: { 1: 0, 2: 0 }, r: 0, win: 0 };
+    for (const p of [1, 2]) lvSend(p, { t: 'start', kind: LV.kind, goal: LV.kind === 'league' ? LV.goal.league : LV.goal['40l'], keys: LV.keys[p], song, mods, hand: lvPc(p).hand, skin: sk[p - 1] }); };
   if (LV.ready[1] && LV.ready[2]) return go();
   $('lvLoad').classList.remove('hidden'); LV.pend = go;
   const viaDoc = () => { const H = lvSelfHTML(); if (!H) return false; for (const p of [1, 2]){ const f = $('lvF' + p); f.removeAttribute('src'); f.srcdoc = `<script>window.__LOCAL_P=${p}<\/script>` + H; } return true; };
@@ -18715,16 +18734,19 @@ function lvDecide(winner, why){
   const big = p => { const r = R(p), v = r ? r.v : LV.prog[p] || 0;
     if (K === '40l') return r && r.done ? (() => { const f = raceFmt(r.secs), i = f.lastIndexOf('.'); return i > 0 ? `${f.slice(0, i)}<small>${f.slice(i)}</small>` : f; })() : `${Math.floor(v)}<small>/${goal}</small>`;
     if (K === 'blitz') return dec(v, 0);
+    if (K === 'league') return `${(LV.tl && LV.tl.s[p]) || 0}<em>PTS</em>`;
     return `${dec(v, 1)}<em>M</em>`; };
   const pps = x => x.secs > 0 ? x.pcs / x.secs : 0, apm = x => x.secs > 0 ? x.sent / x.secs * 60 : 0;
-  const LBL = { '40l': 'YOUR RESULT', blitz: 'YOUR FINAL SCORE', zenith: 'YOUR FINAL ALTITUDE' };
+  const LBL = { '40l': 'YOUR RESULT', blitz: 'YOUR FINAL SCORE', zenith: 'YOUR FINAL ALTITUDE', league: 'ROUNDS WON' };
   const box = (lbl, val, sub) => `<div class="lvr-box"><i>${lbl}</i><b>${val}</b>${sub ? `<small>${sub}</small>` : ''}</div>`;
   const mName = (LV_MODES.find(m => m[0] === K) || [, K])[1];
   for (const p of [1, 2]){
     const x = S(p), st = !winner || winner === p ? 'w' : 'l', r = R(p);
     const resTxt = !winner ? 'DRAW' : winner === p ? 'WIN' : 'LOSE';
     const resSub = K === '40l' && winner !== p ? (r && !r.done ? 'TOPPED OUT' : 'OPPONENT FINISHED FIRST') : why;
-    let rows = K === 'zenith'
+    let rows = K === 'league'
+      ? `<div class="lvr-row2">${box('ATTACK', Math.round(x.sent || 0), `${apm(x).toFixed(2)} APM`)}${box('VS SCORE', (x.secs > 0 ? ((x.sent || 0) + (x.garb || 0)) * 100 / x.secs : 0).toFixed(2), `${x.lines || 0} LINES`)}</div>`
+      : K === 'zenith'
       ? `<div class="lvr-row2">${box('FLOOR REACHED', `<s>F</s>${x.fl || 1}`, x.fn || '')}${box('ATTACK', x.sent || 0, `${apm(x).toFixed(2)} APM`)}</div>`
       : `<div class="lvr-row2">${box('LINES CLEARED', K === '40l' ? `${Math.min(goal, x.lines || 0)}<s>/${goal}</s>` : (x.lines || 0))}${box('TIME', raceFmt(x.secs || 0))}</div>`;
     rows += box('PIECES PLACED', (x.pcs || 0).toLocaleString('en-US'), `${pps(x).toFixed(2)} PPS`);
@@ -18744,6 +18766,12 @@ addEventListener('message', e => {
   if (m.t === 'ready'){ LV.ready[p] = true; lvSendTex(p); if (LV.ready[1] && LV.ready[2] && LV.pend){ const f = LV.pend; LV.pend = null; f(); } }
   else if (m.t === 'prog'){ LV.prog[p] = m.v; if (m.s) (LV.st2 = LV.st2 || {})[p] = m.s; lvSend(3 - p, { t: 'opp', v: m.v }); }
   else if (m.t === 'det'){ if (m.d) (LV.det = LV.det || {})[p] = m.d; lvDetRender(p); }
+  else if (m.t === 'atk'){ if (!LV.decided) lvSend(3 - p, { t: 'atk', n: m.n }); }
+  else if (m.t === 'ko'){ const T = LV.tl; if (!T || T.win || m.r !== T.r) return;              // 同一局只認第一個頂死的
+    T.r++; T.s[3 - p]++; for (const q of [1, 2]) lvSend(q, { t: 'rnd', loser: p });
+    if (T.s[3 - p] >= LV.goal.league){ T.win = 3 - p; clearTimeout(LV.tlT); LV.tlT = setTimeout(() => lvDecide(T.win, `${T.s[1]} - ${T.s[2]} · FIRST TO ${LV.goal.league}`), 5000); } }
+  else if (m.t === 'done' && LV.kind === 'league'){ LV.res[p] = m; if (m.s) (LV.st2 = LV.st2 || {})[p] = m.s; if (m.d) (LV.det = LV.det || {})[p] = m.d;
+    const T = LV.tl; if (T && T.win && LV.res[1] && LV.res[2]){ clearTimeout(LV.tlT); lvDecide(T.win, `${T.s[1]} - ${T.s[2]} · FIRST TO ${LV.goal.league}`); } }
   else if (m.t === 'done'){ LV.res[p] = m; if (m.s) (LV.st2 = LV.st2 || {})[p] = m.s; if (m.d) (LV.det = LV.det || {})[p] = m.d; lvSend(3 - p, { t: 'opp', v: m.v, fin: m.done ? m.secs : null, dead: m.done ? null : m.secs });
     if (LV.kind === '40l'){ if (m.done) lvDecide(p, 'FIRST TO CLEAR ' + LV.goal['40l'] + ' LINES'); else lvDecide(3 - p, `${p}P TOPPED OUT`); }
     else if (LV.res[1] && LV.res[2]){ const a = +LV.res[1].v || 0, b = +LV.res[2].v || 0;   // BLITZ／QP：兩個人都打完才比
@@ -18828,7 +18856,8 @@ if (LOCAL_P){
       if (climb){ climb.over = true; active = null; climb = null; }
       const cmp = m.kind !== '40l';                                                // 40L 是競速；BLITZ 比分數、QP 比高度（各自照原本規則打到結束）
       const race = { kind: m.kind, goal: cmp ? 0 : m.goal, cmp, local: true, players: [{ name: LOCAL_P === 1 ? '2P' : '1P', remote: true, pps: 0, apm: 0 }] };
-      if (m.kind === 'zenith'){ pickedMods = new Set(m.mods || []); startClimb('qp', { race }); }
+      if (m.kind === 'league') startClimb('league', { lv: true, ft: Math.max(1, m.goal | 0), oppName: LOCAL_P === 1 ? '2P' : '1P', unranked: true });
+      else if (m.kind === 'zenith'){ pickedMods = new Set(m.mods || []); startClimb('qp', { race }); }
       else startClimb('practice', { sub: m.kind, race, song: m.song });
     } else if (m.t === 'opp'){
       const R = climb && climb.race; const b = R && R.bots[0]; if (!b) return;
@@ -18841,6 +18870,10 @@ if (LOCAL_P){
       if (!climb.over){ climb.over = true; active = null; }
       sfxEv(win ? 'victory' : 'topout', win ? 'victory' : 'topout', 'gameover');
       clearMsg = { lines: [{ text: draw0 ? 'DRAW' : win ? 'YOU WIN' : 'YOU LOSE', color: draw0 ? '#eef2f7' : win ? '#f7d33e' : '#ef4b4b', size: 'lg' }], t: performance.now(), keep: true }; draw();
+    } else if (m.t === 'atk'){                                                  // TL：對面打過來的垃圾（照 TL 一樣走 20 幀延遲）
+      if (climb && climb.kind === 'league' && !climb.over && climb.opp){ climb.opp.sent = (climb.opp.sent || 0) + m.n; climbReceive(m.n); sfxEv('impact', 'impact'); }
+    } else if (m.t === 'rnd'){                                                  // TL：外層判定這局誰輸（兩邊同時死也只算先到的那個）
+      if (climb && climb.kind === 'league'){ climb.over = false; roundEnd(m.loser === LOCAL_P ? 'opp' : 'me'); }
     } else if (m.t === 'quit'){ if (climb){ climb.over = true; active = null; } }
     else if (m.t === 'key'){ try { document.body.dispatchEvent(new KeyboardEvent(m.type, { code: m.code, key: m.key, bubbles: true, cancelable: true })); } catch(err){} }
   });
