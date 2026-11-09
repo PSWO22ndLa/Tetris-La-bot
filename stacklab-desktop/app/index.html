@@ -11633,10 +11633,21 @@ async function plusApply(s){
   const st = $('plusState'); st.textContent = `DOWNLOADING ${s.n.toUpperCase()}…`;
   try {
     const blob = await plusFetch(`data/content/skin/${encodeURIComponent(s.a)}/${encodeURIComponent(s.f)}`, 'blob');
-    const src = await fileToDataURL(blob);
+    let src = await fileToDataURL(blob);
+    if (/svg/i.test(blob.type) || /\.svg$/i.test(s.f)) src = await plusRaster(src);          // SVG 皮膚（像 QuotePilgrim 的 ppt-*）→ 先畫成 PNG，格子偵測才準
     await new Promise(r => applySkinFile(src, r));
     sfxEv('menuconfirm', 'menuconfirm'); notice(`SKIN APPLIED · ${s.n.toUpperCase()} BY ${s.a.toUpperCase()}`); st.textContent = `APPLIED: ${s.n.toUpperCase()} · ${s.a.toUpperCase()}`;
   } catch(e){ st.textContent = 'COULD NOT DOWNLOAD THAT SKIN: ' + e.message; }
+}
+// 舊版 TETR.IO 的 SVG 皮膚是一排 12 格（I J L O S T Z 垃圾 …）；沒寫寬高的用 viewBox；放大到每格約 64px 再畫，邊緣才不會糊
+function plusRaster(src){
+  return new Promise((res, rej) => { const im = new Image();
+    im.onload = () => { let w = im.naturalWidth || 372, h = im.naturalHeight || 30;
+      if (!im.naturalWidth){ try { const vb = atob(src.split(',')[1]).match(/viewBox="[\d.\s-]*?([\d.]+)\s+([\d.]+)"/); if (vb){ w = +vb[1]; h = +vb[2]; } } catch(e){} }
+      const k = Math.max(1, Math.min(8, Math.round(64 / Math.max(1, h))));   // 整數倍，格距才不會累積誤差
+      const c = document.createElement('canvas'); c.width = Math.round(w * k); c.height = Math.round(h * k);
+      const x = c.getContext('2d'); x.imageSmoothingEnabled = true; x.drawImage(im, 0, 0, c.width, c.height); res(c.toDataURL('image/png')); };
+    im.onerror = () => rej(new Error('bad SVG')); im.src = src; });
 }
 function plusOpen(){ $('plusDlg').classList.remove('hidden'); sfxEv('menuconfirm', 'menuconfirm', .7); if (!PLUS.list) plusLoad(false); else plusRender(); setTimeout(() => $('plusQ').focus(), 50); }
 if (!LOCAL_P && $('plusDlg')){
