@@ -2571,7 +2571,9 @@ document.documentElement.classList.add('booting'); addEventListener('load', func
   .lv-f iframe{ width:100%; height:100%; border:0; display:block; pointer-events:none; background:#07090e; }
   #lvTl{ position:absolute; left:50%; top:10px; transform:translateX(-50%); z-index:6; display:flex; align-items:center; gap:12px; padding:6px 18px; pointer-events:none;
     background:linear-gradient(90deg,rgba(20,40,120,0),rgba(20,28,60,.85) 25%,rgba(60,14,20,.85) 75%,rgba(120,20,30,0)); font-family:var(--t-font,var(--hunf)); transition:top .45s cubic-bezier(.2,.8,.2,1), transform .45s cubic-bezier(.2,.8,.2,1); }
-  #lvTl.hidden{ display:none; } #localvs.tlon .lv-f > b{ display:none; }
+  #lvTl.hidden{ display:none; }
+  .sksel{ display:flex; gap:6px; align-items:center; flex:1; min-width:0; } .sksel select{ flex:1; min-width:0; font:inherit; font-size:13px; color:inherit; background:rgba(0,0,0,.35); border:1px solid rgba(255,255,255,.2); padding:5px 6px; }
+  .sksel select option{ background:#141823; color:#e8ecf4; } #skinDel[hidden]{ display:none; } #localvs.tlon .lv-f > b{ display:none; }
   #lvTl .n{ font:700 22px var(--t-font,var(--hunf)); letter-spacing:.08em; } #lvTl .n:first-child{ color:#8fa2ff; } #lvTl .n:nth-child(5){ color:#ff7a7a; }
   #lvTl .s{ font:700 46px/1 var(--t-font,var(--hunf)); font-style:normal; color:#fff; min-width:58px; text-align:center; padding:6px 10px 4px; }
   #lvTl .s.l{ background:#2846c8; } #lvTl .s.r{ background:#c42536; } #lvTl em{ font:700 30px var(--t-font,var(--hunf)); font-style:normal; color:#c8cfdd; }
@@ -3562,7 +3564,8 @@ document.documentElement.classList.add('booting'); addEventListener('load', func
           <p class="acct-note" id="labotNNNote"></p>
           <div class="fonts" id="fontSlots"></div>
           <p class="acct-note">LOAD fetches the TETR.IO font straight from tetr.io (paths from tetr.io/css/tetrio.css). Stored on this device only.</p>
-          <div class="crow file"><span class="lbl">BLOCK SKIN</span><input type="file" id="skinFile" accept="image/*,.svg,image/svg+xml,.tpse"><button id="skinFetch" class="skinfetch">FETCH</button><button id="skinPlus" class="skinfetch" title="Browse the TETR.IO PLUS skin library (you.have.fail/tetrioplus)">TETR.IO PLUS</button></div>
+          <div class="crow"><span class="lbl">BLOCK SKIN</span><div class="val sksel"><select id="skinSel" title="Every skin you load (file, URL, TETR.IO PLUS) is added to this list"></select><button id="skinDel" class="skinfetch" title="Remove this skin from the list">✕</button></div></div>
+          <div class="crow file"><span class="lbl">ADD SKIN</span><input type="file" id="skinFile" accept="image/*,.svg,image/svg+xml,.tpse"><button id="skinFetch" class="skinfetch">FETCH</button><button id="skinPlus" class="skinfetch" title="Browse the TETR.IO PLUS skin library (you.have.fail/tetrioplus)">TETR.IO PLUS</button></div>
       <div class="crow"><span class="lbl">TILE</span><div class="val in"><input type="number" id="skinTile" value="32" min="4" max="256" step="1"><i>PX</i></div></div>
       <div class="crow"><span class="lbl">GAP</span><div class="val in"><input type="number" id="skinGap" value="0" min="0" max="16" step="1"><i>PX</i></div></div>
       <div class="crow"><span class="lbl">ORIGIN X</span><div class="val in"><input type="number" id="skinOffX" value="0" min="0" max="4096" step="1"><i>PX</i></div></div>
@@ -11689,8 +11692,8 @@ function plusRender(){
   $('plusGrid').innerHTML = L.slice(0, 500).map(s => `<button class="plus-card${s.c === 'unknown' ? ' pk' : ''}" data-i="${PLUS.list.indexOf(s)}" title="${mpEsc(s.d)}">${s.pv || !/tpse/.test(s.fmt) ? `<img loading="lazy" alt="" src="${u(s, s.pv || s.f)}" onerror="this.style.visibility='hidden'">` : '<i>NO PREVIEW</i>'}<b>${mpEsc(s.n)}</b><small>${mpEsc(s.a)} · ${s.c === 'unknown' ? 'PACK' : 'SKIN'} · ${mpEsc(String(s.fmt).toUpperCase())}</small></button>`).join('')
     || `<p class="plus-empty">${PLUS.list ? 'NOTHING MATCHES' : ''}</p>`;
 }
-async function plusApplyTpse(T, label){
-  const st = $('plusState'); const r = await tpseImport(T);
+async function plusApplyTpse(T, label, name){
+  const st = $('plusState'); skSetSel('pending'); const r = await tpseImport(T); if (r.done.includes('BLOCK SKIN')) skinRemember(name || label); else renderSkinSel();
   if (!r.done.length){ st.textContent = `${label}: NOTHING THIS GAME CAN USE` + (r.skip.length ? ` (HAS ${r.skip.join(', ').toUpperCase()})` : ''); return; }
   sfxEv('menuconfirm', 'menuconfirm'); notice(`${label} · APPLIED ${r.done.length} ITEM${r.done.length > 1 ? 'S' : ''}`);
   st.textContent = `APPLIED: ${r.done.join(', ')}` + (r.skip.length ? ` · SKIPPED: ${r.skip.join(', ').toUpperCase()}` : '');
@@ -11699,11 +11702,11 @@ async function plusApply(s){
   const st = $('plusState'); st.textContent = `DOWNLOADING ${s.n.toUpperCase()}…`;
   const rel = `data/content/${s.c || 'skin'}/${encodeURIComponent(s.a)}/${encodeURIComponent(s.f)}`;
   try {
-    if (/\.tpse$/i.test(s.f)){ const T = JSON.parse(await plusFetch(rel)); return await plusApplyTpse(T, `${s.n.toUpperCase()} BY ${s.a.toUpperCase()}`); }
+    if (/\.tpse$/i.test(s.f)){ const T = JSON.parse(await plusFetch(rel)); return await plusApplyTpse(T, `${s.n.toUpperCase()} BY ${s.a.toUpperCase()}`, `${s.n} · ${s.a}`); }
     const blob = await plusFetch(rel, 'blob');
     let src = await fileToDataURL(blob);
     if (/svg/i.test(blob.type) || /\.svg$/i.test(s.f)) src = await plusRaster(src);          // SVG 皮膚（像 QuotePilgrim 的 ppt-*）→ 先畫成 PNG，格子偵測才準
-    await new Promise(r => applySkinFile(src, r));
+    await applySkinNamed(src, `${s.n} · ${s.a}`);
     sfxEv('menuconfirm', 'menuconfirm'); notice(`SKIN APPLIED · ${s.n.toUpperCase()} BY ${s.a.toUpperCase()}`); st.textContent = `APPLIED: ${s.n.toUpperCase()} · ${s.a.toUpperCase()}`;
   } catch(e){ st.textContent = 'COULD NOT LOAD THAT ONE: ' + e.message; }
 }
@@ -13719,6 +13722,7 @@ function renderSkinTiles(){
 function persistSkin(){
   if (LOCAL_P) return;                                                          // RIVALS 子視窗換的皮膚只算那一局
   try { skin ? store.set(SKIN_KEY, JSON.stringify(skin)) : store.del(SKIN_KEY); } catch(e){}
+  if (skin && typeof skCache === 'function') skCache(skSel());                  // 調 TILE／GAP／對應表 → 清單裡那一款也一起更新
 }
 // 色票也吃皮膚：用 background-position 從 sheet 切出對應那一格
 function skinStyleFor(v, px){
@@ -13738,10 +13742,10 @@ function restyleButtons(){
 async function skinFromFile(f){
   if (!f) return;
   try {
-    if (/\.(tpse|json)$/i.test(f.name || '')){ const r = await tpseImport(JSON.parse(await f.text())); notice(r.done.length ? `APPLIED: ${r.done.join(', ')}` : 'NOTHING IN THIS FILE THIS GAME CAN USE'); return; }
+    if (/\.(tpse|json)$/i.test(f.name || '')){ skSetSel('pending'); const r = await tpseImport(JSON.parse(await f.text())); if (r.done.includes('BLOCK SKIN')) skinRemember(f.name); else renderSkinSel(); notice(r.done.length ? `APPLIED: ${r.done.join(', ')}` : 'NOTHING IN THIS FILE THIS GAME CAN USE'); return; }
     let src = await fileToDataURL(f);
     if (/svg/i.test(f.type || '') || /\.svg$/i.test(f.name || '') || /^data:image\/svg/i.test(src)) src = await plusRaster(src);
-    applySkinFile(src);
+    applySkinNamed(src, f.name || 'SKIN');
   } catch(e){ notice('COULD NOT LOAD THAT FILE: ' + e.message); }
 }
 $('skinFile').onchange = e => { const f = e.target.files && e.target.files[0]; e.target.value = ''; skinFromFile(f); };
@@ -13749,7 +13753,7 @@ $('skinFetch').onclick = async () => {
   const r = await uiDialog({ title: 'FETCH BLOCK SKIN', msg: 'Paste a skin image URL. Strip-style skins slice best; connected skins may need manual TILE / GAP.',
     input: '', placeholder: 'https://tetr.io/res/skins/minos/…', ok: 'FETCH', cancel: 'CANCEL', chips: TIO_PRESETS.minos });
   if (!r || r === UI_EXTRA || !r.trim()) return;
-  const bi = /^builtin:(\w+)$/.exec(r.trim()); if (bi && BUILTIN_SKINS[bi[1]]){ const B = BUILTIN_SKINS[bi[1]]; applySkinFile(await plusRaster(B.svg)); notice(`SKIN APPLIED · ${B.name} BY ${B.by.toUpperCase()}`); return; }
+  const fx = SK_FIXED.find(x => x.id === r.trim() || x.url === r.trim()); if (fx) return skSelect(fx.id);
   const file = await fetchAsFile(r, 'image'); if (!file) return;
   skinFromFile(file.name ? file : new File([file], r.split('?')[0].split('/').pop() || 'skin.png', { type: file.type }));
 };
@@ -13764,7 +13768,9 @@ const reGeo = () => {
 };
 ['skinTile','skinGap','skinOffX','skinOffY','skinCols'].forEach(id => { $(id).onchange = reGeo; $(id).oninput = reGeo; });
 $('skinAuto').onclick = () => { if (skin) applySkinFile(skin.src); };
-$('skinClear').onclick = () => { loadSkin(null); persistSkin(); say('Skin removed'); };
+$('skinClear').onclick = () => skSelect('none');
+$('skinSel').onchange = e => skSelect(e.target.value);
+$('skinDel').onclick = async () => { const id = skSel(); if (!/^lib:/.test(id)) return; skLibSave(skLib().filter(x => x.id !== id)); await idbDel('tp-skinlib', 's', id); skSelect('none'); };
 
 /* --- mod 卡牌：仿 QP2／Zenith Clicker，9 張排一列，正位／逆位同一張卡 --- */
 const DECK = [
@@ -14120,6 +14126,55 @@ const TIO_PRESETS = {
   boardRev: [{ label: 'ZENITH REVERSED 2X', value: TIO + 'skins/board/zenith/reversed.2x.png' }],
   minos: [{ label: 'TETR.IO DEFAULT', value: TIO + 'skins/minos/tetrio.png' }, { label: 'CONNECTED 2X', value: TIO + 'skins/minos/connected.2x.png' }, { label: 'PPT · QUOTEPILGRIM', value: 'builtin:ppt' }],
 };
+// BLOCK SKIN 清單：內建（PPT）、TETR.IO 官方兩款一開始就在；之後上傳／FETCH／TETR.IO PLUS 套用的皮膚會自動加進來。
+// 每一款「調好的皮膚設定」（含 TILE／GAP／對應表）存在 IndexedDB 'tp-skinlib'，切換時直接讀，不用重抓、不用重算
+var SKLIB_KEY = 'bp:skinlib', SKSEL_KEY = 'bp:skinsel';
+const SK_FIXED = [{ id: 'none', label: 'NONE · PLAIN COLORS' }, { id: 'builtin:ppt', label: 'PPT · QUOTEPILGRIM' },
+  { id: 'tio:tetrio', label: 'TETR.IO DEFAULT', url: TIO + 'skins/minos/tetrio.png' }, { id: 'tio:connected', label: 'CONNECTED 2X', url: TIO + 'skins/minos/connected.2x.png' }];
+function idbGet(name, st, k){
+  return new Promise(res => { if (!window.indexedDB) return res(null); const q = indexedDB.open(name, 1); q.onupgradeneeded = () => q.result.createObjectStore(st);
+    q.onerror = () => res(null); q.onsuccess = () => { try { const g = q.result.transaction(st, 'readonly').objectStore(st).get(k); g.onsuccess = () => res(g.result == null ? null : g.result); g.onerror = () => res(null); } catch(e){ res(null); } }; });
+}
+function idbDel(name, st, k){
+  return new Promise(res => { if (!window.indexedDB) return res(); const q = indexedDB.open(name, 1); q.onupgradeneeded = () => q.result.createObjectStore(st);
+    q.onerror = () => res(); q.onsuccess = () => { try { const tx = q.result.transaction(st, 'readwrite'); tx.objectStore(st).delete(k); tx.oncomplete = () => res(); tx.onerror = () => res(); } catch(e){ res(); } }; });
+}
+function skLib(){ try { return JSON.parse(localStorage.getItem('bp:skinlib') || '[]') || []; } catch(e){ return []; } }
+function skLibSave(L){ try { localStorage.setItem('bp:skinlib', JSON.stringify(L)); } catch(e){} }
+function skSel(){ try { return localStorage.getItem('bp:skinsel') || ''; } catch(e){ return ''; } }
+function skSetSel(id){ try { localStorage.setItem('bp:skinsel', id); } catch(e){} renderSkinSel(); }
+function skCacheable(id){ return id && id !== 'none' && id !== 'pending'; }
+function skCache(id){ if (!skCacheable(id) || !skin) return; idbPut('tp-skinlib', 's', id, JSON.stringify(skin)).catch(() => {}); }
+function renderSkinSel(){
+  const el = $('skinSel'); if (!el) return; const sel = skSel(), L = skLib();
+  const opts = [...SK_FIXED.map(x => [x.id, x.label]), ...L.map(x => [x.id, x.label.toUpperCase()])];
+  if (!opts.some(o => o[0] === sel)) opts.push([sel || 'pending', skin ? 'CUSTOM (UNSAVED)' : 'NONE']);
+  el.innerHTML = opts.map(([v, t]) => `<option value="${tlEsc(v)}">${tlEsc(t)}</option>`).join('');
+  el.value = opts.some(o => o[0] === sel) ? sel : (sel || 'pending');
+  $('skinDel').hidden = !/^lib:/.test(sel);
+}
+function skinInputsFrom(cfg){ $('skinTile').value = String(cfg.tile); $('skinGap').value = String(cfg.gap || 0); $('skinOffX').value = String(cfg.offX || 0); $('skinOffY').value = String(cfg.offY || 0); $('skinCols').value = String(cfg.cols || 0); }
+function skinRemember(label){                                                  // 新皮膚 → 加進清單（同名就覆蓋那一格）
+  label = String(label || 'SKIN').replace(/\.(png|webp|jpe?g|gif|svg|tpse|json)$/i, '').slice(0, 48);
+  const L = skLib(); let e = L.find(x => x.label.toLowerCase() === label.toLowerCase());
+  if (!e){ e = { id: 'lib:' + Date.now().toString(36), label }; L.push(e); skLibSave(L); }
+  skSetSel(e.id); skCache(e.id);
+}
+const applySkinNamed = (src, label) => new Promise(r => { skSetSel('pending'); applySkinFile(src, ok => { if (ok) skinRemember(label); r(ok); }); });
+async function skSelect(id){
+  if (id === 'pending') return;
+  if (id === 'none'){ skSetSel('none'); loadSkin(null); persistSkin(); say('Skin removed'); return; }
+  const raw = await idbGet('tp-skinlib', 's', id);
+  if (raw){ try { const cfg = JSON.parse(raw); skSetSel(id); skinInputsFrom(cfg); loadSkin(cfg); persistSkin(); restyleButtons(); skinMapInputs(); draw(); return; } catch(e){} }
+  const F = SK_FIXED.find(x => x.id === id);
+  try {
+    let src = null;
+    if (id.startsWith('builtin:')){ const B = BUILTIN_SKINS[id.slice(8)]; if (B) src = await plusRaster(B.svg); }
+    else if (F && F.url){ notice('DOWNLOADING ' + F.label + '…'); const f = await fetchAsFile(F.url, 'image'); if (f) src = await fileToDataURL(f); }
+    if (!src){ renderSkinSel(); if (/^lib:/.test(id)) notice('THAT SKIN IS GONE FROM THIS DEVICE — LOAD IT AGAIN'); return; }
+    skSetSel(id); applySkinFile(src, ok => { if (ok){ skCache(id); notice('SKIN APPLIED · ' + (F ? F.label : id)); } });
+  } catch(e){ renderSkinSel(); notice('COULD NOT LOAD THAT SKIN: ' + e.message); }
+}
 function shrinkImage(file, maxH = 420, maxDim = 0){
   return new Promise((res, rej) => {
     const fr = new FileReader();
@@ -18623,7 +18678,7 @@ const LV_HF = 1000 / 60;
 const LV_HAND = [['arr', 'ARR', 0, 5, .1, 'F'], ['das', 'DAS', 1, 20, .1, 'F'], ['dcd', 'DCD', 0, 20, .1, 'F'], ['sdf', 'SDF', 5, 41, 1, 'X']];
 const lvMyHand = () => ({ arr: +((+$('arr').value || 0) / LV_HF).toFixed(1), das: +((+$('das').value || 0) / LV_HF).toFixed(1), dcd: +((+$('dcd').value || 0) / LV_HF).toFixed(1),
   sdf: $('sdfInf').checked ? 41 : Math.round(+$('sdf').value || 6) });
-const lvSkinOpts = () => [{ label: 'MY CONFIG', value: 'cfg' }, { label: 'PLAIN COLORS', value: 'none' }, ...TIO_PRESETS.minos];
+const lvSkinOpts = () => [{ label: 'MY CONFIG', value: 'cfg' }, { label: 'PLAIN COLORS', value: 'none' }, ...TIO_PRESETS.minos, ...skLib().map(x => ({ label: x.label.toUpperCase(), value: x.id }))];
 function lvPc(p){
   LV.pc = LV.pc || {}; const c = LV.pc[p] = LV.pc[p] || {};
   if (!c.hand) c.hand = lvMyHand(); if (!c.skin) c.skin = 'cfg'; return c;
@@ -18632,6 +18687,7 @@ async function lvSkinFor(p){                                                   /
   const v = lvPc(p).skin;
   if (v === 'cfg') return { cfg: store.get(SKIN_KEY) || null };
   if (v === 'none') return { none: 1 };
+  { const id = (SK_FIXED.find(x => x.id === v || x.url === v) || {}).id || v, raw = await idbGet('tp-skinlib', 's', id); if (raw) return { cfg: raw }; }   // 清單裡調好的那一款
   LV.skinCache = LV.skinCache || {}; if (LV.skinCache[v]) return { src: LV.skinCache[v] };
   try {
     const bi = /^builtin:(\w+)$/.exec(v);
@@ -19169,6 +19225,8 @@ function playSplash(){
 /* ---------------- boot ---------------- */
 (function boot(){
   skinMapInputs();
+  try { if (!skSel()){ if (store.get(SKIN_KEY)){ const L = skLib(); L.push({ id: 'lib:mine', label: 'MY SKIN' }); skLibSave(L); localStorage.setItem(SKSEL_KEY, 'lib:mine'); idbPut('tp-skinlib', 's', 'lib:mine', store.get(SKIN_KEY)).catch(() => {}); } else localStorage.setItem(SKSEL_KEY, 'none'); } } catch(e){}
+  renderSkinSel();
   playSplash();
   try {
     const raw = store.get(SKIN_KEY);

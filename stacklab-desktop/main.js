@@ -50,6 +50,34 @@ async function plus(req, u){
   } catch (e) { return new Response(null, { status: 504 }); }
 }
 
+// 抓一次就存硬碟、之後離線也能用（ZC 塔圖／QP 音樂、網站上的 events／abyss／music 資料夾）
+async function cachedGet(targets, file){
+  const hdr = f => ({ 'content-type': mimeOf(f), 'access-control-allow-origin': '*' });
+  if (fs.existsSync(file)) return new Response(await fsp.readFile(file), { headers: hdr(file) });
+  let last = 504;
+  for (const t of targets){
+    try {
+      const r = await net.fetch(t, { bypassCustomProtocolHandlers: true });
+      if (!r.ok){ last = r.status; continue; }
+      const buf = Buffer.from(await r.arrayBuffer());
+      fsp.mkdir(path.dirname(file), { recursive: true }).then(() => fsp.writeFile(file, buf)).catch(() => {});
+      return new Response(buf, { headers: { ...hdr(file), 'content-type': r.headers.get('content-type') || mimeOf(file) } });
+    } catch (e) {}
+  }
+  return new Response(null, { status: last });
+}
+const safeJoin = (base, rel) => { const f = path.join(base, path.normalize(rel).replace(/^(\.\.[\\/])+/, '')); return f.startsWith(base) ? f : null; };
+// 網站版的素材資料夾（abyss／events／flipside-icons 打包在 app 裡；music 太大 → 第一次用到時從網站抓）
+const SITE = 'https://gridless-tetrio.vercel.app';
+// QP 塔圖、音樂：Zenith Clicker 的 assets（jsDelivr 或 GitHub raw，同一個 commit）
+const ZC_RE = /^\/(?:gh\/MrZ626\/ZenithClicker@([0-9a-f]{40})|MrZ626\/ZenithClicker\/([0-9a-f]{40}))\/assets\/(.+)$/;
+function zc(u){
+  const m = ZC_RE.exec(u.pathname); if (!m) return null;
+  const sha = m[1] || m[2], rest = m[3], file = safeJoin(path.join(CACHE(), 'zc', sha), decodeURIComponent(rest));
+  if (!file) return new Response(null, { status: 403 });
+  return cachedGet([`https://cdn.jsdelivr.net/gh/MrZ626/ZenithClicker@${sha}/assets/${rest}`, `https://raw.githubusercontent.com/MrZ626/ZenithClicker/${sha}/assets/${rest}`], file);
+}
+
 // 網站下載時使用者可以順便存一份「自己瀏覽器裡的」素材包（StackLab-*.slpack）；這裡從「下載」資料夾找最新的一份給頁面匯入
 async function packFromDownloads(req){
   try {
@@ -106,13 +134,19 @@ app.whenReady().then(() => {
   Menu.setApplicationMenu(null);
   protocol.handle('https', async req => {
     const u = new URL(req.url);
+    if ((u.hostname === 'cdn.jsdelivr.net' || u.hostname === 'raw.githubusercontent.com') && req.method === 'GET'){ const r = zc(u); if (r) return r; }
     if (u.hostname !== HOST) return net.fetch(req, { bypassCustomProtocolHandlers: true }).catch(() => new Response(null, { status: 502 }));   // 沒網路：回錯誤碼，不要丟例外
     if (u.pathname.startsWith('/tio/')) return tio(req, u);
     if (u.pathname.startsWith('/plus/')) return plus(req, u);
     if (u.pathname === '/__pack') return packFromDownloads(req);
     let p = decodeURIComponent(u.pathname); if (p === '/' || p === '') p = '/index.html';
     const f = path.join(APP_DIR, path.normalize(p).replace(/^(\.\.[\\/])+/, ''));
-    if (!f.startsWith(APP_DIR) || !fs.existsSync(f)) return new Response('not found', { status: 404 });
+    if (!f.startsWith(APP_DIR)) return new Response('not found', { status: 404 });
+    if (!fs.existsSync(f)){                                              // App 裡沒有的素材 → 跟網站拿一次存起來
+      if (!/^\/(music|events|abyss|flipside-icons|flipside)\//.test(p)) return new Response('not found', { status: 404 });
+      const cf = safeJoin(path.join(CACHE(), 'site'), p); if (!cf) return new Response(null, { status: 403 });
+      return cachedGet([SITE + u.pathname], cf);
+    }
     return new Response(await fsp.readFile(f), { headers: { 'content-type': mimeOf(f) } });
   });
   createWindow();
