@@ -11592,20 +11592,22 @@ async function plusLoad(force){
   if (PLUS.busy) return; PLUS.busy = true;
   const st = $('plusState');
   try {
-    if (!force){ try { const c = JSON.parse(store.get('bp:plusList') || 'null'); if (c && Date.now() - c.t < 864e5 && c.list && c.list.length){ PLUS.list = c.list; plusRender(); st.textContent = `${c.list.length} SKINS`; return; } } catch(e){} }
+    if (!force){ try { const c = JSON.parse(store.get('bp:plusList2') || 'null'); if (c && Date.now() - c.t < 864e5 && c.list && c.list.length){ PLUS.list = c.list; plusRender(); st.textContent = `${c.list.length} SKINS`; return; } } catch(e){} }
     st.textContent = 'LOADING THE SKIN LIST…';
     const authors = plusDirs(await plusFetch('data/content/skin/')).filter(h => h.endsWith('/'));
     PLUS.list = []; let done = 0;
     const one = async a => {
       try {
         const files = plusDirs(await plusFetch('data/content/skin/' + a));
-        const metas = files.filter(f => /\.(png|webp)\.json$/i.test(f));
+        const metas = files.filter(f => /\.(png|webp|svg|gif|jpe?g)\.json$/i.test(f));
+        // 有圖但沒有 .json 的也收（用檔名當名字）
+        for (const f of files) if (/\.(png|webp|svg|gif|jpe?g)$/i.test(f) && !files.includes(f + '.json')) PLUS.list.push({ a: a.replace(/\/$/, ''), f, n: f.replace(/\.[a-z]+$/i, ''), d: '', fmt: f.split('.').pop().toLowerCase(), tags: '' });
         for (const m of metas){
           const img = m.replace(/\.json$/i, ''); let j = {};
           try { j = await plusFetch('data/content/skin/' + a + m, 'json'); } catch(e){}
           const fmt = String(j.format || '').toLowerCase();
-          if (fmt && !/raster|connected|png/.test(fmt)) continue;          // 動畫／SVG 版先不收
-          PLUS.list.push({ a: a.replace(/\/$/, ''), f: img, n: j.name || img.replace(/\.(png|webp)$/i, ''), d: String(j.description || '').slice(0, 140), fmt, tags: (j.tags || []).map(t => t.tag || t).join(' ') });
+          // 全部格式都列出來（SVG、動畫也是）：SVG 一樣是單張圖；動畫版會拿第一格來偵測
+          PLUS.list.push({ a: a.replace(/\/$/, ''), f: img, n: j.name || img.replace(/\.[a-z]+$/i, ''), d: String(j.description || '').slice(0, 140), fmt: fmt || img.split('.').pop().toLowerCase(), tags: (j.tags || []).map(t => t.tag || t.name || t).join(' ') });
         }
       } catch(e){}
       st.textContent = `LOADING… ${++done}/${authors.length} AUTHORS · ${PLUS.list.length} SKINS`;
@@ -11613,7 +11615,7 @@ async function plusLoad(force){
     };
     for (let i = 0; i < authors.length; i += 6) await Promise.all(authors.slice(i, i + 6).map(one));
     PLUS.list.sort((x, y) => x.a.localeCompare(y.a) || x.n.localeCompare(y.n));
-    try { store.set('bp:plusList', JSON.stringify({ t: Date.now(), list: PLUS.list })); } catch(e){}
+    try { store.set('bp:plusList2', JSON.stringify({ t: Date.now(), list: PLUS.list })); } catch(e){}
     st.textContent = `${PLUS.list.length} SKINS`; plusRender();
   } catch(e){
     st.textContent = location.hostname === 'stacklab.invalid' ? 'COULD NOT REACH YOU.HAVE.FAIL: CHECK YOUR CONNECTION'
@@ -11622,9 +11624,9 @@ async function plusLoad(force){
   } finally { PLUS.busy = false; }
 }
 function plusRender(){
-  const q = PLUS.q.trim().toLowerCase(), L = (PLUS.list || []).filter(s => !q || (s.n + ' ' + s.a + ' ' + s.tags + ' ' + s.d).toLowerCase().includes(q));
+  const q = PLUS.q.trim().toLowerCase(), L = (PLUS.list || []).filter(s => !q || (s.n + ' ' + s.a + ' ' + s.f + ' ' + s.tags + ' ' + s.d + ' ' + s.fmt).toLowerCase().replace(/[\s_\-]+/g, ' ').includes(q.replace(/[\s_\-]+/g, ' ')));
   const base = PLUS.base || PLUS_DIRECT;
-  $('plusGrid').innerHTML = L.slice(0, 400).map((s, i) => `<button class="plus-card" data-i="${PLUS.list.indexOf(s)}" title="${mpEsc(s.d)}"><img loading="lazy" alt="" src="${base}data/content/skin/${encodeURIComponent(s.a)}/${encodeURIComponent(s.f)}" onerror="this.style.visibility='hidden'"><b>${mpEsc(s.n)}</b><small>${mpEsc(s.a)}</small></button>`).join('')
+  $('plusGrid').innerHTML = L.slice(0, 400).map((s, i) => `<button class="plus-card" data-i="${PLUS.list.indexOf(s)}" title="${mpEsc(s.d)}"><img loading="lazy" alt="" src="${base}data/content/skin/${encodeURIComponent(s.a)}/${encodeURIComponent(s.f)}" onerror="this.style.visibility='hidden'"><b>${mpEsc(s.n)}</b><small>${mpEsc(s.a)}${s.fmt ? ' · ' + mpEsc(s.fmt.toUpperCase()) : ''}</small></button>`).join('')
     || `<p class="plus-empty">${PLUS.list ? 'NO SKINS MATCH' : ''}</p>`;
 }
 async function plusApply(s){
