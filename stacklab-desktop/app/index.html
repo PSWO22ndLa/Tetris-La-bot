@@ -2556,37 +2556,35 @@ document.documentElement.classList.add('booting'); addEventListener('load', func
   .lv-f{ position:relative; border-right:2px solid #1b2433; } .lv-f > b{ position:absolute; top:6px; right:12px; z-index:2; font:400 1.6em var(--hunf); color:#ffd84a; pointer-events:none; }
   .lv-f iframe{ width:100%; height:100%; border:0; display:block; pointer-events:none; background:#07090e; }
   #lvLoad{ position:absolute; inset:0; display:grid; place-items:center; background:#07090e; font-size:1.6em; color:#8aa8d0; } #lvLoad.hidden{ display:none; }
-  /* RIVALS 結算：照 QP 結算畫面（▼ 標題 ▼、大字標籤、發光大數字、深色小格），顏色跟著模式（40L 棕、BLITZ 紅、QP 橘） */
+  /* RIVALS 結算：像 QP 結算一樣，每個人的面板蓋在自己那半邊的盤面位置；顏色跟著模式（40L 棕、BLITZ 紅、QP 橘） */
   #lvRes{ --pn:#4a1c13; --pb:#8b3a25; --bx:#3c150e; --lb:#e3906d; --tx:#ffe1d3; --dm:#7a3a28; --sb:#c07a60; --gl:#ff9e70;
-    position:absolute; inset:0; z-index:5; overflow:auto; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:24px 12px;
-    background:radial-gradient(rgba(10,6,6,.78), rgba(3,3,5,.94) 75%); font-family:var(--t-font); }
+    position:absolute; inset:0; z-index:5; display:grid; grid-template-columns:1fr 1fr; grid-template-rows:1fr auto; font-family:var(--t-font); background:rgba(3,3,5,.72); }
   #lvRes[data-k="40l"]{ --pn:#382b22; --pb:#6b4f3c; --bx:#2a201a; --lb:#c99272; --tx:#f6e3d4; --dm:#6a4c39; --sb:#a97553; --gl:#e6b48c; }
   #lvRes[data-k="blitz"]{ --pn:#4e2c2c; --pb:#8a3b3b; --bx:#3a1f1f; --lb:#e09f9f; --tx:#ffe4e4; --dm:#7d3c3c; --sb:#c98585; --gl:#ff9a9a; }
   #lvRes.hidden{ display:none; }
-  #lvRes .lvr-panel{ width:min(560px, 92vw); background:var(--pn); border:1px solid var(--pb); box-shadow:0 0 0 1px #0008, 0 10px 40px #000a; padding:0 12px 4px; animation:qrUp .65s cubic-bezier(.2,.8,.25,1) both; }
+  #lvRes .lvr-side{ display:flex; align-items:center; justify-content:center; padding:16px 10px 0; min-height:0; overflow:auto; }
+  #lvRes .lvr-panel{ width:min(420px, 44vw); background:var(--pn); border:1px solid var(--pb); box-shadow:0 0 0 1px #0008, 0 10px 40px #000a; padding:0 12px 4px; animation:qrUp .65s cubic-bezier(.2,.8,.25,1) both; }
+  #lvSide2 .lvr-panel{ animation-delay:.08s; }
+  #lvRes .lvr-panel.l{ filter:saturate(.7) brightness(.85); }
   #lvRes .lvr-head{ text-align:center; padding:9px 0 7px; margin:0 -12px 8px; border-bottom:1px dashed color-mix(in srgb, var(--pb) 55%, transparent); color:var(--lb); font-size:17px; letter-spacing:.07em; }
-  #lvRes .lvr-lbl{ font-size:clamp(24px,7vw,34px); letter-spacing:.06em; color:var(--lb); margin:4px 2px 8px; font-weight:700; }
-  #lvRes .lvr-big{ display:grid; grid-template-columns:1fr auto 1fr; align-items:center; background:var(--bx); padding:10px 8px 12px; margin-bottom:8px; }
-  #lvRes .lvr-big > div{ display:flex; flex-direction:column; align-items:center; line-height:1; color:var(--tx); }
-  #lvRes .lvr-big > div > i{ font-style:normal; font-size:15px; letter-spacing:.1em; color:var(--sb); margin-bottom:4px; }
-  #lvRes .lvr-big > div > b{ font-size:clamp(30px,8.5vw,50px); font-weight:700; white-space:nowrap; }
-  #lvRes .lvr-big > div > b small{ font-size:.55em; }
-  #lvRes .lvr-big > div.w > b{ text-shadow:0 0 14px var(--gl), 0 0 30px color-mix(in srgb, var(--gl) 60%, transparent); }
-  #lvRes .lvr-big > div.w > i{ color:#ffd76a; }
-  #lvRes .lvr-big > div.l{ opacity:.55; }
-  #lvRes .lvr-big > em{ font-style:normal; font-size:14px; letter-spacing:.1em; color:var(--dm); padding:0 6px; }
-  #lvRes .lvr-why{ background:var(--bx); text-align:center; padding:7px 4px; margin-bottom:8px; font-size:13px; letter-spacing:.08em; color:var(--sb); }
-  #lvRes .lvr-row{ background:var(--bx); text-align:center; padding:6px 4px 7px; margin-bottom:8px; }
-  #lvRes .lvr-row > i{ display:block; font-style:normal; font-size:12px; letter-spacing:.08em; color:var(--dm); }
-  #lvRes .lvr-row > div{ display:grid; grid-template-columns:1fr auto 1fr; align-items:baseline; }
-  #lvRes .lvr-row b{ font-size:clamp(22px,6vw,30px); color:var(--tx); line-height:1.15; opacity:.6; }
-  #lvRes .lvr-row b.hi{ opacity:1; }
-  #lvRes .lvr-row b small{ font-size:.5em; color:var(--sb); margin-left:3px; }
-  #lvRes .lvr-row span{ font-size:11px; letter-spacing:.08em; color:var(--dm); padding:0 8px; }
-  #lvRes .lvr-again, #lvRes .lvr-back{ font:700 22px var(--t-font); letter-spacing:.08em; cursor:pointer; margin-top:12px; padding:9px 0; width:min(560px, 92vw); border:1px solid var(--pb); }
+  #lvRes .lvr-panel.w .lvr-head{ color:#ffd76a; }
+  #lvRes .lvr-lbl{ font-size:clamp(16px,2.3vw,28px); letter-spacing:.06em; color:var(--lb); margin:4px 2px 8px; font-weight:700; }
+  #lvRes .lvr-big{ background:var(--bx); text-align:center; padding:10px 0 12px; margin-bottom:8px; color:var(--tx); line-height:1; }
+  #lvRes .lvr-big b{ font-size:clamp(32px,5.4vw,76px); font-weight:700; white-space:nowrap; }
+  #lvRes .lvr-big b small{ font-size:.55em; } #lvRes .lvr-big b em{ font-style:normal; font-size:.55em; color:var(--gl); margin-left:.2em; }
+  #lvRes .lvr-panel.w .lvr-big b{ text-shadow:0 0 14px var(--gl), 0 0 34px color-mix(in srgb, var(--gl) 60%, transparent); }
+  #lvRes .lvr-box{ background:var(--bx); text-align:center; padding:6px 4px 7px; margin-bottom:8px; }
+  #lvRes .lvr-box i{ display:block; font-style:normal; font-size:11px; letter-spacing:.08em; color:var(--dm); }
+  #lvRes .lvr-box b{ display:block; font-size:clamp(20px,2.7vw,34px); color:var(--tx); line-height:1.15; }
+  #lvRes .lvr-box b s{ text-decoration:none; font-size:.5em; color:var(--sb); margin:0 2px; }
+  #lvRes .lvr-box small{ display:block; font-size:11px; letter-spacing:.06em; color:var(--sb); }
+  #lvRes .lvr-box.res b{ color:#ffd76a; } #lvRes .lvr-panel.l .lvr-box.res b{ color:#ef6b5b; }
+  #lvRes .lvr-row2{ display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+  #lvRes .lvr-foot{ grid-column:1 / -1; display:flex; flex-direction:column; align-items:center; padding:10px 12px 40px; }
+  #lvRes .lvr-again, #lvRes .lvr-back{ font:700 22px var(--t-font); letter-spacing:.08em; cursor:pointer; padding:9px 0; width:min(560px, 92vw); border:1px solid var(--pb); }
   #lvRes .lvr-again{ background:var(--lb); color:var(--pn); } #lvRes .lvr-again:hover{ filter:brightness(1.12); }
   #lvRes .lvr-back{ margin-top:6px; background:var(--pn); color:var(--lb); font-size:16px; padding:6px 0; } #lvRes .lvr-back:hover{ filter:brightness(1.2); }
-  #lvRes .lv-hint{ font-size:12px; color:var(--sb); opacity:.7; margin-top:8px; letter-spacing:.06em; }
+  #lvRes .lv-hint{ font-size:12px; color:var(--sb); opacity:.7; margin:8px 0 0; letter-spacing:.06em; }
   #lvQuit{ position:absolute; bottom:8px; left:50%; transform:translateX(-50%); z-index:6; font-size:.8em !important; }
   /* RIVALS 開局頁的按鍵表：兩欄，每欄沿用官方 .orow／.ospin */
   .h2h-keys{ display:grid; grid-template-columns:1fr 1fr; gap:0 2em; } .h2h-keys > div > h2{ font:400 1.6em/1.1 var(--hunf); color:var(--h1); margin:.3em 0 .2em; }
@@ -3157,15 +3155,9 @@ document.documentElement.classList.add('booting'); addEventListener('load', func
 <div id="localvs" class="hidden">
   <div id="lvPlay"><div class="lv-f"><b>1P</b><iframe id="lvF1" tabindex="-1" title="1P"></iframe></div><div class="lv-f"><b>2P</b><iframe id="lvF2" tabindex="-1" title="2P"></iframe></div>
     <div id="lvLoad">LOADING…</div>
-    <div id="lvRes" class="hidden"><div class="lvr-panel">
-      <div class="lvr-head">▼ <span id="lvHead">RIVALS</span> ▼</div>
-      <div class="lvr-lbl" id="lvWin"></div>
-      <div class="lvr-big" id="lvBig"></div>
-      <div class="lvr-why" id="lvSub"></div>
-      <div id="lvRows"></div>
-    </div>
-    <button class="lvr-again" id="lvAgain">REMATCH</button><button class="lvr-back" id="lvToSetup">BACK</button>
-    <p class="lv-hint">ENTER: REMATCH · ESC: BACK</p></div>
+    <div id="lvRes" class="hidden"><span id="lvWin" hidden></span><span id="lvSub" hidden></span>
+      <div class="lvr-side" id="lvSide1"></div><div class="lvr-side" id="lvSide2"></div>
+      <div class="lvr-foot"><button class="lvr-again" id="lvAgain">REMATCH</button><button class="lvr-back" id="lvToSetup">BACK</button><p class="lv-hint">ENTER: REMATCH · ESC: BACK</p></div></div>
     <button id="lvQuit" class="obtn" title="Quit (Esc)">QUIT</button></div>
 </div>
 <div id="raceHud" aria-live="polite"><div class="rc-top" id="rcTop"></div><div class="rc-list" id="rcList"></div><div class="rh-feed" id="rcFeed"></div></div>
@@ -18463,23 +18455,24 @@ function lvDecide(winner, why){
   const big = p => { const r = R(p), v = r ? r.v : LV.prog[p] || 0;
     if (K === '40l') return r && r.done ? (() => { const f = raceFmt(r.secs), i = f.lastIndexOf('.'); return i > 0 ? `${f.slice(0, i)}<small>${f.slice(i)}</small>` : f; })() : `${Math.floor(v)}<small>/${goal}</small>`;
     if (K === 'blitz') return dec(v, 0);
-    return `${dec(v, 1)}<small> M</small>`; };
-  const tag = p => winner === p ? `${p}P · WINNER` : !winner ? `${p}P` : `${p}P`;
-  const cls = p => !winner ? 'w' : winner === p ? 'w' : 'l';
-  $('lvHead').textContent = 'RIVALS · ' + (LV_MODES.find(m => m[0] === K) || [, K])[1];
-  $('lvWin').textContent = winner ? `${winner}P WINS` : 'DRAW';
-  $('lvBig').innerHTML = `<div class="${cls(1)}"><i>${tag(1)}</i><b>${big(1)}</b></div><em>VS</em><div class="${cls(2)}"><i>${tag(2)}</i><b>${big(2)}</b></div>`;
-  $('lvSub').textContent = why;
-  // 每一列：兩邊的數字，比較好的那邊亮起來
-  const row = (lbl, f, fmt, higher = true) => { const a = f(S(1)), b = f(S(2)); const hiA = higher ? a >= b : a <= b, hiB = higher ? b >= a : b <= a;
-    return `<div class="lvr-row"><i>${lbl}</i><div><b class="${hiA ? 'hi' : ''}">${fmt(a, S(1))}</b><span>VS</span><b class="${hiB ? 'hi' : ''}">${fmt(b, S(2))}</b></div></div>`; };
-  const pps = s => s.secs > 0 ? s.pcs / s.secs : 0, apm = s => s.secs > 0 ? s.sent / s.secs * 60 : 0;
-  const rows = [];
-  if (K === 'zenith') rows.push(row('FLOOR REACHED', s => s.fl || 1, (v, s) => `<small>F</small>${v}`), row('ATTACK', s => s.sent || 0, (v, s) => `${v}<small>${apm(s).toFixed(1)} APM</small>`));
-  if (K === '40l') rows.push(row('LINES CLEARED', s => Math.min(goal, s.lines || 0), v => `${v}<small>/${goal}</small>`));
-  if (K === 'blitz') rows.push(row('LINES CLEARED', s => s.lines || 0, v => `${v}`));
-  rows.push(row('PIECES PLACED', s => s.pcs || 0, (v, s) => `${v.toLocaleString('en-US')}<small>${pps(s).toFixed(2)} PPS</small>`));
-  $('lvRows').innerHTML = rows.join('');
+    return `${dec(v, 1)}<em>M</em>`; };
+  const pps = x => x.secs > 0 ? x.pcs / x.secs : 0, apm = x => x.secs > 0 ? x.sent / x.secs * 60 : 0;
+  const LBL = { '40l': 'YOUR RESULT', blitz: 'YOUR FINAL SCORE', zenith: 'YOUR FINAL ALTITUDE' };
+  const box = (lbl, val, sub) => `<div class="lvr-box"><i>${lbl}</i><b>${val}</b>${sub ? `<small>${sub}</small>` : ''}</div>`;
+  const mName = (LV_MODES.find(m => m[0] === K) || [, K])[1];
+  for (const p of [1, 2]){
+    const x = S(p), st = !winner || winner === p ? 'w' : 'l', r = R(p);
+    const resTxt = !winner ? 'DRAW' : winner === p ? 'WIN' : 'LOSE';
+    const resSub = K === '40l' && winner !== p ? (r && !r.done ? 'TOPPED OUT' : 'OPPONENT FINISHED FIRST') : why;
+    let rows = K === 'zenith'
+      ? `<div class="lvr-row2">${box('FLOOR REACHED', `<s>F</s>${x.fl || 1}`, x.fn || '')}${box('ATTACK', x.sent || 0, `${apm(x).toFixed(2)} APM`)}</div>`
+      : `<div class="lvr-row2">${box('LINES CLEARED', K === '40l' ? `${Math.min(goal, x.lines || 0)}<s>/${goal}</s>` : (x.lines || 0))}${box('TIME', raceFmt(x.secs || 0))}</div>`;
+    rows += box('PIECES PLACED', (x.pcs || 0).toLocaleString('en-US'), `${pps(x).toFixed(2)} PPS`);
+    $('lvSide' + p).innerHTML = `<div class="lvr-panel ${st}"><div class="lvr-head">▼ ${p}P · ${mName} ▼</div>
+      <div class="lvr-lbl">${LBL[K] || 'YOUR RESULT'}</div><div class="lvr-big"><b>${big(p)}</b></div>
+      <div class="lvr-box res"><i>RIVALS</i><b>${resTxt}</b><small>${resSub}</small></div>${rows}</div>`;
+  }
+  $('lvWin').textContent = winner ? `${winner}P WINS` : 'DRAW'; $('lvSub').textContent = why;
   $('lvRes').dataset.k = K;
   setTimeout(() => { $('lvRes').classList.remove('hidden'); }, 1200);
 }
