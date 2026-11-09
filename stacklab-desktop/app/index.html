@@ -18471,6 +18471,13 @@ function lvStart(){
     clearTimeout(LV.fbT); LV.fbT = setTimeout(() => { if (LV.st === 'play' && !(LV.ready[1] && LV.ready[2])){ LV.ready = {}; viaDoc(); } }, 12000);   // 網址開不了 → 改用原始碼
   } else if (!viaDoc()){ $('lvLoad').textContent = 'COULD NOT START HERE: OPEN THE GAME FROM THE WEBSITE OR THE DESKTOP APP'; }
 }
+/* RIVALS 子視窗不一定讀得到你存的皮膚：本機雙擊 HTML 時子視窗是 srcdoc（不透明來源），有些瀏覽器會擋 localStorage／IndexedDB，
+   讀不到就變回預設方塊、沒有 board。→ 子視窗一好，外層就把方塊皮膚、board 皮膚和 IndexedDB 裡的 TETR.IO 圖檔直接傳過去 */
+async function lvSendTex(p){
+  const tex = { skin: store.get(SKIN_KEY), board: { normal: store.get(BOARD_SKIN_KEY.normal), rev: store.get(BOARD_SKIN_KEY.rev) }, extra: {} };
+  try { for (const id of await assetIO('keys')){ if (String(id).startsWith('bp:font:') || id === 'bp:custbg') continue; const v = await assetIO('get', id); if (v) tex.extra[id] = v; } } catch(e){}
+  lvSend(p, { t: 'tex', tex });
+}
 // 結算面板的 STATS（跟 QP 結算一樣有 OVERVIEW／FULL 兩個分頁；資料晚到就晚點補上）
 function lvDetRender(p){
   const el = $('lvSt' + p); if (!el) return; const d = LV.det && LV.det[p], full = !!(LV.detFull && LV.detFull[p]);
@@ -18511,7 +18518,7 @@ function lvDecide(winner, why){
 addEventListener('message', e => {
   if (LOCAL_P || LV.st === 'off' || !LV.st) return; const m = e.data || {}; const p = m.p; if (p !== 1 && p !== 2) return;
   if (e.source !== lvWin(p)) return;
-  if (m.t === 'ready'){ LV.ready[p] = true; if (LV.ready[1] && LV.ready[2] && LV.pend){ const f = LV.pend; LV.pend = null; f(); } }
+  if (m.t === 'ready'){ LV.ready[p] = true; lvSendTex(p); if (LV.ready[1] && LV.ready[2] && LV.pend){ const f = LV.pend; LV.pend = null; f(); } }
   else if (m.t === 'prog'){ LV.prog[p] = m.v; if (m.s) (LV.st2 = LV.st2 || {})[p] = m.s; lvSend(3 - p, { t: 'opp', v: m.v }); }
   else if (m.t === 'det'){ if (m.d) (LV.det = LV.det || {})[p] = m.d; lvDetRender(p); }
   else if (m.t === 'done'){ LV.res[p] = m; if (m.s) (LV.st2 = LV.st2 || {})[p] = m.s; if (m.d) (LV.det = LV.det || {})[p] = m.d; lvSend(3 - p, { t: 'opp', v: m.v, fin: m.done ? m.secs : null, dead: m.done ? null : m.secs });
@@ -18582,6 +18589,14 @@ if (LOCAL_P){
   document.body.classList.add('localp', 'localp' + LOCAL_P);
   addEventListener('message', e => {
     if (e.source !== window.parent) return; const m = e.data || {};
+    if (m.t === 'tex'){
+      const T = m.tex || {};
+      try { if (T.skin && store.get(SKIN_KEY) !== T.skin){ try { store.set(SKIN_KEY, T.skin); } catch(e){} const cfg = JSON.parse(T.skin); if (cfg && cfg.v === 3 && cfg.map) loadSkin(cfg); else applySkinFile(cfg.src); } } catch(e){}
+      let bd = false; for (const k of ['normal', 'rev']){ const v = T.board && T.board[k]; if (v && store.get(BOARD_SKIN_KEY[k]) !== v){ try { store.set(BOARD_SKIN_KEY[k], v); } catch(e){} bd = true; } }
+      if (bd) loadBoardSkin();
+      for (const [id, src] of Object.entries(T.extra || {})){ if (TIO_X[id]) continue; if (String(src).startsWith('FNT:')) { try { parseBMF(src.slice(4)); } catch(e){} } else useExtra(id, src); }
+      return;
+    }
     if (m.t === 'start'){
       if (m.keys) LOCAL_CUR = m.keys;
       if (climb){ climb.over = true; active = null; climb = null; }
