@@ -368,7 +368,7 @@ document.documentElement.classList.add('booting'); addEventListener('load', func
   /* 對戰中：RETRY／QUIT 在右上角，REC 在它們下面；下方觸控鍵半透明、沒有底板 */
   /* TL 比分條（實機：畫面最上方正中間，你的名字＋藍底分數 - 紅底分數＋對手名字） */
   #tlScore{ display:none; position:absolute; top:4px; left:50%; transform:translateX(-50%); z-index:5; align-items:center; gap:6px; padding:3px 10px; background:linear-gradient(90deg,rgba(20,40,120,.0),rgba(20,28,60,.55) 30%,rgba(60,14,20,.55) 70%,rgba(120,20,30,0)); font-family:var(--t-font); pointer-events:none; white-space:nowrap; }
-  body.game.tl #tlScore{ display:flex; }
+  body.game.tl #tlScore{ display:flex; } #tlScore[hidden]{ display:none !important; }
   #tlScore .n{ font:700 11px var(--t-font); letter-spacing:.06em; max-width:28vw; overflow:hidden; text-overflow:ellipsis; }
   #tlScore .n.l{ color:#8fa2ff; } #tlScore .n.r{ color:#ff7a7a; }
   #tlScore .s{ font:700 20px/1 var(--t-font); font-style:normal; color:#fff; min-width:24px; text-align:center; padding:3px 4px 2px; }
@@ -2569,6 +2569,15 @@ document.documentElement.classList.add('booting'); addEventListener('load', func
   #lvPlay{ position:absolute; inset:0; display:grid; grid-template-columns:1fr 1fr; }
   .lv-f{ position:relative; border-right:2px solid #1b2433; } .lv-f > b{ position:absolute; top:6px; right:12px; z-index:2; font:400 1.6em var(--hunf); color:#ffd84a; pointer-events:none; }
   .lv-f iframe{ width:100%; height:100%; border:0; display:block; pointer-events:none; background:#07090e; }
+  #lvTl{ position:absolute; left:50%; top:10px; transform:translateX(-50%); z-index:6; display:flex; align-items:center; gap:12px; padding:6px 18px; pointer-events:none;
+    background:linear-gradient(90deg,rgba(20,40,120,0),rgba(20,28,60,.85) 25%,rgba(60,14,20,.85) 75%,rgba(120,20,30,0)); font-family:var(--t-font,var(--hunf)); transition:top .45s cubic-bezier(.2,.8,.2,1), transform .45s cubic-bezier(.2,.8,.2,1); }
+  #lvTl.hidden{ display:none; } #localvs.tlon .lv-f > b{ display:none; }
+  #lvTl .n{ font:700 22px var(--t-font,var(--hunf)); letter-spacing:.08em; } #lvTl .n:first-child{ color:#8fa2ff; } #lvTl .n:nth-child(5){ color:#ff7a7a; }
+  #lvTl .s{ font:700 46px/1 var(--t-font,var(--hunf)); font-style:normal; color:#fff; min-width:58px; text-align:center; padding:6px 10px 4px; }
+  #lvTl .s.l{ background:#2846c8; } #lvTl .s.r{ background:#c42536; } #lvTl em{ font:700 30px var(--t-font,var(--hunf)); font-style:normal; color:#c8cfdd; }
+  #lvTl small{ position:absolute; left:50%; top:100%; transform:translateX(-50%); font:700 13px var(--t-font,var(--hunf)); letter-spacing:.2em; color:#c8cfdd; white-space:nowrap; margin-top:4px; }
+  #lvTl.big{ top:50%; transform:translate(-50%,-50%) scale(2.1); }
+  #lvTl .s.pop{ animation:tlsPop .5s ease-out; }
   #lvLoad{ position:absolute; inset:0; display:grid; place-items:center; background:#07090e; font-size:1.6em; color:#8aa8d0; } #lvLoad.hidden{ display:none; }
   /* RIVALS 結算：像 QP 結算一樣，每個人的面板蓋在自己那半邊的盤面位置；顏色跟著模式（40L 棕、BLITZ 紅、QP 橘） */
   #lvRes{ --pn:#4a1c13; --pb:#8b3a25; --bx:#3c150e; --lb:#e3906d; --tx:#ffe1d3; --dm:#7a3a28; --sb:#c07a60; --gl:#ff9e70;
@@ -3186,6 +3195,7 @@ document.documentElement.classList.add('booting'); addEventListener('load', func
 </div></div>
 <div id="localvs" class="hidden">
   <div id="lvPlay"><div class="lv-f"><b>1P</b><iframe id="lvF1" tabindex="-1" title="1P"></iframe></div><div class="lv-f"><b>2P</b><iframe id="lvF2" tabindex="-1" title="2P"></iframe></div>
+    <div id="lvTl" class="hidden"><b class="n">1P</b><i class="s l">0</i><em>-</em><i class="s r">0</i><b class="n">2P</b><small></small></div>
     <div id="lvLoad">LOADING…</div>
     <div id="lvRes" class="hidden"><span id="lvWin" hidden></span><span id="lvSub" hidden></span>
       <div class="lvr-side" id="lvSide1"></div><div class="lvr-side" id="lvSide2"></div>
@@ -10151,6 +10161,7 @@ function startClimb(kind = 'qp', opts = {}){
     me: kind === 'league' ? { score: opts.keepScore ? opts.keepScore.me : 0, tot: opts.keepScore ? opts.keepScore.tot : null, otot: opts.keepScore ? opts.keepScore.otot : null } : null,
   };
   if (climb.opp && opts.keepScore) climb.opp.score = opts.keepScore.opp;
+  if (kind === 'league' && opts.lv && opts.seed){ let a = opts.seed >>> 0 || 1; climb.rng = () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }   // RIVALS TL：兩邊同種子＝同一串方塊
   if (isZen()){ const z = zenSave(); climb.zenLv = z.level || 1; climb.zenProg = z.progress || 0; climb.score = z.score || 0; }   // 官方 ZEN 從存檔的等級／進度／分數接著玩
   queue = []; bag = []; holdType = (climb.tut && climb.tut.R && climb.tut.R.hold) || null; holdUsed = false;   // PC 表練習：hold 先放 I
   combo = -1; b2b = -1; clearMsg = null;
@@ -12975,8 +12986,9 @@ function roundEnd(winner){
   tlOv('<div class="game">FINISH!</div>', 1150);
   const keep = { me: me.score, opp: o.score, tot: me.tot, otot: me.otot };
   // 實機節奏（錄影）：頂死 → 1.2 秒比分滑入（scoreslide_in）→ 1.5 秒亮分數（showscore）→ 2.5 秒滑出（scoreslide_out）→ 倒數
-  setTimeout(() => { sfxEv('scorein', 'scoreslide_in'); setTimeout(() => sfxEv('showscore', 'showscore'), 1500); setTimeout(() => sfxEv('scoreout', 'scoreslide_out'), 3900);
-    tlOv(tlScoreHtml(me.score, o.score, myName, opName, ft), 4000).then(() => { if (climb && climb.kind === 'league') startClimb('league', { ...climb.opts, keepScore: keep }); }); }, 1200);
+  const lvq = climb.opts.lv, sfxOk = !lvq || LOCAL_P === 1;                   // RIVALS TL：比分由外層在中間大字顯示一份；音效只放一次
+  setTimeout(() => { if (sfxOk){ sfxEv('scorein', 'scoreslide_in'); setTimeout(() => sfxEv('showscore', 'showscore'), 1500); setTimeout(() => sfxEv('scoreout', 'scoreslide_out'), 3900); }
+    (lvq ? new Promise(r => setTimeout(r, 4000)) : tlOv(tlScoreHtml(me.score, o.score, myName, opName, ft), 4000)).then(() => { if (climb && climb.kind === 'league') startClimb('league', { ...climb.opts, keepScore: keep }); }); }, 1200);
 }
 
 /* --- 隨機攻擊：多數是小攻擊，偶爾出 spike 觸發 Windup，機率隨樓層上升 ---
@@ -13137,6 +13149,7 @@ function tlScoreSync(){
   const on = !!(climb && climb.kind === 'league' && climb.me && climb.opp);
   document.body.classList.toggle('tl', on); if (!on) return;
   const el = $('tlScore'); if (!el) return;
+  const hideS = !!climb.opts.lv; if (el.hidden !== hideS) el.hidden = hideS; if (hideS) return;
   const [nl, sl, , sr, nr] = el.children, me = String(climb.me.score), op = String(climb.opp.score);
   const myName = profName(), opName = (climb.opp.name || 'OPPONENT').toUpperCase();
   if (nl.textContent !== myName) nl.textContent = myName;
@@ -18629,6 +18642,13 @@ async function lvSkinFor(p){                                                   /
   } catch(e){}
   return { cfg: store.get(SKIN_KEY) || null };
 }
+const lvSeed = () => ((Math.random() * 2 ** 31) | 0) + 1;                      // TL：兩邊同一個種子 → 同一串 7-bag（官方 TL 兩人方塊順序一樣）
+function lvTlShow(who){                                                        // RIVALS TL：比分只在中間顯示一份（大字）
+  const el = $('lvTl'); if (!el) return; const on = LV.kind === 'league' && LV.st === 'play' && !!LV.tl;
+  el.classList.toggle('hidden', !on); $('localvs').classList.toggle('tlon', on); if (!on){ el.classList.remove('big'); return; }
+  const [, sl, , sr] = el.children; sl.textContent = LV.tl.s[1]; sr.textContent = LV.tl.s[2]; el.querySelector('small').textContent = 'FIRST TO ' + LV.goal.league;
+  const e = who === 1 ? sl : who === 2 ? sr : null; if (e){ e.classList.remove('pop'); void e.offsetWidth; e.classList.add('pop'); }
+}
 function renderH2HPre(){
   lvLoad(); h2hMods(false); const el = $('solopre'), M = SOLO_PRE.h2h, o = soloOpt('h2h'), k = LV.kind;
   el.dataset.t = LV_T(k); document.body.dataset.menu = LV_T(k);                         // 點哪個模式，整頁就換那個模式的顏色
@@ -18702,8 +18722,8 @@ function lvStart(){
   LV.st = 'play'; $('localvs').dataset.st = 'play'; $('lvRes').classList.add('hidden'); LV.decided = false; LV.res = {}; LV.prog = {}; LV.st2 = {}; LV.det = {}; LV.detFull = {};
   const go = async () => { const song = LV.kind === '40l' ? soloOpt('h2h').song : undefined, mods = [...pickedMods].filter(m => !['world', 'duo', 'sun'].includes(m));
     const sk = await Promise.all([lvSkinFor(1), lvSkinFor(2)]); $('lvLoad').classList.add('hidden'); if (LV.st !== 'play') return;
-    LV.tl = { s: { 1: 0, 2: 0 }, r: 0, win: 0 };
-    for (const p of [1, 2]) lvSend(p, { t: 'start', kind: LV.kind, goal: LV.kind === 'league' ? LV.goal.league : LV.goal['40l'], keys: LV.keys[p], song, mods, hand: lvPc(p).hand, skin: sk[p - 1] }); };
+    LV.tl = { s: { 1: 0, 2: 0 }, r: 0, win: 0, seed: lvSeed() }; lvTlShow();
+    for (const p of [1, 2]) lvSend(p, { t: 'start', kind: LV.kind, goal: LV.kind === 'league' ? LV.goal.league : LV.goal['40l'], keys: LV.keys[p], song, mods, hand: lvPc(p).hand, skin: sk[p - 1], seed: LV.tl.seed }); };
   if (LV.ready[1] && LV.ready[2]) return go();
   $('lvLoad').classList.remove('hidden'); LV.pend = go;
   const viaDoc = () => { const H = lvSelfHTML(); if (!H) return false; for (const p of [1, 2]){ const f = $('lvF' + p); f.removeAttribute('src'); f.srcdoc = `<script>window.__LOCAL_P=${p}<\/script>` + H; } return true; };
@@ -18726,8 +18746,9 @@ function lvDetRender(p){
   el.innerHTML = d ? (full ? d.full : d.ov) : '<div class="qr-row"><span>LOADING…</span></div>';
   const t = el.parentNode.querySelector('.lvr-tabs'); if (t) t.querySelectorAll('button').forEach(b => b.classList.toggle('on', (b.dataset.t === 'full') === full));
 }
+function lvDecideTl(){ const el = $('lvTl'); $('localvs').classList.remove('tlon'); if (el){ el.classList.add('hidden'); el.classList.remove('big'); } clearTimeout(LV.tlBigT); }
 function lvDecide(winner, why){
-  if (LV.decided) return; LV.decided = true;
+  if (LV.decided) return; LV.decided = true; lvDecideTl();
   for (const p of [1, 2]) lvSend(p, { t: 'stop', res: !winner ? 'draw' : p === winner ? 'win' : 'lose' });
   const K = LV.kind, goal = LV.goal['40l'], S = p => (LV.st2 && LV.st2[p]) || {}, R = p => LV.res[p];
   const dec = (x, d) => { const t = (+x || 0).toFixed(d).split('.'); return `${(+t[0]).toLocaleString('en-US')}${d ? `<small>.${t[1]}</small>` : ''}`; };
@@ -18768,7 +18789,8 @@ addEventListener('message', e => {
   else if (m.t === 'det'){ if (m.d) (LV.det = LV.det || {})[p] = m.d; lvDetRender(p); }
   else if (m.t === 'atk'){ if (!LV.decided) lvSend(3 - p, { t: 'atk', n: m.n }); }
   else if (m.t === 'ko'){ const T = LV.tl; if (!T || T.win || m.r !== T.r) return;              // 同一局只認第一個頂死的
-    T.r++; T.s[3 - p]++; for (const q of [1, 2]) lvSend(q, { t: 'rnd', loser: p });
+    T.r++; T.s[3 - p]++; T.seed = lvSeed(); for (const q of [1, 2]) lvSend(q, { t: 'rnd', loser: p, seed: T.seed });
+    lvTlShow(3 - p); if (T.s[3 - p] < LV.goal.league){ const tb = $('lvTl'); clearTimeout(LV.tlBigT); LV.tlBigT = setTimeout(() => { tb.classList.add('big'); LV.tlBigT = setTimeout(() => tb.classList.remove('big'), 3600); }, 1200); }
     if (T.s[3 - p] >= LV.goal.league){ T.win = 3 - p; clearTimeout(LV.tlT); LV.tlT = setTimeout(() => lvDecide(T.win, `${T.s[1]} - ${T.s[2]} · FIRST TO ${LV.goal.league}`), 5000); } }
   else if (m.t === 'done' && LV.kind === 'league'){ LV.res[p] = m; if (m.s) (LV.st2 = LV.st2 || {})[p] = m.s; if (m.d) (LV.det = LV.det || {})[p] = m.d;
     const T = LV.tl; if (T && T.win && LV.res[1] && LV.res[2]){ clearTimeout(LV.tlT); lvDecide(T.win, `${T.s[1]} - ${T.s[2]} · FIRST TO ${LV.goal.league}`); } }
@@ -18780,7 +18802,7 @@ addEventListener('message', e => {
 if (!LOCAL_P){
   $('goLocalVs').onclick = lvOpen;
   $('lvAgain').onclick = lvStart;
-  const toSetup = () => { for (const p of [1, 2]) lvSend(p, { t: 'quit' }); LV.st = 'setup'; $('localvs').classList.add('hidden'); $('lvRes').classList.add('hidden'); sfxEv('menuback', 'menuback', .7); openSoloPre('h2h'); };
+  const toSetup = () => { lvDecideTl(); for (const p of [1, 2]) lvSend(p, { t: 'quit' }); LV.st = 'setup'; $('localvs').classList.add('hidden'); $('lvRes').classList.add('hidden'); sfxEv('menuback', 'menuback', .7); openSoloPre('h2h'); };
   $('lvToSetup').onclick = toSetup; $('lvQuit').onclick = toSetup;
   $('lvRes').addEventListener('click', e => { const b = e.target.closest('.lvr-tabs button'); if (!b) return; const p = +b.parentNode.dataset.p;
     (LV.detFull = LV.detFull || {})[p] = b.dataset.t === 'full'; sfxEv('menutap', 'menutap', .6); lvDetRender(p); });
@@ -18856,7 +18878,7 @@ if (LOCAL_P){
       if (climb){ climb.over = true; active = null; climb = null; }
       const cmp = m.kind !== '40l';                                                // 40L 是競速；BLITZ 比分數、QP 比高度（各自照原本規則打到結束）
       const race = { kind: m.kind, goal: cmp ? 0 : m.goal, cmp, local: true, players: [{ name: LOCAL_P === 1 ? '2P' : '1P', remote: true, pps: 0, apm: 0 }] };
-      if (m.kind === 'league') startClimb('league', { lv: true, ft: Math.max(1, m.goal | 0), oppName: LOCAL_P === 1 ? '2P' : '1P', unranked: true });
+      if (m.kind === 'league') startClimb('league', { lv: true, ft: Math.max(1, m.goal | 0), oppName: LOCAL_P === 1 ? '2P' : '1P', unranked: true, seed: m.seed });
       else if (m.kind === 'zenith'){ pickedMods = new Set(m.mods || []); startClimb('qp', { race }); }
       else startClimb('practice', { sub: m.kind, race, song: m.song });
     } else if (m.t === 'opp'){
@@ -18873,7 +18895,7 @@ if (LOCAL_P){
     } else if (m.t === 'atk'){                                                  // TL：對面打過來的垃圾（照 TL 一樣走 20 幀延遲）
       if (climb && climb.kind === 'league' && !climb.over && climb.opp){ climb.opp.sent = (climb.opp.sent || 0) + m.n; climbReceive(m.n); sfxEv('impact', 'impact'); }
     } else if (m.t === 'rnd'){                                                  // TL：外層判定這局誰輸（兩邊同時死也只算先到的那個）
-      if (climb && climb.kind === 'league'){ climb.over = false; roundEnd(m.loser === LOCAL_P ? 'opp' : 'me'); }
+      if (climb && climb.kind === 'league'){ if (m.seed) climb.opts.seed = m.seed; climb.over = false; roundEnd(m.loser === LOCAL_P ? 'opp' : 'me'); }
     } else if (m.t === 'quit'){ if (climb){ climb.over = true; active = null; } }
     else if (m.t === 'key'){ try { document.body.dispatchEvent(new KeyboardEvent(m.type, { code: m.code, key: m.key, bubbles: true, cancelable: true })); } catch(err){} }
   });
