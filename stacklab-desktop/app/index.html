@@ -4034,7 +4034,7 @@ const BGM_CALM = ['honemi-ni-shimiiru-karasukaze', 'inorimichite', 'kaze-no-sanp
   'madobe-no-hidamari', 'minamoto', 'sora-no-sakura', 'suiu', 'freshherb-wreath-wo-genkan-ni'];
 const BGM_BATTLE = ['back-water', 'burning-heart', 'hayate-no-sei', 'ice-eyes', 'ima-koso', 'risky-area', 'chiheisen-wo-koete',
   'moyase-toushi-yobisamase-tamashii', 'naraku-heno-abyssmaze', 'samurai-sword', 'super-machine-soul', 'uchuu-5239', 'ultra-super-heros'];
-const BGM = { el: null, cur: null, want: null, bad: new Set() };
+var BGM = { el: null, cur: null, want: null, bad: new Set() };
 // 滑桿 0–100；實際音量用平方曲線（人耳對音量是對數感受，線性的 50% 聽起來還是很大聲）
 try { if (!localStorage.getItem('bp:volv2')){ const o = localStorage.getItem('bp:bgmvol'); if (o !== null) localStorage.setItem('bp:bgmvol', String(Math.round(Math.pow(+o / 100, 2) * 100))); localStorage.setItem('bp:volv2', '1'); } } catch(e){}
 const bgmVolRaw = () => { try { const v = localStorage.getItem('bp:bgmvol'); return v === null ? 100 : +v; } catch(e){ return 100; } };
@@ -4173,7 +4173,7 @@ const ZM_TITLE = { f0:'Watchful Eye', f1:'Divine Registration', f2:'Zenith Hotel
   f0r:'Awaiting Judgement', f1r:'Desecrated Ruins', f2r:'The Age of Vanity', f3r:'A Rigged Game', f4r:'Spectacles of Violence',
   f5r:'The Past Repeats', f6r:'Damning Evidence', f7r:'Cryptic Heresy', f8r:'Futile Ambition', f9r:'Mere Sacrifices', f10r:'False God',
   f1ex:'Infernal Registration', tera:'Schnellfeuer BULLET', terar:'Kugelhagel OVERDRIVE' };
-const ZM = { key: null, layers: [], bad: new Set(), stems: [], cur: null, gen: 0, out: null, loading: false, blocked: false };
+var ZM = { key: null, layers: [], bad: new Set(), stems: [], cur: null, gen: 0, out: null, loading: false, blocked: false };
 const zmUrl = (f, b = 0) => ZC_BASES[b] + 'music/' + f + '.ogg';
 // ── QP 音樂：Web Audio 版。舊版每個聲部一個 <audio>，手機上各自緩衝、各自開始 → 聲部錯開，聽起來像好幾首疊在一起。
 // 現在：抓下來（壓縮檔留快取）→ 一個一個解碼（32kHz）→ 按音量混成「一條」音軌 → 用 AudioBufferSource 精準循環。
@@ -4558,7 +4558,7 @@ function lockSfx(cleared, spin, difficult, prevCombo, prevB2b, pc, nowCombo){
     sfxEv('combo', `combo_${c}${pw ? '_power' : ''}`, `combo_${c}`, pw ? (a >= 7 ? 2.2 : 1.75) : 1); if (pw) fireAdd(5); }, 0);
 }
 
-const CANVAS_FONT = '"TP-HUN","Roboto Condensed","Arial Narrow",sans-serif';   // 畫布文字：有上傳 HUN 就用 HUN
+var CANVAS_FONT = '"TP-HUN","Roboto Condensed","Arial Narrow",sans-serif';   // 畫布文字：有上傳 HUN 就用 HUN
 /* ---------------- constants ---------------- */
 let W = 10;                                // 盤面寬；SNOWBALL BOARD 會從 4 長到 20
 let VISIBLE = 20;                          // 可視列數；遊戲模式由 climb.vis 決定（Last Stand 是 14）
@@ -7471,7 +7471,7 @@ function lbApply(o, d){
 }
 
 // 運算放到 Web Worker：手機上一次決策可能要 50–100ms，在主執行緒算會讓你的畫面卡一下
-let LBWK = null, LBWK_id = 0; const LBWK_cb = new Map();
+var LBWK = null, LBWK_id = 0; const LBWK_cb = new Map();
 function lbWorker(){
   if (LBWK !== null) return LBWK || null;
   try {
@@ -10079,7 +10079,7 @@ const bigClear = (n, spin, mini) => spin ? (mini ? n : 12 + 2 * (n - 5)) : 5 + (
 // 官方 Quick Play 類別的常數（tetrio.js）
 const ZEN_GBUMP = [0, .48, .3, .3, .3, .3, .3, .3, .3, .3, .3, .3, .3, .3, .3, .3], ZEN_GLD = [0, 30, 29, 28, 27, 26, 24, 22, 20, 18, 17, 17, 17, 16, 16, 16], ZEN_GRLD = [0, 24, 22, 20, 18, 16, 15, 14, 13, 12, 12, 12, 11, 11, 11, 11];   // 本站 F10–F14 夾在官方 F9／F10 之間   // F10 THE OBSERVATORY 夾在官方 F9／F10 中間
 const ZEN_GLD0 = ZEN_GLD.slice(0, 10), ZEN_GRLD0 = ZEN_GRLD.slice(0, 10), ZEN_TOPV = [ZEN_GLD[ZEN_GLD.length - 1], ZEN_GRLD[ZEN_GRLD.length - 1]];
-let climb = null, pickedMods = new Set();
+var climb = null, pickedMods = new Set();
 
 // Climb Speed 各階顏色、樓層主色（數值取自 Zenith Clicker 的設計，畫法是自己的）
 const RANK_CLR = ['rgba(255,255,255,.26)','#ff1a00','#ffb300','#80ff00','#00b3ff','#ff1aff','#ffcc80','#99ffcc','#66e6ff','#ffb3ff'];
@@ -10762,7 +10762,7 @@ function finishSolo(done){
 const SOLO_OPT_DEF = { pro:false, alert:false, retry:false, stride:false, song:'RANDOMcalm', slots:['', '', '', '', ''] };
 function soloOpt(k){ try { const all = JSON.parse(localStorage.getItem('bp:soloopt') || '{}'); const o = Object.assign({}, SOLO_OPT_DEF, all[k] || {}); o.slots = [0, 1, 2, 3, 4].map(i => (o.slots || [])[i] || ''); return o; } catch(e){ return { ...SOLO_OPT_DEF, slots:['', '', '', '', ''] }; } }
 function soloOptSet(k, o){ try { const all = JSON.parse(localStorage.getItem('bp:soloopt') || '{}'); all[k] = o; localStorage.setItem('bp:soloopt', JSON.stringify(all)); } catch(e){} }
-let soloPreKind = '40l';
+var soloPreKind = '40l';
 const SOLO_PRE = {
   '40l':  { t:'40 LINES', d:"clear 40 lines in the shortest amount of time possible.<br>score doesn't matter here, just go for the world record!", f:'press START to begin playing' },
   blitz:  { t:'BLITZ', d:'get as many points as possible within 2 minutes!<br>clear lines to level up and gain more points and speed!', f:'press START to begin playing' },
@@ -14753,7 +14753,7 @@ if (duoMate) qcSys(`${duoMate} is in your party.`);
    - ▼ SPECTATE ▼：面板收起來，看排行第一的人在打（LIVE／SPECTATING 名字／FOLLOWING ‹ FREE ›），▲ PLAY ▲ 回到面板
    名字：抓得到 TETRA CHANNEL 就用 QP 週榜（records/zenith_global）上的真實玩家名，抓不到就隨機
    UI DETAIL（CONFIG）：HIGH 全開；MEDIUM 小盤面少、觀戰的 bot 用簡單 AI、排行 2.5 秒更新；LOW 只有靜態背景＋排行開場算一次 */
-const QPL = { cam: 10, camCur: 10, range: 30, scrollAway: 0, players: [], ghosts: [], spec: null, specOn: false, follow: 'auto', raf: 0, last: 0, lbT: 0, count: 320 + ((Math.random() * 140) | 0),
+var QPL = { cam: 10, camCur: 10, range: 30, scrollAway: 0, players: [], ghosts: [], spec: null, specOn: false, follow: 'auto', raf: 0, last: 0, lbT: 0, count: 320 + ((Math.random() * 140) | 0),
   bgKey: '', bgC: null, names: null, fetching: false, slots: [], slotKey: '' };
 const QPL_OFF = ['BLUEFOX','NEOTETRO','ZENSPIN','TINYDROP','MEGAWAVE','VOIDBYTE','PIXELOWL','LUCKYBEAR','FASTACE','SKYMOON','IRONSTORM','SNOWLEAF','RUBYKID','STARREX','ECHOLYNX','NOVACAT',
   'KIRIN_','MOCHI42','T_SPINNER','HAKU','QUADGOD','B2BKING','LATTE','PERFECTO','CHEESEDIG','STACKMASTER','SOFTDROP','HARDDROP','TSDLOVER','OSPIN','ZEN_DAD','PURPLE_T'];
@@ -15959,7 +15959,7 @@ const loadSkinFile = async f => { const src = await fileToDataURL(f); return new
 // match：下載後的檔名（Android 重複下載會變成 xxx (1).png，所以只比關鍵字）
 /* ---- 其他 TETR.IO 圖檔（存在 IndexedDB 'tp-assets'，太大不放 localStorage）----
    路徑全部取自 TETR.IO PLUS 的 generic-texture-request-filter.js。版面已知的才接到遊戲裡，其他先收著 */
-const TIO_X = {};                      // id → Image（已載入）
+var TIO_X = {};                      // id → Image（已載入）
 const assetDB = () => new Promise((res, rej) => {
   if (!window.indexedDB) return rej(new Error('no IndexedDB'));
   const q = indexedDB.open('tp-assets', 1);
@@ -18244,7 +18244,7 @@ function flatLogo(text, c1, c2){
 // 官方選單圖示：tetr.io/res/<name>.svg（經 /tio 代理）；載不到（離線／file://）就退回自己畫的方塊字
 /* ── MULTIPLAYER：ROOM LISTING／CUSTOM GAME／ROYALE（照官方 #multi_menu、#roomlisting_scroller、#roomview 的結構與文字）
    房間與玩家是模擬的：玩家是 TETRA CHANNEL 抓到的真實玩家數據（名字、TR、APM、PPS）。⚠️ 沒有連到官方伺服器 ── */
-const MP = { rooms: [], room: null, t: 0, sys: null };
+var MP = { rooms: [], room: null, t: 0, sys: null };
 const mpEsc = t => String(t).replace(/[&<>"]/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' })[c]);
 const mpId = () => { const A = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; let r = ''; for (let i = 0; i < 6; i++) r += A[(Math.random() * A.length) | 0]; return r; };
 function mpProfPool(){ try { qplNames(); } catch(e){} return (QPL.profs && QPL.profs.length ? QPL.profs : QPL_OFF.map(n => ({ name: n, pps: 1 + Math.random() * 2, apm: 25 + Math.random() * 90 }))).filter(p => p.pps); }
@@ -18568,7 +18568,7 @@ function raceEnd(done, reason){
   if (MP.room){ MP.room.ingame = false; mrSys(won ? 'YOU WON THE RACE!' : `YOU PLACED #${place} OF ${rows.length}`); }
 }
 // ── 同一台電腦 2P（外層）：設定模式／目標／按鍵 → 開兩個 iframe（各自是一份完整的遊戲），鍵盤事件轉給兩邊（各自只認自己的鍵）
-const LV = { st: 'setup', kind: '40l', goal: { '40l': 40, blitz: 100000, zenith: 5 }, keys: null, listen: null, ready: {}, decided: false, res: {}, prog: {} };
+var LV = { st: 'setup', kind: '40l', goal: { '40l': 40, blitz: 100000, zenith: 5 }, keys: null, listen: null, ready: {}, decided: false, res: {}, prog: {} };
 const LV_ACT = [['left', 'MOVE LEFT'], ['right', 'MOVE RIGHT'], ['soft', 'SOFT DROP'], ['hard', 'HARD DROP'], ['ccw', 'ROTATE CCW'], ['cw', 'ROTATE CW'], ['flip', 'ROTATE 180'], ['hold', 'HOLD']];
 function lvLoad(){ try { const j = JSON.parse(localStorage.getItem('bp:localvs') || 'null'); if (j){ if (j.kind) LV.kind = j.kind; if (j.goal) Object.assign(LV.goal, j.goal); if (j.keys && j.keys[1] && j.keys[2]) LV.keys = j.keys; } } catch(e){}
   if (!LV.keys) LV.keys = JSON.parse(JSON.stringify(LOCAL_KEYS)); }
@@ -18578,8 +18578,9 @@ const LV_MODES = [['40l', '40 LINES'], ['blitz', 'BLITZ'], ['zenith', 'QUICK PLA
 const LV_DESC = { '40l': 'a race! the first to clear the lines wins.<br>top out and you lose.', blitz: '2 minutes each. the higher score wins!<br>topping out ends your run early.', zenith: 'scale the ZENITH TOWER side by side. the higher altitude wins!<br>both players use the mods picked below.' };
 const LV_T = k => k === 'zenith' ? 'zenith' : k;
 // QP 的 mod 面板：RIVALS 選 QUICK PLAY 時整塊搬到開局頁最下面，離開就搬回 QP 大廳
-const H2H_MODS = { el: null, home: null, next: null };
+var H2H_MODS = { el: null, home: null, next: null };
 function h2hMods(on){
+  if (!H2H_MODS) return;
   const P = H2H_MODS.el || (H2H_MODS.el = document.querySelector('#modsel .qpl-mods'));
   if (!P) return;
   if (!H2H_MODS.home){ H2H_MODS.home = P.parentNode; H2H_MODS.next = P.nextSibling; }
