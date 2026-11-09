@@ -1444,6 +1444,8 @@ document.documentElement.classList.add('booting'); addEventListener('load', func
   #plusDlg .plus-card img{ width:100%; height:3.2em; object-fit:contain; object-position:left center; image-rendering:auto; background:#0008; }
   #plusDlg .plus-card b{ font-size:1em; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; } #plusDlg .plus-card small{ font-size:.8em; opacity:.6; }
   #plusDlg .plus-empty{ opacity:.6; }
+  #plusDlg .plus-card > i{ display:grid; place-items:center; height:3.2em; font-style:normal; font-size:.75em; opacity:.45; background:#0008; }
+  #plusDlg .plus-card.pk{ border-color:#7fb4ff44; }
   #dlDlg{ position:fixed; inset:0; z-index:9500; background:rgba(0,0,0,.7); display:grid; place-items:center; padding:1em; }
   #dlDlg.hidden{ display:none; }
   #dlDlg .oblk{ width:min(40em, 100%); font-size:var(--ofs); margin:0; box-sizing:border-box; }
@@ -3167,9 +3169,9 @@ document.documentElement.classList.add('booting'); addEventListener('load', func
   </div>
 </section>
 <div id="plusDlg" class="hidden" role="dialog" aria-modal="true"><div class="oblk">
-  <h1>TETR.IO PLUS SKINS</h1>
-  <p>Block skins from the TETR.IO PLUS library by UniQMG (<a href="https://you.have.fail/tetrioplus/" target="_blank" rel="noopener">you.have.fail/tetrioplus</a>). Click one to use it.</p>
-  <div class="plus-bar"><input id="plusQ" type="search" placeholder="search name, author, tag…" autocomplete="off"><button id="plusReload" class="obtn">RELOAD</button><button id="plusClose" class="obtn">CLOSE</button></div>
+  <h1>TETR.IO PLUS</h1>
+  <p>Skins and texture packs (board, queue, particles, icons…) from the TETR.IO PLUS library by UniQMG (<a href="https://you.have.fail/tetrioplus/" target="_blank" rel="noopener">you.have.fail/tetrioplus</a>). Click one to use it.</p>
+  <div class="plus-bar"><input id="plusQ" type="search" placeholder="search name, author, tag…" autocomplete="off"><button id="plusReload" class="obtn">RELOAD</button><button id="plusTpse" class="obtn" title="Load a .tpse file exported from TETR.IO PLUS">LOAD .TPSE</button><input type="file" id="plusTpseFile" accept=".tpse,.json,application/json" hidden><button id="plusClose" class="obtn">CLOSE</button></div>
   <p id="plusState" class="plus-state"></p>
   <div id="plusGrid" class="plus-grid"></div>
 </div></div>
@@ -3878,7 +3880,8 @@ const modIconUrl = (base, rev) => WIKI_IMG(`Mod_${rev ? 'reverse_' : ''}${base}.
 const RANK_FILES = ['d', 'd+', 'c-', 'c', 'c+', 'b-', 'b', 'b+', 'a-', 'a', 'a+', 's-', 's', 's+', 'ss', 'u', 'x', 'x+', 'z'];
 // 桌面版／有 /tio 轉發的網域：走同網域 /tio/res/（桌面版會存到硬碟，離線也有）；本機 file:// 直接連 tetr.io
 const TIO_R = () => location.protocol.startsWith('http') ? '/tio/res/' : 'https://tetr.io/res/';
-const rankIconUrl = r => `${TIO_R()}league-ranks/${encodeURIComponent(String(r).toLowerCase())}.png`;
+const rankIconUrl = r => { const k = String(r).toLowerCase(), own = typeof TIO_X !== 'undefined' && TIO_X['rk_' + k.replace(/\+/g, 'plus').replace(/-/g, 'minus')];
+  return own ? own.src : `${TIO_R()}league-ranks/${encodeURIComponent(k)}.png`; };
 // 段位徽章：有圖就用圖、載不到退回文字徽章
 function rankBadge(r, cls = ''){
   if (!r) return '';
@@ -3888,7 +3891,9 @@ function rankBadge(r, cls = ''){
 const FX_NAMES = ['beam', 'beams/beam', 'bigbox', 'box', 'chip', 'chirp', 'dust', 'fbox', 'fire', 'particle', 'smoke', 'star', 'flake'];
 const FX_IMG = {};
 function fxImg(n){
-  if (!FX_IMG[n]){ const i = new Image(); i.onload = () => { i.ok = true; }; i.onerror = () => { i.bad = true; }; i.src = `${TIO_R()}particles/${n}.png`; FX_IMG[n] = i; }
+  if (!FX_IMG[n]){ const i = new Image(); i.onload = () => { i.ok = true; }; i.onerror = () => { i.bad = true; };
+    const own = typeof TIO_X !== 'undefined' && TIO_X['p_' + n.replace(/\//g, '_')];       // TETR.IO PLUS 包換過的粒子
+    i.src = own ? own.src : `${TIO_R()}particles/${n}.png`; FX_IMG[n] = i; }
   return FX_IMG[n];
 }
 const FX = []; let fxRAF = 0, fxLast = 0;
@@ -11588,56 +11593,105 @@ async function plusFetch(rel, as){
   throw err || new Error('offline');
 }
 const plusDirs = html => [...String(html).matchAll(/href="([^"?/][^"]*)"/g)].map(m => decodeURIComponent(m[1])).filter(h => h !== '../');
+/* ── TETR.IO PLUS 的 .tpse（整包設定匯出，JSON：鍵 → base64 data URL）
+   鍵名照 TETR.IO PLUS 原始碼（filters/generic-texture-request-filter.js、filters/skin/skin-request-filter.js）：
+   skin／ghost（connected.2x.png 版面）、board／queue／grid、particle_*、rank_*、zenith*、achievements、font_hun_*、frosty2023snowcaps
+   本站有對應的就套；音效、音樂、背景這些格式不同的先跳過，會列出來 */
+const TPSE_MAP = { board: 'gBoard', queue: 'gQueue', grid: 'gGrid', ghost: 'ghost', achievements: 'achv', zenith_rank: 'zrank',
+  zenith_expert: 'boardE', zenith_expert_2x: 'boardE', zenith_duoleft: 'duoL', zenith_duoleft_2x: 'duoL', zenith_duoright: 'duoR', zenith_duoright_2x: 'duoR',
+  zenith_expert_duoleft: 'exDuoL', zenith_expert_duoleft_2x: 'exDuoL', zenith_expert_duoright: 'exDuoR', zenith_expert_duoright_2x: 'exDuoR',
+  font_hun_png: 'hunPng', frosty2023snowcaps: 'snow', winter2022board: 'gBoard', winter2022queue: 'gQueue', frosty2023board: 'gBoard', frosty2023queue: 'gQueue', frosty2023grid: 'gGrid' };
+const dataUrlBlob = u => { const m = /^data:([^;,]*)(;base64)?,(.*)$/s.exec(u); if (!m) return null; const raw = m[2] ? atob(m[3]) : decodeURIComponent(m[3]);
+  const a = new Uint8Array(raw.length); for (let i = 0; i < raw.length; i++) a[i] = raw.charCodeAt(i); return new Blob([a], { type: m[1] || 'application/octet-stream' }); };
+async function tpseImport(T){
+  if (!T || typeof T !== 'object') throw new Error('not a TETR.IO PLUS file');
+  const done = [], skip = [];
+  const img = v => typeof v === 'string' && /^data:image\//.test(v);
+  // 方塊皮膚：新版 skin（data URL），舊版 skinPng／skinSvg（SVG 文字）
+  let sk = img(T.skin) ? T.skin : img(T.skinPng) ? T.skinPng : null;
+  const svg = typeof T.skinSvg === 'string' ? T.skinSvg : typeof T.skin === 'string' && /^\s*<svg/i.test(T.skin) ? T.skin : null;
+  if (!sk && svg) sk = await plusRaster('data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svg))));
+  else if (sk && /svg/i.test(sk.slice(0, 30))) sk = await plusRaster(sk);
+  if (sk){ await new Promise(r => applySkinFile(sk, r)); done.push('BLOCK SKIN'); }
+  if (img(T.ghostPng) && !img(T.ghost)) T.ghost = T.ghostPng;
+  for (const [k, v] of Object.entries(T)){
+    if (!img(v) && !(k === 'font_hun_fnt' && typeof v === 'string')) continue;
+    if (k === 'skin' || k === 'skinPng') continue;
+    let id = TPSE_MAP[k];
+    if (k === 'zenith' || k === 'zenith_2x'){ const b = dataUrlBlob(v); if (b && await saveBoardSkinFile('normal', new File([b], 'base.png', { type: b.type }))) done.push('ZENITH BOARD'); continue; }
+    if (k === 'font_hun_fnt'){ if (await saveExtra('hunFnt', new File([v], 'hun.fnt', { type: 'text/plain' }))) done.push('HUN FONT'); continue; }
+    if (/^particle_/.test(k)) id = 'p_' + k.slice(9);
+    if (/^rank_/.test(k)) id = 'rk_' + k.slice(5);
+    if (!id){ skip.push(k); continue; }
+    const b = dataUrlBlob(v); if (b && await saveExtra(id, new File([b], k + '.png', { type: b.type }))) done.push(k.toUpperCase().replace(/_/g, ' '));
+  }
+  for (const k of ['customSounds', 'customSoundAtlas', 'music', 'musicGraph', 'backgrounds', 'animatedBackground', 'skinAnim', 'ghostAnim']) if (T[k]) skip.push(k);
+  return { done, skip };
+}
 async function plusLoad(force){
   if (PLUS.busy) return; PLUS.busy = true;
   const st = $('plusState');
   try {
-    if (!force){ try { const c = JSON.parse(store.get('bp:plusList2') || 'null'); if (c && Date.now() - c.t < 864e5 && c.list && c.list.length){ PLUS.list = c.list; plusRender(); st.textContent = `${c.list.length} SKINS`; return; } } catch(e){} }
-    st.textContent = 'LOADING THE SKIN LIST…';
-    const authors = plusDirs(await plusFetch('data/content/skin/')).filter(h => h.endsWith('/'));
+    if (!force){ try { const c = JSON.parse(store.get('bp:plusList3') || 'null'); if (c && Date.now() - c.t < 864e5 && c.list && c.list.length){ PLUS.list = c.list; plusRender(); st.textContent = `${c.list.length} ITEMS`; return; } } catch(e){} }
+    st.textContent = 'LOADING THE LIST…';
+    // 站上分兩類：skin（方塊皮膚）、unknown（整包 .tpse：board、queue、粒子、圖示…）
+    const jobs = [];
+    for (const cat of ['skin', 'unknown']){ for (const a of plusDirs(await plusFetch(`data/content/${cat}/`)).filter(h => h.endsWith('/'))) jobs.push([cat, a]); }
     PLUS.list = []; let done = 0;
-    const one = async a => {
+    const IMG = /\.(png|webp|svg|gif|jpe?g)$/i;
+    const one = async ([cat, a]) => {
       try {
-        const files = plusDirs(await plusFetch('data/content/skin/' + a));
-        const metas = files.filter(f => /\.(png|webp|svg|gif|jpe?g)\.json$/i.test(f));
-        // 有圖但沒有 .json 的也收（用檔名當名字）
-        for (const f of files) if (/\.(png|webp|svg|gif|jpe?g)$/i.test(f) && !files.includes(f + '.json')) PLUS.list.push({ a: a.replace(/\/$/, ''), f, n: f.replace(/\.[a-z]+$/i, ''), d: '', fmt: f.split('.').pop().toLowerCase(), tags: '' });
-        for (const m of metas){
-          const img = m.replace(/\.json$/i, ''); let j = {};
-          try { j = await plusFetch('data/content/skin/' + a + m, 'json'); } catch(e){}
-          const fmt = String(j.format || '').toLowerCase();
-          // 全部格式都列出來（SVG、動畫也是）：SVG 一樣是單張圖；動畫版會拿第一格來偵測
-          PLUS.list.push({ a: a.replace(/\/$/, ''), f: img, n: j.name || img.replace(/\.[a-z]+$/i, ''), d: String(j.description || '').slice(0, 140), fmt: fmt || img.split('.').pop().toLowerCase(), tags: (j.tags || []).map(t => t.tag || t.name || t).join(' ') });
+        const files = plusDirs(await plusFetch(`data/content/${cat}/${a}`)).filter(f => !f.endsWith('/'));
+        // 同一個名字（第一個點之前）的檔案是同一件作品：.tpse、.svg／.png、.json 說明
+        const groups = {};
+        for (const f of files){ const stem = f.replace(/\.json$/i, '').replace(/\.[^.]+$/, ''); (groups[stem] = groups[stem] || []).push(f); }
+        for (const [stem, fs] of Object.entries(groups)){
+          const main = fs.filter(f => !/\.json$/i.test(f)), imgs = main.filter(f => IMG.test(f)), tpse = main.find(f => /\.tpse$/i.test(f));
+          if (!imgs.length && !tpse) continue;
+          let j = {}; const meta = fs.find(f => /\.json$/i.test(f));
+          if (meta) try { j = await plusFetch(`data/content/${cat}/${a}${meta}`, 'json'); } catch(e){}
+          const useImg = cat === 'skin' && imgs.length;                      // 皮膚類有圖就直接用圖；整包類用 .tpse
+          const f = useImg ? (imgs.find(x => /\.svg$/i.test(x)) || imgs[0]) : tpse || imgs[0];
+          PLUS.list.push({ c: cat, a: a.replace(/\/$/, ''), f, pv: imgs[0] || null, n: j.name || stem, d: String(j.description || '').slice(0, 160),
+            fmt: /\.tpse$/i.test(f) ? 'tpse' : f.split('.').pop().toLowerCase(), tags: (j.tags || []).map(t => t.tag || t.name || t).join(' ') });
         }
       } catch(e){}
-      st.textContent = `LOADING… ${++done}/${authors.length} AUTHORS · ${PLUS.list.length} SKINS`;
+      st.textContent = `LOADING… ${++done}/${jobs.length} FOLDERS · ${PLUS.list.length} ITEMS`;
       if (done % 8 === 0) plusRender();
     };
-    for (let i = 0; i < authors.length; i += 6) await Promise.all(authors.slice(i, i + 6).map(one));
-    PLUS.list.sort((x, y) => x.a.localeCompare(y.a) || x.n.localeCompare(y.n));
-    try { store.set('bp:plusList2', JSON.stringify({ t: Date.now(), list: PLUS.list })); } catch(e){}
-    st.textContent = `${PLUS.list.length} SKINS`; plusRender();
+    for (let i = 0; i < jobs.length; i += 6) await Promise.all(jobs.slice(i, i + 6).map(one));
+    PLUS.list.sort((x, y) => x.c.localeCompare(y.c) || x.a.localeCompare(y.a) || x.n.localeCompare(y.n));
+    try { store.set('bp:plusList3', JSON.stringify({ t: Date.now(), list: PLUS.list })); } catch(e){}
+    st.textContent = `${PLUS.list.length} ITEMS`; plusRender();
   } catch(e){
     st.textContent = location.hostname === 'stacklab.invalid' ? 'COULD NOT REACH YOU.HAVE.FAIL: CHECK YOUR CONNECTION'
-      : location.protocol.startsWith('http') ? 'THE SKIN SITE BLOCKS OTHER PAGES (NO CORS). SITE OWNER: ADD THIS TO vercel.json REWRITES → { "source": "/plus/:path*", "destination": "https://you.have.fail/tetrioplus/:path*" }. OR USE THE DESKTOP APP'
-      : 'THE SKIN SITE BLOCKS THIS PAGE (NO CORS): USE THE DESKTOP APP, OR DOWNLOAD A PNG THERE AND LOAD IT WITH BLOCK SKIN';
+      : location.protocol.startsWith('http') ? 'THE SKIN SITE BLOCKS OTHER PAGES (NO CORS). SITE OWNER: ADD THIS TO vercel.json REWRITES → { "source": "/plus/(.*)", "destination": "https://you.have.fail/tetrioplus/$1" }. OR USE THE DESKTOP APP'
+      : 'THE SKIN SITE BLOCKS THIS PAGE (NO CORS): USE THE DESKTOP APP, OR DOWNLOAD A FILE THERE AND LOAD IT HERE';
   } finally { PLUS.busy = false; }
 }
 function plusRender(){
-  const q = PLUS.q.trim().toLowerCase(), L = (PLUS.list || []).filter(s => !q || (s.n + ' ' + s.a + ' ' + s.f + ' ' + s.tags + ' ' + s.d + ' ' + s.fmt).toLowerCase().replace(/[\s_\-]+/g, ' ').includes(q.replace(/[\s_\-]+/g, ' ')));
-  const base = PLUS.base || PLUS_DIRECT;
-  $('plusGrid').innerHTML = L.slice(0, 400).map((s, i) => `<button class="plus-card" data-i="${PLUS.list.indexOf(s)}" title="${mpEsc(s.d)}"><img loading="lazy" alt="" src="${base}data/content/skin/${encodeURIComponent(s.a)}/${encodeURIComponent(s.f)}" onerror="this.style.visibility='hidden'"><b>${mpEsc(s.n)}</b><small>${mpEsc(s.a)}${s.fmt ? ' · ' + mpEsc(s.fmt.toUpperCase()) : ''}</small></button>`).join('')
-    || `<p class="plus-empty">${PLUS.list ? 'NO SKINS MATCH' : ''}</p>`;
+  const q = PLUS.q.trim().toLowerCase().replace(/[\s_\-]+/g, ' '), L = (PLUS.list || []).filter(s => !q || (s.n + ' ' + s.a + ' ' + s.f + ' ' + s.tags + ' ' + s.d + ' ' + s.fmt + ' ' + (s.c === 'unknown' ? 'pack' : 'skin')).toLowerCase().replace(/[\s_\-]+/g, ' ').includes(q));
+  const base = PLUS.base || PLUS_DIRECT, u = (s, f) => `${base}data/content/${s.c || 'skin'}/${encodeURIComponent(s.a)}/${encodeURIComponent(f)}`;
+  $('plusGrid').innerHTML = L.slice(0, 500).map(s => `<button class="plus-card${s.c === 'unknown' ? ' pk' : ''}" data-i="${PLUS.list.indexOf(s)}" title="${mpEsc(s.d)}">${s.pv || !/tpse/.test(s.fmt) ? `<img loading="lazy" alt="" src="${u(s, s.pv || s.f)}" onerror="this.style.visibility='hidden'">` : '<i>NO PREVIEW</i>'}<b>${mpEsc(s.n)}</b><small>${mpEsc(s.a)} · ${s.c === 'unknown' ? 'PACK' : 'SKIN'} · ${mpEsc(String(s.fmt).toUpperCase())}</small></button>`).join('')
+    || `<p class="plus-empty">${PLUS.list ? 'NOTHING MATCHES' : ''}</p>`;
+}
+async function plusApplyTpse(T, label){
+  const st = $('plusState'); const r = await tpseImport(T);
+  if (!r.done.length){ st.textContent = `${label}: NOTHING THIS GAME CAN USE` + (r.skip.length ? ` (HAS ${r.skip.join(', ').toUpperCase()})` : ''); return; }
+  sfxEv('menuconfirm', 'menuconfirm'); notice(`${label} · APPLIED ${r.done.length} ITEM${r.done.length > 1 ? 'S' : ''}`);
+  st.textContent = `APPLIED: ${r.done.join(', ')}` + (r.skip.length ? ` · SKIPPED: ${r.skip.join(', ').toUpperCase()}` : '');
 }
 async function plusApply(s){
   const st = $('plusState'); st.textContent = `DOWNLOADING ${s.n.toUpperCase()}…`;
+  const rel = `data/content/${s.c || 'skin'}/${encodeURIComponent(s.a)}/${encodeURIComponent(s.f)}`;
   try {
-    const blob = await plusFetch(`data/content/skin/${encodeURIComponent(s.a)}/${encodeURIComponent(s.f)}`, 'blob');
+    if (/\.tpse$/i.test(s.f)){ const T = JSON.parse(await plusFetch(rel)); return await plusApplyTpse(T, `${s.n.toUpperCase()} BY ${s.a.toUpperCase()}`); }
+    const blob = await plusFetch(rel, 'blob');
     let src = await fileToDataURL(blob);
     if (/svg/i.test(blob.type) || /\.svg$/i.test(s.f)) src = await plusRaster(src);          // SVG 皮膚（像 QuotePilgrim 的 ppt-*）→ 先畫成 PNG，格子偵測才準
     await new Promise(r => applySkinFile(src, r));
     sfxEv('menuconfirm', 'menuconfirm'); notice(`SKIN APPLIED · ${s.n.toUpperCase()} BY ${s.a.toUpperCase()}`); st.textContent = `APPLIED: ${s.n.toUpperCase()} · ${s.a.toUpperCase()}`;
-  } catch(e){ st.textContent = 'COULD NOT DOWNLOAD THAT SKIN: ' + e.message; }
+  } catch(e){ st.textContent = 'COULD NOT LOAD THAT ONE: ' + e.message; }
 }
 // 舊版 TETR.IO 的 SVG 皮膚是一排 12 格（I J L O S T Z 垃圾 …）；沒寫寬高的用 viewBox；放大到每格約 64px 再畫，邊緣才不會糊
 function plusRaster(src){
@@ -11655,6 +11709,9 @@ if (!LOCAL_P && $('plusDlg')){
   $('plusClose').onclick = () => $('plusDlg').classList.add('hidden');
   $('plusDlg').onclick = e => { if (e.target === $('plusDlg')) $('plusDlg').classList.add('hidden'); };
   $('plusReload').onclick = () => plusLoad(true);
+  $('plusTpse').onclick = () => $('plusTpseFile').click();
+  $('plusTpseFile').onchange = async () => { const f = $('plusTpseFile').files[0]; $('plusTpseFile').value = ''; if (!f) return;
+    try { await plusApplyTpse(JSON.parse(await f.text()), f.name.toUpperCase()); } catch(e){ $('plusState').textContent = 'NOT A TETR.IO PLUS FILE: ' + e.message; } };
   $('plusQ').oninput = () => { PLUS.q = $('plusQ').value; plusRender(); };
   $('plusGrid').onclick = e => { const b = e.target.closest('.plus-card'); if (b) plusApply(PLUS.list[+b.dataset.i]); };
 }
