@@ -2556,8 +2556,37 @@ document.documentElement.classList.add('booting'); addEventListener('load', func
   .lv-f{ position:relative; border-right:2px solid #1b2433; } .lv-f > b{ position:absolute; top:6px; right:12px; z-index:2; font:400 1.6em var(--hunf); color:#ffd84a; pointer-events:none; }
   .lv-f iframe{ width:100%; height:100%; border:0; display:block; pointer-events:none; background:#07090e; }
   #lvLoad{ position:absolute; inset:0; display:grid; place-items:center; background:#07090e; font-size:1.6em; color:#8aa8d0; } #lvLoad.hidden{ display:none; }
-  #lvRes{ position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); width:auto; min-width:22em; max-width:90vw; text-align:center; z-index:5; font-size:var(--ofs); }
-  #lvRes.hidden{ display:none; } #lvRes > h1{ font-size:3.4em; color:var(--big); text-shadow:var(--bigs) 0 .03em, rgba(255,255,255,.267) 0 0 16px; } #lvRes .lv-hint{ font-size:.9em; opacity:.6; margin-top:.6em; }
+  /* RIVALS 結算：照 QP 結算畫面（▼ 標題 ▼、大字標籤、發光大數字、深色小格），顏色跟著模式（40L 棕、BLITZ 紅、QP 橘） */
+  #lvRes{ --pn:#4a1c13; --pb:#8b3a25; --bx:#3c150e; --lb:#e3906d; --tx:#ffe1d3; --dm:#7a3a28; --sb:#c07a60; --gl:#ff9e70;
+    position:absolute; inset:0; z-index:5; overflow:auto; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:24px 12px;
+    background:radial-gradient(rgba(10,6,6,.78), rgba(3,3,5,.94) 75%); font-family:var(--t-font); }
+  #lvRes[data-k="40l"]{ --pn:#382b22; --pb:#6b4f3c; --bx:#2a201a; --lb:#c99272; --tx:#f6e3d4; --dm:#6a4c39; --sb:#a97553; --gl:#e6b48c; }
+  #lvRes[data-k="blitz"]{ --pn:#4e2c2c; --pb:#8a3b3b; --bx:#3a1f1f; --lb:#e09f9f; --tx:#ffe4e4; --dm:#7d3c3c; --sb:#c98585; --gl:#ff9a9a; }
+  #lvRes.hidden{ display:none; }
+  #lvRes .lvr-panel{ width:min(560px, 92vw); background:var(--pn); border:1px solid var(--pb); box-shadow:0 0 0 1px #0008, 0 10px 40px #000a; padding:0 12px 4px; animation:qrUp .65s cubic-bezier(.2,.8,.25,1) both; }
+  #lvRes .lvr-head{ text-align:center; padding:9px 0 7px; margin:0 -12px 8px; border-bottom:1px dashed color-mix(in srgb, var(--pb) 55%, transparent); color:var(--lb); font-size:17px; letter-spacing:.07em; }
+  #lvRes .lvr-lbl{ font-size:clamp(24px,7vw,34px); letter-spacing:.06em; color:var(--lb); margin:4px 2px 8px; font-weight:700; }
+  #lvRes .lvr-big{ display:grid; grid-template-columns:1fr auto 1fr; align-items:center; background:var(--bx); padding:10px 8px 12px; margin-bottom:8px; }
+  #lvRes .lvr-big > div{ display:flex; flex-direction:column; align-items:center; line-height:1; color:var(--tx); }
+  #lvRes .lvr-big > div > i{ font-style:normal; font-size:15px; letter-spacing:.1em; color:var(--sb); margin-bottom:4px; }
+  #lvRes .lvr-big > div > b{ font-size:clamp(30px,8.5vw,50px); font-weight:700; white-space:nowrap; }
+  #lvRes .lvr-big > div > b small{ font-size:.55em; }
+  #lvRes .lvr-big > div.w > b{ text-shadow:0 0 14px var(--gl), 0 0 30px color-mix(in srgb, var(--gl) 60%, transparent); }
+  #lvRes .lvr-big > div.w > i{ color:#ffd76a; }
+  #lvRes .lvr-big > div.l{ opacity:.55; }
+  #lvRes .lvr-big > em{ font-style:normal; font-size:14px; letter-spacing:.1em; color:var(--dm); padding:0 6px; }
+  #lvRes .lvr-why{ background:var(--bx); text-align:center; padding:7px 4px; margin-bottom:8px; font-size:13px; letter-spacing:.08em; color:var(--sb); }
+  #lvRes .lvr-row{ background:var(--bx); text-align:center; padding:6px 4px 7px; margin-bottom:8px; }
+  #lvRes .lvr-row > i{ display:block; font-style:normal; font-size:12px; letter-spacing:.08em; color:var(--dm); }
+  #lvRes .lvr-row > div{ display:grid; grid-template-columns:1fr auto 1fr; align-items:baseline; }
+  #lvRes .lvr-row b{ font-size:clamp(22px,6vw,30px); color:var(--tx); line-height:1.15; opacity:.6; }
+  #lvRes .lvr-row b.hi{ opacity:1; }
+  #lvRes .lvr-row b small{ font-size:.5em; color:var(--sb); margin-left:3px; }
+  #lvRes .lvr-row span{ font-size:11px; letter-spacing:.08em; color:var(--dm); padding:0 8px; }
+  #lvRes .lvr-again, #lvRes .lvr-back{ font:700 22px var(--t-font); letter-spacing:.08em; cursor:pointer; margin-top:12px; padding:9px 0; width:min(560px, 92vw); border:1px solid var(--pb); }
+  #lvRes .lvr-again{ background:var(--lb); color:var(--pn); } #lvRes .lvr-again:hover{ filter:brightness(1.12); }
+  #lvRes .lvr-back{ margin-top:6px; background:var(--pn); color:var(--lb); font-size:16px; padding:6px 0; } #lvRes .lvr-back:hover{ filter:brightness(1.2); }
+  #lvRes .lv-hint{ font-size:12px; color:var(--sb); opacity:.7; margin-top:8px; letter-spacing:.06em; }
   #lvQuit{ position:absolute; bottom:8px; left:50%; transform:translateX(-50%); z-index:6; font-size:.8em !important; }
   /* RIVALS 開局頁的按鍵表：兩欄，每欄沿用官方 .orow／.ospin */
   .h2h-keys{ display:grid; grid-template-columns:1fr 1fr; gap:0 2em; } .h2h-keys > div > h2{ font:400 1.6em/1.1 var(--hunf); color:var(--h1); margin:.3em 0 .2em; }
@@ -3128,7 +3157,15 @@ document.documentElement.classList.add('booting'); addEventListener('load', func
 <div id="localvs" class="hidden">
   <div id="lvPlay"><div class="lv-f"><b>1P</b><iframe id="lvF1" tabindex="-1" title="1P"></iframe></div><div class="lv-f"><b>2P</b><iframe id="lvF2" tabindex="-1" title="2P"></iframe></div>
     <div id="lvLoad">LOADING…</div>
-    <div id="lvRes" class="oblk hidden"><h2>RIVALS</h2><h1 id="lvWin"></h1><p id="lvSub"></p><div class="lv-btns"><button id="lvAgain" class="obtn">REMATCH</button><button id="lvToSetup" class="obtn">BACK</button></div><p class="lv-hint">ENTER: REMATCH · ESC: BACK</p></div>
+    <div id="lvRes" class="hidden"><div class="lvr-panel">
+      <div class="lvr-head">▼ <span id="lvHead">RIVALS</span> ▼</div>
+      <div class="lvr-lbl" id="lvWin"></div>
+      <div class="lvr-big" id="lvBig"></div>
+      <div class="lvr-why" id="lvSub"></div>
+      <div id="lvRows"></div>
+    </div>
+    <button class="lvr-again" id="lvAgain">REMATCH</button><button class="lvr-back" id="lvToSetup">BACK</button>
+    <p class="lv-hint">ENTER: REMATCH · ESC: BACK</p></div>
     <button id="lvQuit" class="obtn" title="Quit (Esc)">QUIT</button></div>
 </div>
 <div id="raceHud" aria-live="polite"><div class="rc-top" id="rcTop"></div><div class="rc-list" id="rcList"></div><div class="rh-feed" id="rcFeed"></div></div>
@@ -18279,6 +18316,8 @@ function raceInit(){
   climb.race = { kind: R0.kind, goal: R0.goal, cmp: !!R0.cmp, local: !!R0.local, bots: (R0.players || []).map(p => raceBot(p, R0.kind)), feed: [], hudT: 0, first: null, postT: 0 };
   raceHud(); return climb.race;
 }
+// RIVALS 結算用：每個人的數據（prog／done 都帶著，輸的人還沒打完也有）
+const lvStats = () => { const c = climb, f = floorOf(c.alt || 0); return { pcs: c.pieces || 0, secs: (c.elapsed || 0) / 1000, lines: c.lines || 0, sent: c.sent || 0, score: c.score || 0, alt: c.alt || 0, fl: f.n, fn: f.name || '' }; };
 function raceMine(){ const k = climb.race.kind; return k === '40l' ? Math.min(climb.race.goal, climb.lines || 0) : k === 'blitz' ? climb.score || 0 : climb.alt || 0; }
 const raceGoalV = R => R.kind === 'zenith' ? raceFloorAlt(R.goal) : R.goal;
 function raceTick(dt){
@@ -18290,7 +18329,7 @@ function raceTick(dt){
     R.feed.length = Math.min(R.feed.length, 4); }
   if (!R.cmp && R.kind !== '40l' && raceMine() >= raceGoalV(R)){ raceEnd(true); return; }   // 40L 由 sprintDone → finishSolo 處理
   if ((R.hudT += dt) > 200){ R.hudT = 0; raceHud(); }
-  if (R.local && (R.postT += dt) > 120){ R.postT = 0; try { parent.postMessage({ t: 'prog', p: LOCAL_P, v: raceMine() }, '*'); } catch(e){} }
+  if (R.local && (R.postT += dt) > 120){ R.postT = 0; try { parent.postMessage({ t: 'prog', p: LOCAL_P, v: raceMine(), s: lvStats() }, '*'); } catch(e){} }
 }
 const raceFmt = t => { const m = Math.floor(t / 60), x = t - m * 60; return `${m}:${String(Math.floor(x)).padStart(2, '0')}.${String(Math.floor((x % 1) * 1000)).padStart(3, '0')}`; };
 const raceVal = (R, v) => R.kind === '40l' ? `${Math.floor(v)}/${R.goal}` : R.cmp && R.kind === 'blitz' ? Math.floor(v).toLocaleString('en-US') : R.kind === 'blitz' ? Math.floor(v).toLocaleString('en-US') : `${v.toFixed(1)}m`;
@@ -18316,7 +18355,7 @@ function raceEnd(done, reason){
   if (R.local){                                                                   // 同一台電腦 2P：結果交給外層頁面判勝負
     sfxEv(done ? 'finish' : 'topout', done ? 'finish' : 'topout', 'gameover');
     clearMsg = { lines: [{ text: R.cmp ? (done ? 'TIME UP' : (reason || 'TOPPED OUT')) : done ? 'FINISHED' : (reason || 'TOPPED OUT'), color: done ? '#7dff9c' : '#ef4b4b', size: 'sm' }, { text: R.cmp ? raceVal(R, raceMine()) : raceFmt(secs), color: '#eef2f7', size: 'md' }, ...(R.cmp ? [{ text: 'WAITING FOR THE OTHER PLAYER…', color: '#9aa6c4', size: 'sm' }] : [])], t: performance.now(), keep: true };
-    try { parent.postMessage({ t: 'done', p: LOCAL_P, done: !!done, secs, v: raceMine() }, '*'); } catch(e){}
+    try { parent.postMessage({ t: 'done', p: LOCAL_P, done: !!done, secs, v: raceMine(), s: lvStats() }, '*'); } catch(e){}
     raceHud(); draw(); return;
   }
   // 其他人快轉算完（最多再 15 分鐘）
@@ -18404,7 +18443,7 @@ const lvWin = p => { const f = $('lvF' + p); return f && f.contentWindow; };
 function lvSend(p, m){ const w = lvWin(p); if (w) try { w.postMessage(m, '*'); } catch(e){} }
 function lvStart(){
   lvSave(); $('localvs').classList.remove('hidden'); bgmFade(300);                                // 外層的選單音樂收掉，音樂交給 1P 那邊
-  LV.st = 'play'; $('localvs').dataset.st = 'play'; $('lvRes').classList.add('hidden'); LV.decided = false; LV.res = {}; LV.prog = {};
+  LV.st = 'play'; $('localvs').dataset.st = 'play'; $('lvRes').classList.add('hidden'); LV.decided = false; LV.res = {}; LV.prog = {}; LV.st2 = {};
   const go = () => { $('lvLoad').classList.add('hidden'); const song = LV.kind === '40l' ? soloOpt('h2h').song : undefined, mods = [...pickedMods].filter(m => !['world', 'duo', 'sun'].includes(m));
     for (const p of [1, 2]) lvSend(p, { t: 'start', kind: LV.kind, goal: LV.goal['40l'], keys: LV.keys[p], song, mods }); };
   if (LV.ready[1] && LV.ready[2]) return go();
@@ -18419,16 +18458,37 @@ function lvStart(){
 function lvDecide(winner, why){
   if (LV.decided) return; LV.decided = true;
   for (const p of [1, 2]) lvSend(p, { t: 'stop', res: !winner ? 'draw' : p === winner ? 'win' : 'lose' });
-  const fmtP = p => { const r = LV.res[p], v = r ? r.v : LV.prog[p] || 0; const val = LV.kind === '40l' ? `${Math.floor(v)}/${LV.goal['40l']} LINES` : LV.kind === 'blitz' ? `${Math.floor(v).toLocaleString('en-US')} PTS` : `${(+v).toFixed(1)}m`;
-    return LV.kind === '40l' ? `${p}P ${r && r.done ? raceFmt(r.secs) : r ? 'TOPPED OUT · ' + val : val}` : `${p}P ${val}`; };
-  setTimeout(() => { $('lvWin').textContent = winner ? `${winner}P WINS` : 'DRAW'; $('lvSub').textContent = `${why} · ${fmtP(1)} · ${fmtP(2)}`; $('lvRes').classList.remove('hidden'); }, 1200);
+  const K = LV.kind, goal = LV.goal['40l'], S = p => (LV.st2 && LV.st2[p]) || {}, R = p => LV.res[p];
+  const dec = (x, d) => { const t = (+x || 0).toFixed(d).split('.'); return `${(+t[0]).toLocaleString('en-US')}${d ? `<small>.${t[1]}</small>` : ''}`; };
+  const big = p => { const r = R(p), v = r ? r.v : LV.prog[p] || 0;
+    if (K === '40l') return r && r.done ? (() => { const f = raceFmt(r.secs), i = f.lastIndexOf('.'); return i > 0 ? `${f.slice(0, i)}<small>${f.slice(i)}</small>` : f; })() : `${Math.floor(v)}<small>/${goal}</small>`;
+    if (K === 'blitz') return dec(v, 0);
+    return `${dec(v, 1)}<small> M</small>`; };
+  const tag = p => winner === p ? `${p}P · WINNER` : !winner ? `${p}P` : `${p}P`;
+  const cls = p => !winner ? 'w' : winner === p ? 'w' : 'l';
+  $('lvHead').textContent = 'RIVALS · ' + (LV_MODES.find(m => m[0] === K) || [, K])[1];
+  $('lvWin').textContent = winner ? `${winner}P WINS` : 'DRAW';
+  $('lvBig').innerHTML = `<div class="${cls(1)}"><i>${tag(1)}</i><b>${big(1)}</b></div><em>VS</em><div class="${cls(2)}"><i>${tag(2)}</i><b>${big(2)}</b></div>`;
+  $('lvSub').textContent = why;
+  // 每一列：兩邊的數字，比較好的那邊亮起來
+  const row = (lbl, f, fmt, higher = true) => { const a = f(S(1)), b = f(S(2)); const hiA = higher ? a >= b : a <= b, hiB = higher ? b >= a : b <= a;
+    return `<div class="lvr-row"><i>${lbl}</i><div><b class="${hiA ? 'hi' : ''}">${fmt(a, S(1))}</b><span>VS</span><b class="${hiB ? 'hi' : ''}">${fmt(b, S(2))}</b></div></div>`; };
+  const pps = s => s.secs > 0 ? s.pcs / s.secs : 0, apm = s => s.secs > 0 ? s.sent / s.secs * 60 : 0;
+  const rows = [];
+  if (K === 'zenith') rows.push(row('FLOOR REACHED', s => s.fl || 1, (v, s) => `<small>F</small>${v}`), row('ATTACK', s => s.sent || 0, (v, s) => `${v}<small>${apm(s).toFixed(1)} APM</small>`));
+  if (K === '40l') rows.push(row('LINES CLEARED', s => Math.min(goal, s.lines || 0), v => `${v}<small>/${goal}</small>`));
+  if (K === 'blitz') rows.push(row('LINES CLEARED', s => s.lines || 0, v => `${v}`));
+  rows.push(row('PIECES PLACED', s => s.pcs || 0, (v, s) => `${v.toLocaleString('en-US')}<small>${pps(s).toFixed(2)} PPS</small>`));
+  $('lvRows').innerHTML = rows.join('');
+  $('lvRes').dataset.k = K;
+  setTimeout(() => { $('lvRes').classList.remove('hidden'); }, 1200);
 }
 addEventListener('message', e => {
   if (LOCAL_P || LV.st === 'off' || !LV.st) return; const m = e.data || {}; const p = m.p; if (p !== 1 && p !== 2) return;
   if (e.source !== lvWin(p)) return;
   if (m.t === 'ready'){ LV.ready[p] = true; if (LV.ready[1] && LV.ready[2] && LV.pend){ const f = LV.pend; LV.pend = null; f(); } }
-  else if (m.t === 'prog'){ LV.prog[p] = m.v; lvSend(3 - p, { t: 'opp', v: m.v }); }
-  else if (m.t === 'done'){ LV.res[p] = m; lvSend(3 - p, { t: 'opp', v: m.v, fin: m.done ? m.secs : null, dead: m.done ? null : m.secs });
+  else if (m.t === 'prog'){ LV.prog[p] = m.v; if (m.s) (LV.st2 = LV.st2 || {})[p] = m.s; lvSend(3 - p, { t: 'opp', v: m.v }); }
+  else if (m.t === 'done'){ LV.res[p] = m; if (m.s) (LV.st2 = LV.st2 || {})[p] = m.s; lvSend(3 - p, { t: 'opp', v: m.v, fin: m.done ? m.secs : null, dead: m.done ? null : m.secs });
     if (LV.kind === '40l'){ if (m.done) lvDecide(p, 'FIRST TO CLEAR ' + LV.goal['40l'] + ' LINES'); else lvDecide(3 - p, `${p}P TOPPED OUT`); }
     else if (LV.res[1] && LV.res[2]){ const a = +LV.res[1].v || 0, b = +LV.res[2].v || 0;   // BLITZ／QP：兩個人都打完才比
       lvDecide(a === b ? 0 : a > b ? 1 : 2, LV.kind === 'blitz' ? 'HIGHER SCORE' : 'HIGHER ALTITUDE'); } }
