@@ -2610,7 +2610,7 @@ document.documentElement.classList.add('booting'); addEventListener('load', func
   #lvRes .lv-hint{ font-size:12px; color:var(--sb); opacity:.7; margin:8px 0 0; letter-spacing:.06em; }
   #lvQuit{ position:absolute; bottom:8px; left:50%; transform:translateX(-50%); z-index:6; font-size:.8em !important; }
   /* RIVALS 開局頁的按鍵表：兩欄，每欄沿用官方 .orow／.ospin */
-  .lvh{ display:flex; align-items:center; gap:.4em; } .lvh input{ width:5.5em; font:inherit; color:inherit; background:rgba(0,0,0,.35); border:1px solid rgba(255,255,255,.18); padding:.2em .4em; text-align:right; } .lvh i{ font-style:normal; opacity:.7; min-width:1em; }
+  .lvsl{ margin:2px 0; font-size:14px; } .lvsl .val{ min-width:96px; }
   .h2h-keys{ display:grid; grid-template-columns:1fr 1fr; gap:0 2em; } .h2h-keys > div > h2{ font:400 1.6em/1.1 var(--hunf); color:var(--h1); margin:.3em 0 .2em; }
   .orow .ospin.listen{ color:#fff !important; background:var(--cbo) !important; }
   @media (max-width:800px){ .h2h-keys{ grid-template-columns:1fr; } }
@@ -18621,7 +18621,9 @@ function renderH2HPre(){
   const songs = songList(), sName = (songs.find(x => x[0] === o.song) || songs[0])[1];
   const skOpts = lvSkinOpts();
   const pcCol = p => { const c = lvPc(p), sk = skOpts.find(x => x.value === c.skin) || skOpts[0];
-    return `<div><h2>${p}P</h2>${LV_HAND.map(([id, n, mn, mx, st, u]) => `<div class="orow"><label>${n}</label><span class="lvh"><input type="number" class="lvhin" data-p="${p}" data-h="${id}" min="${mn}" max="${mx}" step="${st}" value="${c.hand[id]}"><i>${id === 'sdf' && c.hand[id] >= 41 ? '∞' : u}</i></span></div>`).join('')}
+    return `<div><h2>${p}P</h2>${LV_HAND.map(([id, n, mn, mx, st, u]) => `<div class="crow sl lvsl" data-p="${p}" data-h="${id}" data-target="${id}" data-min="${mn}" data-max="${mx}" data-step="${st}" data-invert="${id === 'sdf' ? 0 : 1}">
+        <span class="lbl">${n}</span><div class="trk"><small>SLOW</small><input type="range" class="rng" min="${mn}" max="${mx}" step="${st}" value="${id === 'sdf' ? c.hand[id] : mx + mn - c.hand[id]}"><small>FAST</small></div>
+        <div class="val"><em class="ms"></em><b class="num"></b><i class="unit">${u}</i></div></div>`).join('')}
       <div class="orow" title="Click: next skin · right-click: previous"><label>block skin</label><button class="ospin lvsk" data-p="${p}">${sk.label}</button></div></div>`; };
   const keyCol = p => `<div><h2>${p}P</h2>${LV_ACT.map(([a, n]) => { const on = LV.listen && LV.listen.p === p && LV.listen.a === a;
     return `<div class="orow"><label>${n.toLowerCase()}</label><button class="ospin${on ? ' listen' : ''}" data-p="${p}" data-a="${a}">${on ? 'PRESS A KEY…' : (LV.keys[p][a] || []).map(c => keyName(c, true)).join(' / ') || '—'}</button></div>`; }).join('')}</div>`;
@@ -18653,9 +18655,10 @@ function renderH2HPre(){
   $('h2hDef').onclick = () => { LV.keys = JSON.parse(JSON.stringify(LOCAL_KEYS)); LV.listen = null; lvSave(); sfxEv('menutap', 'menutap'); renderH2HPre(); };
   $('h2hPc').querySelector('h1').onclick = () => { LV.pcOpen = !LV.pcOpen; $('h2hPc').classList.toggle('collapsed', !LV.pcOpen); };
   $('h2hPcDef').onclick = () => { LV.pc = {}; lvPc(1); lvPc(2); lvSave(); sfxEv('menutap', 'menutap'); renderH2HPre(); };
-  el.querySelectorAll('.lvhin').forEach(i => i.onchange = () => { const c = lvPc(+i.dataset.p), d = LV_HAND.find(x => x[0] === i.dataset.h);
-    let v = +i.value; if (!isFinite(v)) v = c.hand[d[0]]; v = Math.min(d[3], Math.max(d[2], v)); v = d[4] < 1 ? +v.toFixed(1) : Math.round(v);
-    c.hand[d[0]] = v; i.value = v; i.nextElementSibling.textContent = d[0] === 'sdf' && v >= 41 ? '∞' : d[5]; lvSave(); });
+  el.querySelectorAll('.lvsl').forEach(row => { const rng = row.querySelector('.rng'), mn = +row.dataset.min, mx = +row.dataset.max, inv = row.dataset.invert === '1';
+    paintSlider(row);
+    rng.oninput = () => { const v = inv ? mx + mn - +rng.value : +rng.value; lvPc(+row.dataset.p).hand[row.dataset.h] = row.dataset.h === 'sdf' ? Math.round(v) : Math.round(v * 10) / 10; paintSlider(row); };
+    rng.onchange = () => lvSave(); });
   el.querySelectorAll('.lvsk').forEach(b => { const step = d => { const c = lvPc(+b.dataset.p), i = skOpts.findIndex(x => x.value === c.skin);
       const n = skOpts[(Math.max(0, i) + d + skOpts.length) % skOpts.length]; c.skin = n.value; b.textContent = n.label; lvSave(); sfxEv('menutap', 'menutap'); };
     b.onclick = () => step(1); b.oncontextmenu = e => { e.preventDefault(); step(-1); }; });
