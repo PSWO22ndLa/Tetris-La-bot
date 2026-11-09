@@ -3550,7 +3550,7 @@ document.documentElement.classList.add('booting'); addEventListener('load', func
           <p class="acct-note" id="labotNNNote"></p>
           <div class="fonts" id="fontSlots"></div>
           <p class="acct-note">LOAD fetches the TETR.IO font straight from tetr.io (paths from tetr.io/css/tetrio.css). Stored on this device only.</p>
-          <div class="crow file"><span class="lbl">BLOCK SKIN</span><input type="file" id="skinFile" accept="image/*"><button id="skinFetch" class="skinfetch">FETCH</button><button id="skinPlus" class="skinfetch" title="Browse the TETR.IO PLUS skin library (you.have.fail/tetrioplus)">TETR.IO PLUS</button></div>
+          <div class="crow file"><span class="lbl">BLOCK SKIN</span><input type="file" id="skinFile" accept="image/*,.svg,image/svg+xml,.tpse"><button id="skinFetch" class="skinfetch">FETCH</button><button id="skinPlus" class="skinfetch" title="Browse the TETR.IO PLUS skin library (you.have.fail/tetrioplus)">TETR.IO PLUS</button></div>
       <div class="crow"><span class="lbl">TILE</span><div class="val in"><input type="number" id="skinTile" value="32" min="4" max="256" step="1"><i>PX</i></div></div>
       <div class="crow"><span class="lbl">GAP</span><div class="val in"><input type="number" id="skinGap" value="0" min="0" max="16" step="1"><i>PX</i></div></div>
       <div class="crow"><span class="lbl">ORIGIN X</span><div class="val in"><input type="number" id="skinOffX" value="0" min="0" max="4096" step="1"><i>PX</i></div></div>
@@ -13704,19 +13704,23 @@ function restyleButtons(){
   });
 }
 
-$('skinFile').onchange = e => {
-  const f = e.target.files && e.target.files[0];
+// 方塊皮膚檔：PNG／WEBP 直接用；SVG（舊版 TETR.IO 皮膚、TETR.IO PLUS 的 ppt-* 那些）先畫成 PNG；.tpse 整包照 TETR.IO PLUS 的鍵套用
+async function skinFromFile(f){
   if (!f) return;
-  const fr = new FileReader();
-  fr.onload = () => applySkinFile(String(fr.result));
-  fr.readAsDataURL(f);
-};
+  try {
+    if (/\.(tpse|json)$/i.test(f.name || '')){ const r = await tpseImport(JSON.parse(await f.text())); notice(r.done.length ? `APPLIED: ${r.done.join(', ')}` : 'NOTHING IN THIS FILE THIS GAME CAN USE'); return; }
+    let src = await fileToDataURL(f);
+    if (/svg/i.test(f.type || '') || /\.svg$/i.test(f.name || '') || /^data:image\/svg/i.test(src)) src = await plusRaster(src);
+    applySkinFile(src);
+  } catch(e){ notice('COULD NOT LOAD THAT FILE: ' + e.message); }
+}
+$('skinFile').onchange = e => { const f = e.target.files && e.target.files[0]; e.target.value = ''; skinFromFile(f); };
 $('skinFetch').onclick = async () => {
   const r = await uiDialog({ title: 'FETCH BLOCK SKIN', msg: 'Paste a skin image URL. Strip-style skins slice best; connected skins may need manual TILE / GAP.',
     input: '', placeholder: 'https://tetr.io/res/skins/minos/…', ok: 'FETCH', cancel: 'CANCEL', chips: TIO_PRESETS.minos });
   if (!r || r === UI_EXTRA || !r.trim()) return;
   const file = await fetchAsFile(r, 'image'); if (!file) return;
-  const fr = new FileReader(); fr.onload = () => applySkinFile(String(fr.result)); fr.readAsDataURL(file);
+  skinFromFile(file.name ? file : new File([file], r.split('?')[0].split('/').pop() || 'skin.png', { type: file.type }));
 };
 const reGeo = () => {
   if (!skin) return;
@@ -14047,6 +14051,8 @@ async function fetchAsFile(url, kind){
   if (!/^https?:\/\//i.test(u)){ notice('PASTE A FULL URL (https://…)'); return null; }
   // 放在自己的網域、而且那個網域把 /tio/* 轉發到 tetr.io（vercel.json rewrites）→ 先走同網域，就不會被 CORS 擋
   const cands = [];
+  const plusM = /^https:\/\/you\.have\.fail\/tetrioplus\/(.*)$/i.exec(u);                 // TETR.IO PLUS 素材站 → 走 /plus 轉發
+  if (plusM && /^https?:$/.test(location.protocol)) cands.push('/plus/' + plusM[1]);
   const tio = /^https:\/\/tetr\.io\/(.*)$/i.exec(u);
   if (tio && /^https?:$/.test(location.protocol)){
     if (/(^|\.)tetr\.io$/i.test(location.hostname)) cands.push('/' + tio[1]);            // 頁面本身就在 tetr.io 上
