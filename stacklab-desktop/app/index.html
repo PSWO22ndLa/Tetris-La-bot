@@ -2558,11 +2558,11 @@ document.documentElement.classList.add('booting'); addEventListener('load', func
   #lvLoad{ position:absolute; inset:0; display:grid; place-items:center; background:#07090e; font-size:1.6em; color:#8aa8d0; } #lvLoad.hidden{ display:none; }
   /* RIVALS 結算：像 QP 結算一樣，每個人的面板蓋在自己那半邊的盤面位置；顏色跟著模式（40L 棕、BLITZ 紅、QP 橘） */
   #lvRes{ --pn:#4a1c13; --pb:#8b3a25; --bx:#3c150e; --lb:#e3906d; --tx:#ffe1d3; --dm:#7a3a28; --sb:#c07a60; --gl:#ff9e70;
-    position:absolute; inset:0; z-index:5; display:grid; grid-template-columns:1fr 1fr; grid-template-rows:1fr auto; font-family:var(--t-font); background:rgba(3,3,5,.72); }
+    position:absolute; inset:0; z-index:5; display:grid; grid-template-columns:1fr 1fr; grid-template-rows:auto auto; align-content:start; overflow:auto; font-family:var(--t-font); background:rgba(3,3,5,.72); }
   #lvRes[data-k="40l"]{ --pn:#382b22; --pb:#6b4f3c; --bx:#2a201a; --lb:#c99272; --tx:#f6e3d4; --dm:#6a4c39; --sb:#a97553; --gl:#e6b48c; }
   #lvRes[data-k="blitz"]{ --pn:#4e2c2c; --pb:#8a3b3b; --bx:#3a1f1f; --lb:#e09f9f; --tx:#ffe4e4; --dm:#7d3c3c; --sb:#c98585; --gl:#ff9a9a; }
   #lvRes.hidden{ display:none; }
-  #lvRes .lvr-side{ display:flex; align-items:center; justify-content:center; padding:16px 10px 0; min-height:0; overflow:auto; }
+  #lvRes .lvr-side{ display:flex; align-items:flex-start; justify-content:center; padding:16px 10px 0; }
   #lvRes .lvr-panel{ width:min(420px, 44vw); background:var(--pn); border:1px solid var(--pb); box-shadow:0 0 0 1px #0008, 0 10px 40px #000a; padding:0 12px 4px; animation:qrUp .65s cubic-bezier(.2,.8,.25,1) both; }
   #lvSide2 .lvr-panel{ animation-delay:.08s; }
   #lvRes .lvr-panel.l{ filter:saturate(.7) brightness(.85); }
@@ -2580,7 +2580,16 @@ document.documentElement.classList.add('booting'); addEventListener('load', func
   #lvRes .lvr-box small{ display:block; font-size:11px; letter-spacing:.06em; color:var(--sb); }
   #lvRes .lvr-box.res b{ color:#ffd76a; } #lvRes .lvr-panel.l .lvr-box.res b{ color:#ef6b5b; }
   #lvRes .lvr-row2{ display:grid; grid-template-columns:1fr 1fr; gap:8px; }
-  #lvRes .lvr-foot{ grid-column:1 / -1; display:flex; flex-direction:column; align-items:center; padding:10px 12px 40px; }
+  #lvRes .lvr-stats{ margin:4px -12px 0; border-top:1px dashed color-mix(in srgb, var(--pb) 55%, transparent); padding:8px 12px 10px; }
+  #lvRes .lvr-stats h3{ margin:0 0 6px; font-size:clamp(18px,2.4vw,28px); font-weight:700; letter-spacing:.06em; color:var(--lb); }
+  #lvRes .lvr-tabs{ display:grid; grid-template-columns:1fr 1fr; gap:6px; background:var(--bx); padding:4px; margin-bottom:8px; }
+  #lvRes .lvr-tabs button{ background:var(--pn); border:1px solid var(--pb); color:var(--sb); font:700 14px var(--t-font); letter-spacing:.06em; padding:4px 0; cursor:pointer; }
+  #lvRes .lvr-tabs button.on{ background:var(--bx); border-color:var(--bx); color:var(--tx); }
+  #lvRes .qr-row{ display:flex; justify-content:space-between; gap:10px; padding:2px; font-size:clamp(12px,1.35vw,15px); letter-spacing:.05em; }
+  #lvRes .qr-row span{ color:var(--sb); } #lvRes .qr-row b{ color:var(--tx); font-weight:500; text-align:right; } #lvRes .qr-row b span{ color:var(--tx); }
+  #lvRes .qr-sub{ margin:8px 2px 3px; font-size:11px; letter-spacing:.1em; color:var(--lb); border-top:1px dashed color-mix(in srgb, var(--pb) 55%, transparent); padding-top:6px; }
+  #lvRes .lvr-side{ align-items:flex-start; }
+  #lvRes .lvr-foot{ grid-column:1 / -1; position:sticky; bottom:0; display:flex; flex-direction:column; align-items:center; padding:12px 12px 36px; background:linear-gradient(transparent, rgba(3,3,5,.92) 30%); }
   #lvRes .lvr-again, #lvRes .lvr-back{ font:700 22px var(--t-font); letter-spacing:.08em; cursor:pointer; padding:9px 0; width:min(560px, 92vw); border:1px solid var(--pb); }
   #lvRes .lvr-again{ background:var(--lb); color:var(--pn); } #lvRes .lvr-again:hover{ filter:brightness(1.12); }
   #lvRes .lvr-back{ margin-top:6px; background:var(--pn); color:var(--lb); font-size:16px; padding:6px 0; } #lvRes .lvr-back:hover{ filter:brightness(1.2); }
@@ -17725,7 +17734,7 @@ function qpStatRows(full){
   const posTxt = P => P ? `<span>${P[0].toLocaleString('en-US')}</span> / ${P[1].toLocaleString('en-US')}` : '—';
   // 官方結算欄位（tetrio.js 的 L(y, …)，名稱大小寫照原文）
   let h = row('TIME', clockText(c.elapsed)) + row('FLOOR', `${fl.n}: ${fl.name}`) + row("KO's", c.kos || 0)
-    + (!c.custom && !c.duo ? row('PEAK POSITION', posTxt(c.peakPos)) + row('FINAL POSITION', posTxt(c.finalPos)) : '')
+    + (!c.custom && !c.duo && !LOCAL_P ? row('PEAK POSITION', posTxt(c.peakPos)) + row('FINAL POSITION', posTxt(c.finalPos)) : '')
     + row('average CLIMB SPEED', ((c.cspSum || 0) / Math.max(c.elapsed, 1)).toFixed(2)) + row('peak CLIMB SPEED', Math.floor(c.cspPeak || c.csp || 1))
     + row('ALTITUDE per SECOND', (c.alt / secs).toFixed(2)) + row('ATTACK per MINUTE', (teamSent() / secs * 60).toFixed(2))
     + row('PIECES per SECOND', (teamPieces() / secs).toFixed(2)) + row('VERSUS SCORE', ((teamSent() + teamGarb()) / secs * 100).toFixed(2))
@@ -18308,6 +18317,21 @@ function raceInit(){
   climb.race = { kind: R0.kind, goal: R0.goal, cmp: !!R0.cmp, local: !!R0.local, bots: (R0.players || []).map(p => raceBot(p, R0.kind)), feed: [], hudT: 0, first: null, postT: 0 };
   raceHud(); return climb.race;
 }
+// RIVALS 結算的 STATS（OVERVIEW／FULL）：QP 用 QP 結算的欄位；40L／BLITZ 用單人結算的官方欄位
+function lvDetail(){
+  const c = climb; if (!c) return null;
+  if (c.kind === 'qp') return { ov: qpStatRows(false), full: qpStatRows(true) };
+  const row = (k, v) => `<div class="qr-row"><span>${k}</span><b>${v}</b></div>`, secs = Math.max(.001, c.elapsed / 1000), st = c.st || { n: [0, 0, 0, 0, 0], spins: 0, pc: 0, mc: 0, mb: 0 };
+  const inp = c.inputs || 0, R = c.run || {}, fOk = R.finOk || 0, fBad = R.finBad || 0, fN = fOk + fBad, fin = fN ? (fOk / fN * 100).toFixed(2) + '%' : '—';
+  const ov = row('TIME', fmtT3(secs)) + (c.sub === 'blitz' ? row('SCORE', (c.score || 0).toLocaleString('en-US')) + row('LEVEL', c.blvl || 1) : '')
+    + row('PIECES PLACED', `${c.pieces || 0} · ${((c.pieces || 0) / secs).toFixed(2)}/S`) + row('KEYS PRESSED', `${inp} · ${(inp / Math.max(1, c.pieces || 0)).toFixed(2)}/P`)
+    + row('LINES CLEARED', c.lines || 0) + row('FINESSE', fN ? `${fin}${fBad ? ` · ${fBad} FAULTS` : ''}` : '—')
+    + row('maximum COMBO', Math.max(0, st.mc)) + row('maximum back-to-back chain', Math.max(0, st.mb));
+  const full = ov + '<div class="qr-sub">CLEARS</div>' + row('SINGLES', st.n[1]) + row('DOUBLES', st.n[2]) + row('TRIPLES', st.n[3]) + row('QUADS', st.n[4]) + row('SPINS', st.spins || 0) + row('ALL CLEARS', st.pc || 0)
+    + '<div class="qr-sub">INPUT</div>' + row('KEYS per SECOND', (inp / secs).toFixed(2)) + row('HOLDS', c.holds || 0) + row('LINES per MINUTE', ((c.lines || 0) / (secs / 60)).toFixed(2))
+    + row('ATTACK', `${c.sent || 0} · ${((c.sent || 0) / secs * 60).toFixed(2)}/M`);
+  return { ov, full };
+}
 // RIVALS 結算用：每個人的數據（prog／done 都帶著，輸的人還沒打完也有）
 const lvStats = () => { const c = climb, f = floorOf(c.alt || 0); return { pcs: c.pieces || 0, secs: (c.elapsed || 0) / 1000, lines: c.lines || 0, sent: c.sent || 0, score: c.score || 0, alt: c.alt || 0, fl: f.n, fn: f.name || '' }; };
 function raceMine(){ const k = climb.race.kind; return k === '40l' ? Math.min(climb.race.goal, climb.lines || 0) : k === 'blitz' ? climb.score || 0 : climb.alt || 0; }
@@ -18347,7 +18371,7 @@ function raceEnd(done, reason){
   if (R.local){                                                                   // 同一台電腦 2P：結果交給外層頁面判勝負
     sfxEv(done ? 'finish' : 'topout', done ? 'finish' : 'topout', 'gameover');
     clearMsg = { lines: [{ text: R.cmp ? (done ? 'TIME UP' : (reason || 'TOPPED OUT')) : done ? 'FINISHED' : (reason || 'TOPPED OUT'), color: done ? '#7dff9c' : '#ef4b4b', size: 'sm' }, { text: R.cmp ? raceVal(R, raceMine()) : raceFmt(secs), color: '#eef2f7', size: 'md' }, ...(R.cmp ? [{ text: 'WAITING FOR THE OTHER PLAYER…', color: '#9aa6c4', size: 'sm' }] : [])], t: performance.now(), keep: true };
-    try { parent.postMessage({ t: 'done', p: LOCAL_P, done: !!done, secs, v: raceMine(), s: lvStats() }, '*'); } catch(e){}
+    try { parent.postMessage({ t: 'done', p: LOCAL_P, done: !!done, secs, v: raceMine(), s: lvStats(), d: lvDetail() }, '*'); } catch(e){}
     raceHud(); draw(); return;
   }
   // 其他人快轉算完（最多再 15 分鐘）
@@ -18435,7 +18459,7 @@ const lvWin = p => { const f = $('lvF' + p); return f && f.contentWindow; };
 function lvSend(p, m){ const w = lvWin(p); if (w) try { w.postMessage(m, '*'); } catch(e){} }
 function lvStart(){
   lvSave(); $('localvs').classList.remove('hidden'); bgmFade(300);                                // 外層的選單音樂收掉，音樂交給 1P 那邊
-  LV.st = 'play'; $('localvs').dataset.st = 'play'; $('lvRes').classList.add('hidden'); LV.decided = false; LV.res = {}; LV.prog = {}; LV.st2 = {};
+  LV.st = 'play'; $('localvs').dataset.st = 'play'; $('lvRes').classList.add('hidden'); LV.decided = false; LV.res = {}; LV.prog = {}; LV.st2 = {}; LV.det = {}; LV.detFull = {};
   const go = () => { $('lvLoad').classList.add('hidden'); const song = LV.kind === '40l' ? soloOpt('h2h').song : undefined, mods = [...pickedMods].filter(m => !['world', 'duo', 'sun'].includes(m));
     for (const p of [1, 2]) lvSend(p, { t: 'start', kind: LV.kind, goal: LV.goal['40l'], keys: LV.keys[p], song, mods }); };
   if (LV.ready[1] && LV.ready[2]) return go();
@@ -18446,6 +18470,12 @@ function lvStart(){
     $('lvF1').src = base + '?local=1'; $('lvF2').src = base + '?local=2';
     clearTimeout(LV.fbT); LV.fbT = setTimeout(() => { if (LV.st === 'play' && !(LV.ready[1] && LV.ready[2])){ LV.ready = {}; viaDoc(); } }, 12000);   // 網址開不了 → 改用原始碼
   } else if (!viaDoc()){ $('lvLoad').textContent = 'COULD NOT START HERE: OPEN THE GAME FROM THE WEBSITE OR THE DESKTOP APP'; }
+}
+// 結算面板的 STATS（跟 QP 結算一樣有 OVERVIEW／FULL 兩個分頁；資料晚到就晚點補上）
+function lvDetRender(p){
+  const el = $('lvSt' + p); if (!el) return; const d = LV.det && LV.det[p], full = !!(LV.detFull && LV.detFull[p]);
+  el.innerHTML = d ? (full ? d.full : d.ov) : '<div class="qr-row"><span>LOADING…</span></div>';
+  const t = el.parentNode.querySelector('.lvr-tabs'); if (t) t.querySelectorAll('button').forEach(b => b.classList.toggle('on', (b.dataset.t === 'full') === full));
 }
 function lvDecide(winner, why){
   if (LV.decided) return; LV.decided = true;
@@ -18470,7 +18500,9 @@ function lvDecide(winner, why){
     rows += box('PIECES PLACED', (x.pcs || 0).toLocaleString('en-US'), `${pps(x).toFixed(2)} PPS`);
     $('lvSide' + p).innerHTML = `<div class="lvr-panel ${st}"><div class="lvr-head">▼ ${p}P · ${mName} ▼</div>
       <div class="lvr-lbl">${LBL[K] || 'YOUR RESULT'}</div><div class="lvr-big"><b>${big(p)}</b></div>
-      <div class="lvr-box res"><i>RIVALS</i><b>${resTxt}</b><small>${resSub}</small></div>${rows}</div>`;
+      <div class="lvr-box res"><i>RIVALS</i><b>${resTxt}</b><small>${resSub}</small></div>${rows}
+      <div class="lvr-stats"><h3>STATS</h3><div class="lvr-tabs" data-p="${p}"><button data-t="ov">OVERVIEW</button><button data-t="full">FULL</button></div><div class="lvr-st" id="lvSt${p}"></div></div></div>`;
+    lvDetRender(p);
   }
   $('lvWin').textContent = winner ? `${winner}P WINS` : 'DRAW'; $('lvSub').textContent = why;
   $('lvRes').dataset.k = K;
@@ -18481,7 +18513,8 @@ addEventListener('message', e => {
   if (e.source !== lvWin(p)) return;
   if (m.t === 'ready'){ LV.ready[p] = true; if (LV.ready[1] && LV.ready[2] && LV.pend){ const f = LV.pend; LV.pend = null; f(); } }
   else if (m.t === 'prog'){ LV.prog[p] = m.v; if (m.s) (LV.st2 = LV.st2 || {})[p] = m.s; lvSend(3 - p, { t: 'opp', v: m.v }); }
-  else if (m.t === 'done'){ LV.res[p] = m; if (m.s) (LV.st2 = LV.st2 || {})[p] = m.s; lvSend(3 - p, { t: 'opp', v: m.v, fin: m.done ? m.secs : null, dead: m.done ? null : m.secs });
+  else if (m.t === 'det'){ if (m.d) (LV.det = LV.det || {})[p] = m.d; lvDetRender(p); }
+  else if (m.t === 'done'){ LV.res[p] = m; if (m.s) (LV.st2 = LV.st2 || {})[p] = m.s; if (m.d) (LV.det = LV.det || {})[p] = m.d; lvSend(3 - p, { t: 'opp', v: m.v, fin: m.done ? m.secs : null, dead: m.done ? null : m.secs });
     if (LV.kind === '40l'){ if (m.done) lvDecide(p, 'FIRST TO CLEAR ' + LV.goal['40l'] + ' LINES'); else lvDecide(3 - p, `${p}P TOPPED OUT`); }
     else if (LV.res[1] && LV.res[2]){ const a = +LV.res[1].v || 0, b = +LV.res[2].v || 0;   // BLITZ／QP：兩個人都打完才比
       lvDecide(a === b ? 0 : a > b ? 1 : 2, LV.kind === 'blitz' ? 'HIGHER SCORE' : 'HIGHER ALTITUDE'); } }
@@ -18491,6 +18524,8 @@ if (!LOCAL_P){
   $('lvAgain').onclick = lvStart;
   const toSetup = () => { for (const p of [1, 2]) lvSend(p, { t: 'quit' }); LV.st = 'setup'; $('localvs').classList.add('hidden'); $('lvRes').classList.add('hidden'); sfxEv('menuback', 'menuback', .7); openSoloPre('h2h'); };
   $('lvToSetup').onclick = toSetup; $('lvQuit').onclick = toSetup;
+  $('lvRes').addEventListener('click', e => { const b = e.target.closest('.lvr-tabs button'); if (!b) return; const p = +b.parentNode.dataset.p;
+    (LV.detFull = LV.detFull || {})[p] = b.dataset.t === 'full'; sfxEv('menutap', 'menutap', .6); lvDetRender(p); });
   const fwd = e => {
     if (LV.listen && e.type === 'keydown' && screen === 'solopre' && soloPreKind === 'h2h'){ e.preventDefault(); e.stopImmediatePropagation();
       const { p, a } = LV.listen, code = e.code === 'Backspace' ? null : kNorm(e.code);
@@ -18560,6 +18595,7 @@ if (LOCAL_P){
       if (R.kind === 'zenith' && !climb.hyper){ const f = Math.max(floorOf(climb.alt || 0).n, floorOf(b.v || 0).n); if (f !== R.musF){ R.musF = f; zmFloor(f); } }   // 對手爬得比較高 → 換成他那層的音樂（你已經死了也一樣跟著）
     } else if (m.t === 'stop'){
       if (!climb) return; const win = m.res === 'win', draw0 = m.res === 'draw';
+      try { window.parent.postMessage({ t: 'det', p: LOCAL_P, s: lvStats(), d: lvDetail() }, '*'); } catch(e){}
       if (climb.kind === 'qp') try { zmStop(); } catch(e){}                                   // 兩個人都打完才停 QP 音樂
       if (!climb.over){ climb.over = true; active = null; }
       sfxEv(win ? 'victory' : 'topout', win ? 'victory' : 'topout', 'gameover');
