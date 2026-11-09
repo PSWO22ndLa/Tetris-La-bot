@@ -11579,7 +11579,10 @@ async function plusFetch(rel, as){
   let err;
   for (const b of bases){
     try { const r = await fetch(b + rel, { cache: 'no-cache' }); if (!r.ok) throw new Error('HTTP ' + r.status);
-      PLUS.base = b; return as === 'blob' ? await r.blob() : as === 'json' ? await r.json() : await r.text(); }
+      const v = as === 'blob' ? await r.blob() : as === 'json' ? await r.json() : await r.text();
+      if (!as && rel.endsWith('/') && !/href="\.\.\/"/.test(v)) throw new Error('not a listing');   // 網站沒設轉發時 /plus/ 會回首頁，不能當清單
+      if (as === 'blob' && !/^image\//.test(v.type)) throw new Error('not an image');
+      PLUS.base = b; return v; }
     catch(e){ err = e; }
   }
   throw err || new Error('offline');
@@ -11613,7 +11616,9 @@ async function plusLoad(force){
     try { store.set('bp:plusList', JSON.stringify({ t: Date.now(), list: PLUS.list })); } catch(e){}
     st.textContent = `${PLUS.list.length} SKINS`; plusRender();
   } catch(e){
-    st.textContent = location.hostname === 'stacklab.invalid' ? 'COULD NOT REACH YOU.HAVE.FAIL: CHECK YOUR CONNECTION' : 'THE SKIN SITE BLOCKS THIS PAGE (NO CORS): USE THE DESKTOP APP, OR DOWNLOAD A PNG THERE AND LOAD IT WITH BLOCK SKIN';
+    st.textContent = location.hostname === 'stacklab.invalid' ? 'COULD NOT REACH YOU.HAVE.FAIL: CHECK YOUR CONNECTION'
+      : location.protocol.startsWith('http') ? 'THE SKIN SITE BLOCKS OTHER PAGES (NO CORS). SITE OWNER: ADD THIS TO vercel.json REWRITES → { "source": "/plus/:path*", "destination": "https://you.have.fail/tetrioplus/:path*" }. OR USE THE DESKTOP APP'
+      : 'THE SKIN SITE BLOCKS THIS PAGE (NO CORS): USE THE DESKTOP APP, OR DOWNLOAD A PNG THERE AND LOAD IT WITH BLOCK SKIN';
   } finally { PLUS.busy = false; }
 }
 function plusRender(){
