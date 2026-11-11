@@ -2081,6 +2081,9 @@ document.documentElement.classList.add('booting'); addEventListener('load', func
   [data-t="blitz"] .oblk{ --bk:rgb(62,36,36); --bc:rgb(121,69,69) rgb(50,29,29) rgb(36,22,22) rgb(98,61,61); --h1:rgb(219,161,161); --p:rgb(243,197,197); --sg:rgb(121,75,75); --sgl:rgb(176,99,99); --sgc:rgb(235,172,172);
     --cb:rgb(166,98,98); --cbc:rgb(219,147,147); --cbx:rgb(23,16,16); --cbxb:rgb(8,7,7) rgb(38,30,30) rgb(43,35,35) rgb(15,12,12); --cbo:rgb(163,104,104); --cbob:rgb(227,145,145) rgb(125,79,79) rgb(115,72,72) rgb(191,122,122);
     --btn:rgb(76,49,49); --btnb:rgb(108,69,69) rgb(61,41,41) rgb(48,33,33) rgb(92,62,62); --btnc:rgb(220,171,171); --big:rgb(246,195,195); --bigs:rgb(187,142,142); --rk:rgb(109,60,60); --kp:rgb(169,124,124); --kp2:rgb(241,201,201); --lab:rgb(219,147,147); --mus:rgb(246,195,195); }
+  [data-t="league"] .oblk{ --bk:rgb(66,22,26); --bc:rgb(150,38,48) rgb(56,18,22) rgb(38,12,15) rgb(122,30,40); --h1:rgb(238,174,180); --p:rgb(255,206,212); --sg:rgb(120,30,40); --sgl:rgb(200,56,72); --sgc:rgb(255,200,208);
+    --cb:rgb(176,82,94); --cbc:rgb(238,150,162); --cbx:rgb(24,12,14); --cbxb:rgb(8,6,7) rgb(40,24,27) rgb(46,28,31) rgb(16,10,11); --cbo:rgb(180,70,84); --cbob:rgb(240,128,142) rgb(130,44,54) rgb(118,38,48) rgb(200,92,106);
+    --btn:rgb(86,28,34); --btnb:rgb(128,44,54) rgb(64,22,27) rgb(48,16,20) rgb(108,38,46); --btnc:rgb(250,176,186); --big:rgb(255,206,212); --bigs:rgb(200,128,138); --rk:rgb(118,40,50); --kp:rgb(186,112,122); --kp2:rgb(255,206,212); --lab:rgb(238,150,162); --mus:rgb(255,206,212); }
   [data-t="zenith"] .oblk{ --bk:rgb(62,26,15); --bc:rgb(176,61,26) rgb(62,24,12) rgb(40,15,8) rgb(141,46,27); --h1:rgb(238,176,145); --p:rgb(255,196,160); --sg:rgb(120,44,20); --sgl:rgb(214,96,52); --sgc:rgb(255,214,190);
     --cb:rgb(190,110,80); --cbc:rgb(255,180,140); --cbo:rgb(184,84,48); --cbob:rgb(255,156,107) rgb(141,46,27) rgb(120,40,22) rgb(214,96,52);
     --btn:rgb(92,36,18); --btnb:rgb(141,56,30) rgb(66,26,12) rgb(48,18,8) rgb(120,46,24); --btnc:rgb(255,180,140); --big:rgb(255,196,160); --bigs:rgb(200,120,90); --lab:rgb(255,180,140); --mus:rgb(255,196,160); }
@@ -2579,6 +2582,36 @@ document.documentElement.classList.add('booting'); addEventListener('load', func
   #lvTl .s.l{ background:#2846c8; } #lvTl .s.r{ background:#c42536; } #lvTl em{ font:700 30px var(--t-font,var(--hunf)); font-style:normal; color:#c8cfdd; }
   #lvTl small{ position:absolute; left:50%; top:100%; transform:translateX(-50%); font:700 13px var(--t-font,var(--hunf)); letter-spacing:.2em; color:#c8cfdd; white-space:nowrap; margin-top:4px; }
   #lvTl.big{ top:50%; transform:translate(-50%,-50%) scale(2.1); }
+  /* 官方 TL 開場（使用者錄影）：FTn＋藍紅斜切＋金色 VS → 黑 → 中間一條 TETRA LEAGUE → 兩個盤面從中間放大 */
+  #lvVs,#lvRs{ position:absolute; inset:0; z-index:8; pointer-events:none; overflow:hidden; background:#000; transition:opacity .45s; font-family:var(--t-font,var(--hunf)); }
+  #lvVs.hidden,#lvRs.hidden,#lvBan.hidden{ display:none; } #lvVs.out,#lvRs.out{ opacity:0; }
+  #lvVs .t,#lvVs .b{ position:absolute; inset:0; }
+  #lvVs .t{ background:linear-gradient(180deg,#0d1a5c,#2541c9 70%,#3d63ff); clip-path:polygon(0 0,100% 0,100% 44%,0 56%); }
+  #lvVs .b{ background:linear-gradient(0deg,#3a0508,#a3121c 65%,#d41f2a); clip-path:polygon(0 56%,100% 44%,100% 100%,0 100%); }
+  #lvVs .ft{ position:absolute; top:3%; left:50%; transform:translateX(-50%); font-size:min(5vw,9vh); color:#fff; letter-spacing:.04em; }
+  #lvVs .p1,#lvVs .p2{ position:absolute; font-size:min(7vw,12vh); color:#fff; letter-spacing:.03em; text-shadow:0 4px 18px rgba(0,0,0,.5); }
+  #lvVs .p1{ left:6%; top:24%; } #lvVs .p2{ right:6%; bottom:22%; }
+  #lvVs .vs{ position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); font-style:normal; font-size:min(11vw,20vh); font-weight:700; color:#ffd23a;
+    text-shadow:0 0 18px #ff9d00,0 0 42px rgba(255,140,0,.8); animation:lvVsIn .5s cubic-bezier(.2,1.6,.4,1) both; }
+  @keyframes lvVsIn{ 0%{ transform:translate(-50%,-50%) scale(2.4); opacity:0; } 100%{ transform:translate(-50%,-50%) scale(1); opacity:1; } }
+  #lvFin{ position:absolute; left:0; right:0; top:50%; transform:translateY(-50%); z-index:7; pointer-events:none; text-align:center; font:800 clamp(70px,22vh,200px)/1 "Roboto Condensed",var(--t-font,var(--hunf));
+    color:rgba(225,240,90,.82); text-shadow:0 0 22px rgba(220,255,80,.6); animation:tlGame .45s cubic-bezier(.2,.9,.3,1.3) both; } #lvFin.hidden{ display:none; }
+  #lvBan{ position:absolute; left:0; right:0; top:50%; transform:translateY(-50%); z-index:7; pointer-events:none; text-align:center; padding:.45em 0;
+    background:linear-gradient(90deg,transparent 22%,rgba(196,24,36,.92) 38%,rgba(196,24,36,.92) 62%,transparent 78%); font:700 min(2.4vw,4.2vh) var(--t-font,var(--hunf)); letter-spacing:.14em; color:#fff;
+    animation:lvBanIn .35s ease-out both; }
+  @keyframes lvBanIn{ 0%{ opacity:0; transform:translateY(-50%) scaleX(.4); } 100%{ opacity:1; transform:translateY(-50%); } }
+  #localvs.zoomin .lv-f{ animation:lvZoom 1.5s cubic-bezier(.2,.9,.3,1) 1s both; } #localvs.zoomin .lv-f:first-child{ transform-origin:100% 50%; } #localvs.zoomin .lv-f:nth-child(2){ transform-origin:0 50%; }
+  @keyframes lvZoom{ 0%{ transform:scale(.3); opacity:0; } 30%{ opacity:1; } 100%{ transform:none; opacity:1; } }
+  /* 官方 TL 每局結束：整個畫面左藍右紅＋中間兩個大數字＋名字 */
+  #lvRs{ background:transparent; } #lvRs .l,#lvRs .r{ position:absolute; top:0; bottom:0; width:50%; }
+  #lvRs .l,#lvRs .r{ transition:filter .5s, opacity .5s; filter:brightness(.45) saturate(.7); } #lvRs .l.hot,#lvRs .r.hot{ filter:none; }
+  #lvRs .l{ left:0; background:linear-gradient(90deg,rgba(4,10,40,.92),rgba(18,44,150,.92) 92%,#3d6bff); box-shadow:inset -3px 0 0 #6f95ff; }
+  #lvRs .r{ right:0; background:linear-gradient(270deg,rgba(30,2,4,.92),rgba(120,10,18,.92) 92%,#e0303c); box-shadow:inset 3px 0 0 #ff6670; }
+  #lvRs b{ position:absolute; top:50%; transform:translate(-50%,-62%); font-size:min(16vw,30vh); line-height:1; color:#fff; text-shadow:0 0 14px rgba(255,255,255,.85),0 0 36px rgba(160,190,255,.6); }
+  #lvRs .a{ left:41%; } #lvRs .b{ left:59%; } #lvRs b.pop{ animation:lvRsPop .6s ease-out; }
+  @keyframes lvRsPop{ 0%{ transform:translate(-50%,-62%) scale(1.7); filter:brightness(2.2); } 100%{ transform:translate(-50%,-62%); filter:none; } }
+  #lvRs small{ position:absolute; top:50%; transform:translate(-50%,calc(min(8vw,15vh) + 10px)); font-size:min(2.6vw,4.6vh); color:#fff; letter-spacing:.06em; }
+  #lvRs .na{ left:41%; } #lvRs .nb{ left:59%; }
   #lvTl .s.pop{ animation:tlsPop .5s ease-out; }
   #lvLoad{ position:absolute; inset:0; display:grid; place-items:center; background:#07090e; font-size:1.6em; color:#8aa8d0; } #lvLoad.hidden{ display:none; }
   /* RIVALS 結算：像 QP 結算一樣，每個人的面板蓋在自己那半邊的盤面位置；顏色跟著模式（40L 棕、BLITZ 紅、QP 橘） */
@@ -3104,7 +3137,7 @@ document.documentElement.classList.add('booting'); addEventListener('load', func
     <button class="tbar" id="goLeague" data-logo="4LG" style="--bg:#4a1a1c;--ti:#f6a6a6;--su:#d48a86;--l1:#c9473a;--l2:#d8903a"><span class="tlogo" aria-hidden="true"></span><b>TETRA LEAGUE</b><small>fight players of your skill in ranked duels</small></button>
     <button class="tbar" id="goCustGame" data-logo="CTM" style="--bg:#2a2540;--ti:#d6cdfa;--su:#a39ad0;--l1:#7a5ce6;--l2:#c45ad8"><span class="tlogo" aria-hidden="true"></span><b>CUSTOM GAME</b><small>create public and private rooms to play by your rules</small></button>
     <button class="tbar" id="goRoomList" data-logo="RMS" style="--bg:#1f3338;--ti:#bfeef4;--su:#8cc0c8;--l1:#2fa8bf;--l2:#4ad0a0"><span class="tlogo" aria-hidden="true"></span><b>ROOM LISTING</b><small>join public games</small><span class="tcount player_count room_count empty" id="mpRoomCount">0</span></button>
-    <button class="tbar" id="goLocalVs" data-logo="1V1" style="--bg:rgb(56,44,20);--bt:rgb(104,82,30);--bl:rgb(78,62,25);--bb:rgb(24,19,9);--ti:rgb(255,214,120);--su:rgb(204,164,84);--l1:#e0a13d;--l2:#f0c050"><span class="tlogo" aria-hidden="true"></span><b>RIVALS</b><small>challenge your rival, side by side!</small></button>
+    <button class="tbar" id="goLocalVs" data-logo="1V1" style="--bg:rgb(26,40,60);--bt:rgb(34,62,106);--bl:rgb(30,50,82);--bb:rgb(13,17,25);--ti:rgb(150,200,255);--su:rgb(96,140,198);--l1:#3d7be0;--l2:#e0a13d"><span class="tlogo" aria-hidden="true"></span><b>RIVALS</b><small>challenge your rival, side by side!</small></button>
   </div>
 </section>
 
@@ -3197,6 +3230,10 @@ document.documentElement.classList.add('booting'); addEventListener('load', func
 </div></div>
 <div id="localvs" class="hidden">
   <div id="lvPlay"><div class="lv-f"><b>1P</b><iframe id="lvF1" tabindex="-1" title="1P"></iframe></div><div class="lv-f"><b>2P</b><iframe id="lvF2" tabindex="-1" title="2P"></iframe></div>
+    <div id="lvVs" class="hidden"><div class="t"></div><div class="b"></div><b class="ft">FT3</b><b class="p1">1P</b><b class="p2">2P</b><i class="vs">VS</i></div>
+    <div id="lvBan" class="hidden">TETRA LEAGUE</div>
+    <div id="lvFin" class="hidden">FINISH!</div>
+    <div id="lvRs" class="hidden"><div class="l"></div><div class="r"></div><b class="a">0</b><b class="b">0</b><small class="na">1P</small><small class="nb">2P</small></div>
     <div id="lvTl" class="hidden"><b class="n">1P</b><i class="s l">0</i><em>-</em><i class="s r">0</i><b class="n">2P</b><small></small></div>
     <div id="lvLoad">LOADING…</div>
     <div id="lvRes" class="hidden"><span id="lvWin" hidden></span><span id="lvSub" hidden></span>
@@ -5474,6 +5511,12 @@ function nine(X, img, sx, sy, sw, sh, L, T, R, B, dx, dy, dw, dh, k){
 function genUnder(X = ctx){
   const top = (H - VISIBLE) * cell, u = cell / 30, B = genTex('gBoard'), G = genTex('gGrid');
   if (B){ X.save(); X.globalAlpha = Math.min(1, optN('oBoardVis') / 100); X.drawImage(B, 2, 2, 16, 16, -u, top, W * cell + 2 * u, VISIBLE * cell + u); X.restore(); }
+  genGrid(X, G);
+  return !!B;
+}
+// 官方 Kc.zenith.ns.Board 繼承 generic：QP 的 zenith 盤面一樣有 generic grid.png 這層網子
+function genGrid(X = ctx, G = genTex('gGrid')){
+  const top = (H - VISIBLE) * cell;
   if (G && showGrid){
     X.save(); X.globalAlpha = Math.min(1, optN('oGridVis') / 100);
     for (let r = 0; r < VISIBLE; r += 2) for (let c = 0; c < W; c += 2){
@@ -5482,7 +5525,6 @@ function genUnder(X = ctx){
     }
     X.restore();
   }
-  return !!B;
 }
 const genTex = id => (typeof TIO_X !== 'undefined' && TIO_X[id] && tioImgOn()) ? TIO_X[id] : null;
 const GTINT = new Map();
@@ -8179,10 +8221,10 @@ function drawTlOppInner(o){
   const total = Math.min(20, botHeight(o)), inc = (o.pending || []).reduce((n, p) => n + p.lines, 0), danger = total >= 14 || total + inc >= 17;
   const keepD = dangerNow; dangerNow = danger;
   ctx.save(); ctx.translate(D, 0);
-  atlasDraw(ctx, 'bg', { x: 0, y: (H - VISIBLE) * cell, w: bw, h: VISIBLE * cell });
+  atlasDraw(ctx, 'bg', { x: 0, y: (H - VISIBLE) * cell, w: bw, h: VISIBLE * cell }); genGrid(ctx);
   const view = new Uint8Array(W * H), off = H - BOT_H;                              // 對手盤面 24 行 → 對齊你的盤面底部
   for (let y = 0; y < H; y++){ const oy = y - off; if (oy < 0 || oy >= BOT_H) continue; for (let x = 0; x < W; x++) view[y * W + x] = o.bd[oy * W + x]; }
-  renderBoard(ctx, view, { scale: cell, grid: showGrid, buffer: false, noBufGrid: true, transparent: true, keepUnder: true, frame: false });
+  renderBoard(ctx, view, { scale: cell, grid: showGrid && !genTex('gGrid'), buffer: false, noBufGrid: true, transparent: true, keepUnder: true, frame: false });
   const lastSet = new Set(o.last);
   for (const k of lastSet){ const y = Math.floor(k / W) + off, x = k % W; if (y >= H - VISIBLE){ ctx.fillStyle = 'rgba(255,255,255,.3)'; ctx.fillRect(x * mc, y * mc, mc, mc); } }
   if (o.anim && o.anim.steps){                                                       // 正在移動的那顆＋影子
@@ -8419,8 +8461,8 @@ function drawFrame(){
   if (meFall && meFall.k > 1.2) ctx.globalAlpha = 0;
   const shown = exileView(showPreview ? clearRows(grid()).board : grid());
   const skinned = boardSkinOn(), gen = genBoard(), genT = gen && genUnder(ctx);
-  if (skinned) drawSkinUnder();
-  renderBoard(ctx, shown, { scale:cell, grid:showGrid && !(gen && genTex('gGrid')), buffer: mode !== 'sim', noBufGrid: mode === 'sim', transparent:skinned || genT, keepUnder:skinned || genT, frame:!skinned && !gen,   // 遊戲中照實機：盤面上方（出生區）不畫格線、不畫虛線
+  if (skinned){ drawSkinUnder(); genGrid(ctx); }
+  renderBoard(ctx, shown, { scale:cell, grid:showGrid && !((gen || skinned) && genTex('gGrid')), buffer: mode !== 'sim', noBufGrid: mode === 'sim', transparent:skinned || genT, keepUnder:skinned || genT, frame:!skinned && !gen,   // 遊戲中照實機：盤面上方（出生區）不畫格線、不畫虛線
     invisible: hasMod('exile'), invPulse: !hasMod('exile') && hasMod('invisible') ? invPulse() : null });
 
   if (!showPreview){
@@ -10188,8 +10230,10 @@ function startClimb(kind = 'qp', opts = {}){
   const room = !!opts.room || (kind === 'league' && !opts.custom), stride = kind === 'practice' && (opts.sub || 'zen') === 'zen';
   if (cdOn){
     let n, iv, pre, post = 0, labels = null, snd = null, goSnd = 'go', mis = null;
-    if (kind === 'league' && !opts.room){                                       // 官方 TL（使用者錄影＋_StartCountdown）：開局 1 秒喊 TETRA LEAGUE（mission_league）→ 4 秒起 5、4、3、2、1（每秒，countdown5–1）→ GO!
-      n = 5; iv = 1000; pre = 4000; mis = { at: 1000, text: opts.unranked ? 'CUSTOM GAME' : 'TETRA LEAGUE', snd: 'mission_league', ban: true }; }
+    if (kind === 'league' && !opts.room && opts.keepScore){                     // 官方 TL 第 2 局起（使用者錄影 Shan vs icly）：比分畫面後盤面出現約 0.8 秒 → 3、2、1（每秒）→ GO!，沒有 mission
+      n = 3; iv = 1000; pre = 800; }
+    else if (kind === 'league' && !opts.room){                                  // 官方 TL 第 1 局（使用者錄影＋_StartCountdown）：開局 1 秒喊 TETRA LEAGUE（mission_league）→ 4 秒起 5、4、3、2、1（每秒，countdown5–1）→ GO!
+      n = 5; iv = 1000; pre = 4000; mis = LOCAL_P ? null : { at: 1000, text: opts.unranked ? 'CUSTOM GAME' : 'TETRA LEAGUE', snd: 'mission_league', ban: true }; }
     else if (room){ n = 3; iv = 500; pre = 0; snd = () => 'rsg'; goSnd = 'rsg_go'; }
     else if (opts.custom){ n = Math.max(1, Math.min(9, Math.round(opts.custom.cdn) || 3)); iv = Math.max(200, +opts.custom.cdiv || 1000); pre = Math.max(0, +opts.custom.cdpre || 0); post = Math.max(0, +opts.custom.cdpost || 0); }
     else if (stride){ n = 2; iv = 500; pre = 1500; labels = ['ready', 'set']; snd = k => k ? 'countdown4' : 'countdown5'; }
@@ -15419,7 +15463,7 @@ function qplDraw(){
 function qplLoop(t){
   QPL.raf = 0;
   const resOn = document.body.classList.contains('qpres') || document.body.classList.contains('qpg');
-  if ((screen !== 'modsel' && !resOn) || document.hidden){ QPL.last = 0; return; }
+  if ((screen !== 'modsel' && !resOn) || document.hidden || (QPK && QPK.active)){ QPL.last = 0; if (QPK && QPK.active && !QPL.wq){ QPL.wq = setInterval(() => { if (!QPK.active){ clearInterval(QPL.wq); QPL.wq = 0; if (!QPL.raf) QPL.raf = requestAnimationFrame(qplLoop); } }, 500); } return; }   // THE WORLD 開著：大廳的排行榜模擬先停（被蓋住了，還很吃效能）
   const det = uiDetail(), dt = QPL.last ? Math.min(100, t - QPL.last) : 16;
   const minGap = LOCAL_P ? 500 : det >= 2 ? 0 : det === 1 ? 45 : 250;        // 畫面更新上限：HIGH 跟螢幕、MEDIUM ~22fps、LOW 4fps；RIVALS 看不到排行榜 → 一秒兩次就好
   if (!QPL.last || t - QPL.last >= minGap){
@@ -17742,7 +17786,8 @@ const tlFtFor = r => ['U', 'X', 'X+'].includes(r) ? 7 : ['S-', 'S', 'S+', 'SS'].
 const tlFtForTR = tr => tr >= 20000 ? 7 : tr >= 13800 ? 5 : 3;
 // 過場疊層：用序號判斷「還是不是我這一個」（以前比對 innerHTML 字串：HTML 被瀏覽器正規化後不相等 → 永遠收不回去）
 let TLOV_ID = 0;
-const tlOv = (html, ms) => new Promise(res => { const o = $('tlOv'), id = ++TLOV_ID; o.innerHTML = html; o.classList.add('on'); setTimeout(() => { if (TLOV_ID === id){ o.classList.remove('on'); o.innerHTML = ''; } res(); }, ms); });
+const tlOv = (html, ms) => new Promise(res => { if (LOCAL_P && /class="game"/.test(html)){ setTimeout(res, ms); return; }   // RIVALS：FINISH!／GAME! 由外層在兩個盤面正中間只顯示一個
+  const o = $('tlOv'), id = ++TLOV_ID; o.innerHTML = html; o.classList.add('on'); setTimeout(() => { if (TLOV_ID === id){ o.classList.remove('on'); o.innerHTML = ''; } res(); }, ms); });
 const tlOvClear = () => { TLOV_ID++; const o = $('tlOv'); if (o){ o.classList.remove('on'); o.innerHTML = ''; } };
 const tlEsc = t => String(t).replace(/[<&]/g, '');
 function tlMyTR(){ const p = loadProfile(), st = tlState(p); return { name: p.name, tr: st.placed ? Math.round(st.tr) : null, mmTR: trOfG({ r: st.g.r, rd: Math.min(st.g.rd, 100) }), r: st.rank, left: st.left, st }; }
@@ -18654,13 +18699,13 @@ function raceEnd(done, reason){
 // ── 同一台電腦 2P（外層）：設定模式／目標／按鍵 → 開兩個 iframe（各自是一份完整的遊戲），鍵盤事件轉給兩邊（各自只認自己的鍵）
 var LV = { st: 'setup', kind: '40l', goal: { '40l': 40, blitz: 100000, zenith: 5, league: 3 }, keys: null, listen: null, ready: {}, decided: false, res: {}, prog: {} };
 const LV_ACT = [['left', 'MOVE LEFT'], ['right', 'MOVE RIGHT'], ['soft', 'SOFT DROP'], ['hard', 'HARD DROP'], ['ccw', 'ROTATE CCW'], ['cw', 'ROTATE CW'], ['flip', 'ROTATE 180'], ['hold', 'HOLD']];
-function lvLoad(){ try { const j = JSON.parse(localStorage.getItem('bp:localvs') || 'null'); if (j){ if (j.goal && !j.goal.league) j.goal.league = 3; if (j.pc) LV.pc = j.pc; if (j.kind) LV.kind = j.kind; if (j.goal) Object.assign(LV.goal, j.goal); if (j.keys && j.keys[1] && j.keys[2]) LV.keys = j.keys; } } catch(e){}
+function lvLoad(){ try { const j = JSON.parse(localStorage.getItem('bp:localvs') || 'null'); if (j){ if (j.goal && !j.goal.league) j.goal.league = 3; if (j.pc){ LV.pc = j.pc; lvHandFix(); } if (j.kind) LV.kind = j.kind; if (j.goal) Object.assign(LV.goal, j.goal); if (j.keys && j.keys[1] && j.keys[2]) LV.keys = j.keys; } } catch(e){}
   if (!LV.keys) LV.keys = JSON.parse(JSON.stringify(LOCAL_KEYS)); }
 function lvSave(){ try { localStorage.setItem('bp:localvs', JSON.stringify({ kind: LV.kind, goal: LV.goal, keys: LV.keys, pc: LV.pc })); } catch(e){} }
 const LV_GOALS = { league: [1, 2, 3, 4, 5, 7], '40l': [10, 20, 40, 100, 150], blitz: [20000, 50000, 100000, 200000, 500000, 1000000], zenith: [2, 3, 4, 5, 6, 7, 8, 9, 10] };
 const LV_MODES = [['40l', '40 LINES'], ['blitz', 'BLITZ'], ['zenith', 'QUICK PLAY'], ['league', 'TETRA LEAGUE']];
 const LV_DESC = { league: 'a real 1v1: everything you clear is sent to your rival as garbage.<br>top out and you lose the round. first to win the set number of rounds takes the match.', '40l': 'a race! the first to clear the lines wins.<br>top out and you lose.', blitz: '2 minutes each. the higher score wins!<br>topping out ends your run early.', zenith: 'scale the ZENITH TOWER side by side. the higher altitude wins!<br>both players use the mods picked below.' };
-const LV_T = k => k === 'league' ? 'blitz' : k;
+const LV_T = k => k;                                                           // 每個模式用自己的顏色（TL 是官方 TL 大廳的酒紅，不是 BLITZ 的灰紅）
 // QP 的 mod 面板：RIVALS 選 QUICK PLAY 時整塊搬到開局頁最下面，離開就搬回 QP 大廳
 var H2H_MODS = { el: null, home: null, next: null };
 function h2hMods(on){
@@ -18681,7 +18726,13 @@ const lvMyHand = () => ({ arr: +((+$('arr').value || 0) / LV_HF).toFixed(1), das
 const lvSkinOpts = () => [{ label: 'MY CONFIG', value: 'cfg' }, { label: 'PLAIN COLORS', value: 'none' }, ...TIO_PRESETS.minos, ...skLib().map(x => ({ label: x.label.toUpperCase(), value: x.id }))];
 function lvPc(p){
   LV.pc = LV.pc || {}; const c = LV.pc[p] = LV.pc[p] || {};
-  if (!c.hand) c.hand = lvMyHand(); if (!c.skin) c.skin = 'cfg'; return c;
+  if (!c.skin) c.skin = 'cfg'; return c;
+}
+// 1P／2P 的 ARR／DAS／DCD／SDF：沒動過滑桿 → 一律跟著 CONFIG（以前第一次打開就把當下的值存死，之後改 CONFIG 也不會跟）
+const lvHand = p => { const c = lvPc(p); return c.own && c.hand ? c.hand : lvMyHand(); };
+function lvHandFix(){                                                            // 舊存檔：沒有 own 記號的 hand 都是自動抄的 → 是預設值 2／10／2／6 就丟掉改回跟 CONFIG
+  for (const p of [1, 2]){ const c = LV.pc && LV.pc[p]; if (!c || !c.hand || c.own) continue;
+    const h = c.hand; if (h.arr === 2 && h.das === 10 && h.dcd === 2 && h.sdf === 6) delete c.hand; else c.own = true; }
 }
 async function lvSkinFor(p){                                                   // 開局前把選的皮膚變成子視窗直接能用的東西
   const v = lvPc(p).skin;
@@ -18698,6 +18749,29 @@ async function lvSkinFor(p){                                                   /
   } catch(e){}
   return { cfg: store.get(SKIN_KEY) || null };
 }
+// 官方 TL 開場：VS 畫面約 3.5 秒 → 淡出成黑 → （送出開局）1 秒時中間一條 TETRA LEAGUE＋mission_league、盤面從中間放大 → 4 秒起 5…1 → GO!
+const lvSleep = ms => new Promise(r => setTimeout(r, ms));
+async function lvTlIntro(){
+  const vs = $('lvVs'), L = $('localvs'); if (!vs) return;
+  vs.querySelector('.ft').textContent = 'FT' + LV.goal.league; vs.classList.remove('hidden', 'out');
+  const v = vs.querySelector('.vs'); v.style.animation = 'none'; void v.offsetWidth; v.style.animation = '';
+  L.classList.remove('zoomin'); $('lvTl').classList.add('hidden');
+  await lvSleep(3300); vs.classList.add('out'); await lvSleep(500); vs.classList.add('hidden');
+  if (LV.st !== 'play') return;
+  void L.offsetWidth; L.classList.add('zoomin'); clearTimeout(LV.zoomT); LV.zoomT = setTimeout(() => L.classList.remove('zoomin'), 2600);
+  clearTimeout(LV.banT); LV.banT = setTimeout(() => { if (LV.st !== 'play') return; $('lvBan').classList.remove('hidden'); try { sfxEv('mission', 'mission_league'); } catch(e){}
+    LV.banT = setTimeout(() => $('lvBan').classList.add('hidden'), 2900); }, 1000);
+}
+function lvTlRound(who){                                                       // 官方 TL 每局結束的全畫面比分
+  const el = $('lvRs'); if (!el || !LV.tl) return; const a = el.querySelector('.a'), b = el.querySelector('.b');
+  // 官方：先亮舊比分（兩邊都暗）→ 約 1.5 秒（showscore）贏的那邊亮起來、數字跳成新的 → 滑出
+  const sc = { ...LV.tl.s }; if (who) sc[who] = Math.max(0, sc[who] - 1);
+  a.textContent = sc[1]; b.textContent = sc[2]; el.querySelector('.l').classList.remove('hot'); el.querySelector('.r').classList.remove('hot'); a.classList.remove('pop'); b.classList.remove('pop'); el.classList.remove('hidden', 'out');
+  clearTimeout(LV.rsT); LV.rsT = setTimeout(() => { if (!LV.tl) return;
+    a.textContent = LV.tl.s[1]; b.textContent = LV.tl.s[2]; lvTlShow(who);
+    const e = who === 1 ? a : who === 2 ? b : null; if (e){ e.classList.remove('pop'); void e.offsetWidth; e.classList.add('pop'); el.querySelector(who === 1 ? '.l' : '.r').classList.add('hot'); }
+    LV.rsT = setTimeout(() => { el.classList.add('out'); LV.rsT = setTimeout(() => el.classList.add('hidden'), 450); }, 2000); }, 1500);
+}
 const lvSeed = () => ((Math.random() * 2 ** 31) | 0) + 1;                      // TL：兩邊同一個種子 → 同一串 7-bag（官方 TL 兩人方塊順序一樣）
 function lvTlShow(who){                                                        // RIVALS TL：比分只在中間顯示一份（大字）
   const el = $('lvTl'); if (!el) return; const on = LV.kind === 'league' && LV.st === 'play' && !!LV.tl;
@@ -18712,7 +18786,7 @@ function renderH2HPre(){
   const skOpts = lvSkinOpts();
   const pcCol = p => { const c = lvPc(p), sk = skOpts.find(x => x.value === c.skin) || skOpts[0];
     return `<div><h2>${p}P</h2>${LV_HAND.map(([id, n, mn, mx, st, u]) => `<div class="crow sl lvsl" data-p="${p}" data-h="${id}" data-target="${id}" data-min="${mn}" data-max="${mx}" data-step="${st}" data-invert="${id === 'sdf' ? 0 : 1}">
-        <span class="lbl">${n}</span><div class="trk"><small>SLOW</small><input type="range" class="rng" min="${mn}" max="${mx}" step="${st}" value="${id === 'sdf' ? c.hand[id] : mx + mn - c.hand[id]}"><small>FAST</small></div>
+        <span class="lbl">${n}</span><div class="trk"><small>SLOW</small><input type="range" class="rng" min="${mn}" max="${mx}" step="${st}" value="${id === 'sdf' ? lvHand(p)[id] : mx + mn - lvHand(p)[id]}"><small>FAST</small></div>
         <div class="val"><em class="ms"></em><b class="num"></b><i class="unit">${u}</i></div></div>`).join('')}
       <div class="orow" title="Click: next skin · right-click: previous"><label>block skin</label><button class="ospin lvsk" data-p="${p}">${sk.label}</button></div></div>`; };
   const keyCol = p => `<div><h2>${p}P</h2>${LV_ACT.map(([a, n]) => { const on = LV.listen && LV.listen.p === p && LV.listen.a === a;
@@ -18748,7 +18822,7 @@ function renderH2HPre(){
   $('h2hPcDef').onclick = () => { LV.pc = {}; lvPc(1); lvPc(2); lvSave(); sfxEv('menutap', 'menutap'); renderH2HPre(); };
   el.querySelectorAll('.lvsl').forEach(row => { const rng = row.querySelector('.rng'), mn = +row.dataset.min, mx = +row.dataset.max, inv = row.dataset.invert === '1';
     paintSlider(row);
-    rng.oninput = () => { const v = inv ? mx + mn - +rng.value : +rng.value; lvPc(+row.dataset.p).hand[row.dataset.h] = row.dataset.h === 'sdf' ? Math.round(v) : Math.round(v * 10) / 10; paintSlider(row); };
+    rng.oninput = () => { const v = inv ? mx + mn - +rng.value : +rng.value, c = lvPc(+row.dataset.p); if (!c.own){ c.hand = { ...lvHand(+row.dataset.p) }; c.own = true; } c.hand[row.dataset.h] = row.dataset.h === 'sdf' ? Math.round(v) : Math.round(v * 10) / 10; paintSlider(row); };
     rng.onchange = () => lvSave(); });
   el.querySelectorAll('.lvsk').forEach(b => { const step = d => { const c = lvPc(+b.dataset.p), i = skOpts.findIndex(x => x.value === c.skin);
       const n = skOpts[(Math.max(0, i) + d + skOpts.length) % skOpts.length]; c.skin = n.value; b.textContent = n.label; lvSave(); sfxEv('menutap', 'menutap'); };
@@ -18777,9 +18851,11 @@ function lvStart(){
   lvSave(); $('localvs').classList.remove('hidden'); bgmFade(300);                                // 外層的選單音樂收掉，音樂交給 1P 那邊
   LV.st = 'play'; $('localvs').dataset.st = 'play'; $('lvRes').classList.add('hidden'); LV.decided = false; LV.res = {}; LV.prog = {}; LV.st2 = {}; LV.det = {}; LV.detFull = {};
   const go = async () => { const song = LV.kind === '40l' ? soloOpt('h2h').song : undefined, mods = [...pickedMods].filter(m => !['world', 'duo', 'sun'].includes(m));
-    const sk = await Promise.all([lvSkinFor(1), lvSkinFor(2)]); $('lvLoad').classList.add('hidden'); if (LV.st !== 'play') return;
-    LV.tl = { s: { 1: 0, 2: 0 }, r: 0, win: 0, seed: lvSeed() }; lvTlShow();
-    for (const p of [1, 2]) lvSend(p, { t: 'start', kind: LV.kind, goal: LV.kind === 'league' ? LV.goal.league : LV.goal['40l'], keys: LV.keys[p], song, mods, hand: lvPc(p).hand, skin: sk[p - 1], seed: LV.tl.seed }); };
+    const sk = await Promise.all([lvSkinFor(1), lvSkinFor(2)]); try { await Promise.all(Object.values(LV.texP || {})); } catch(e){} $('lvLoad').classList.add('hidden'); if (LV.st !== 'play') return;   // 圖檔先到、開局的皮膚後到：不然晚到的圖檔會把 1P／2P 選的皮膚洗回 MY CONFIG
+    LV.tl = { s: { 1: 0, 2: 0 }, r: 0, win: 0, seed: lvSeed() };
+    if (LV.kind === 'league'){ await lvTlIntro(); if (LV.st !== 'play') return; }
+    lvTlShow();
+    for (const p of [1, 2]) lvSend(p, { t: 'start', kind: LV.kind, goal: LV.kind === 'league' ? LV.goal.league : LV.goal['40l'], keys: LV.keys[p], song, mods, hand: lvHand(p), skin: sk[p - 1], seed: LV.tl.seed }); };
   if (LV.ready[1] && LV.ready[2]) return go();
   $('lvLoad').classList.remove('hidden'); LV.pend = go;
   const viaDoc = () => { const H = lvSelfHTML(); if (!H) return false; for (const p of [1, 2]){ const f = $('lvF' + p); f.removeAttribute('src'); f.srcdoc = `<script>window.__LOCAL_P=${p}<\/script>` + H; } return true; };
@@ -18802,7 +18878,7 @@ function lvDetRender(p){
   el.innerHTML = d ? (full ? d.full : d.ov) : '<div class="qr-row"><span>LOADING…</span></div>';
   const t = el.parentNode.querySelector('.lvr-tabs'); if (t) t.querySelectorAll('button').forEach(b => b.classList.toggle('on', (b.dataset.t === 'full') === full));
 }
-function lvDecideTl(){ const el = $('lvTl'); $('localvs').classList.remove('tlon'); if (el){ el.classList.add('hidden'); el.classList.remove('big'); } clearTimeout(LV.tlBigT); }
+function lvDecideTl(){ const el = $('lvTl'); $('localvs').classList.remove('tlon', 'zoomin'); for (const id of ['lvVs', 'lvBan', 'lvRs', 'lvFin']) $(id).classList.add('hidden'); clearTimeout(LV.finT); clearTimeout(LV.banT); clearTimeout(LV.rsT); if (el){ el.classList.add('hidden'); el.classList.remove('big'); } clearTimeout(LV.tlBigT); }
 function lvDecide(winner, why){
   if (LV.decided) return; LV.decided = true; lvDecideTl();
   for (const p of [1, 2]) lvSend(p, { t: 'stop', res: !winner ? 'draw' : p === winner ? 'win' : 'lose' });
@@ -18840,13 +18916,15 @@ function lvDecide(winner, why){
 addEventListener('message', e => {
   if (LOCAL_P || LV.st === 'off' || !LV.st) return; const m = e.data || {}; const p = m.p; if (p !== 1 && p !== 2) return;
   if (e.source !== lvWin(p)) return;
-  if (m.t === 'ready'){ LV.ready[p] = true; lvSendTex(p); if (LV.ready[1] && LV.ready[2] && LV.pend){ const f = LV.pend; LV.pend = null; f(); } }
+  if (m.t === 'ready'){ LV.ready[p] = true; (LV.texP = LV.texP || {})[p] = lvSendTex(p); if (LV.ready[1] && LV.ready[2] && LV.pend){ const f = LV.pend; LV.pend = null; f(); } }
   else if (m.t === 'prog'){ LV.prog[p] = m.v; if (m.s) (LV.st2 = LV.st2 || {})[p] = m.s; lvSend(3 - p, { t: 'opp', v: m.v }); }
   else if (m.t === 'det'){ if (m.d) (LV.det = LV.det || {})[p] = m.d; lvDetRender(p); }
   else if (m.t === 'atk'){ if (!LV.decided) lvSend(3 - p, { t: 'atk', n: m.n }); }
   else if (m.t === 'ko'){ const T = LV.tl; if (!T || T.win || m.r !== T.r) return;              // 同一局只認第一個頂死的
     T.r++; T.s[3 - p]++; T.seed = lvSeed(); for (const q of [1, 2]) lvSend(q, { t: 'rnd', loser: p, seed: T.seed });
-    lvTlShow(3 - p); if (T.s[3 - p] < LV.goal.league){ const tb = $('lvTl'); clearTimeout(LV.tlBigT); LV.tlBigT = setTimeout(() => { tb.classList.add('big'); LV.tlBigT = setTimeout(() => tb.classList.remove('big'), 3600); }, 1200); }
+    { const f = $('lvFin'), last = T.s[3 - p] >= LV.goal.league; f.textContent = last ? 'GAME!' : 'FINISH!'; f.classList.remove('hidden'); f.style.animation = 'none'; void f.offsetWidth; f.style.animation = '';
+      clearTimeout(LV.finT); LV.finT = setTimeout(() => f.classList.add('hidden'), last ? 3000 : 1150); }
+    if (T.s[3 - p] >= LV.goal.league) lvTlShow(3 - p); if (T.s[3 - p] < LV.goal.league){ clearTimeout(LV.tlBigT); LV.tlBigT = setTimeout(() => lvTlRound(3 - p), 1200); }
     if (T.s[3 - p] >= LV.goal.league){ T.win = 3 - p; clearTimeout(LV.tlT); LV.tlT = setTimeout(() => lvDecide(T.win, `${T.s[1]} - ${T.s[2]} · FIRST TO ${LV.goal.league}`), 5000); } }
   else if (m.t === 'done' && LV.kind === 'league'){ LV.res[p] = m; if (m.s) (LV.st2 = LV.st2 || {})[p] = m.s; if (m.d) (LV.det = LV.det || {})[p] = m.d;
     const T = LV.tl; if (T && T.win && LV.res[1] && LV.res[2]){ clearTimeout(LV.tlT); lvDecide(T.win, `${T.s[1]} - ${T.s[2]} · FIRST TO ${LV.goal.league}`); } }
@@ -18920,7 +18998,7 @@ if (LOCAL_P){
     if (e.source !== window.parent) return; const m = e.data || {};
     if (m.t === 'tex'){
       const T = m.tex || {};
-      try { if (T.skin){ const cfg = JSON.parse(T.skin); if (cfg && cfg.v === 3 && cfg.map) loadSkin(cfg); else applySkinFile(cfg.src); } } catch(e){}
+      try { if (T.skin && !window.__lvSkinSet){ const cfg = JSON.parse(T.skin); if (cfg && cfg.v === 3 && cfg.map) loadSkin(cfg); else applySkinFile(cfg.src); } } catch(e){}
       let bd = false; for (const k of ['normal', 'rev']){ const v = T.board && T.board[k]; if (v && store.get(BOARD_SKIN_KEY[k]) !== v){ try { store.set(BOARD_SKIN_KEY[k], v); } catch(e){} bd = true; } }
       if (bd) loadBoardSkin();
       for (const [id, src] of Object.entries(T.extra || {})){ if (TIO_X[id]) continue; if (String(src).startsWith('FNT:')) { try { parseBMF(src.slice(4)); } catch(e){} } else useExtra(id, src); }
@@ -18928,9 +19006,9 @@ if (LOCAL_P){
     }
     if (m.t === 'start'){
       if (m.keys) LOCAL_CUR = m.keys;
-      const H = m.hand; if (H){ try { $('arr').value = String(Math.round(H.arr * LV_HF)); $('das').value = String(Math.round(H.das * LV_HF)); $('dcd').value = String(Math.round(H.dcd * LV_HF));
+      const H = m.hand; if (H){ try { $('arr').value = String(+(H.arr * LV_HF).toFixed(2)); $('das').value = String(+(H.das * LV_HF).toFixed(2)); $('dcd').value = String(+(H.dcd * LV_HF).toFixed(2));
         $('sdfInf').checked = H.sdf >= 41; if (H.sdf < 41) $('sdf').value = String(H.sdf); syncConfigUI(); } catch(e){} }
-      const S = m.skin; if (S){ try { if (S.none) loadSkin(null); else if (S.src) applySkinFile(S.src); else if (S.cfg){ const cfg = JSON.parse(S.cfg); if (cfg && cfg.v === 3 && cfg.map) loadSkin(cfg); else if (cfg && cfg.src) applySkinFile(cfg.src); } else loadSkin(null); } catch(e){} }
+      const S = m.skin; if (S){ window.__lvSkinSet = true; try { if (S.none) loadSkin(null); else if (S.src) applySkinFile(S.src); else if (S.cfg){ const cfg = JSON.parse(S.cfg); if (cfg && cfg.v === 3 && cfg.map) loadSkin(cfg); else if (cfg && cfg.src) applySkinFile(cfg.src); } else loadSkin(null); } catch(e){} }
       if (climb){ climb.over = true; active = null; climb = null; }
       const cmp = m.kind !== '40l';                                                // 40L 是競速；BLITZ 比分數、QP 比高度（各自照原本規則打到結束）
       const race = { kind: m.kind, goal: cmp ? 0 : m.goal, cmp, local: true, players: [{ name: LOCAL_P === 1 ? '2P' : '1P', remote: true, pps: 0, apm: 0 }] };
@@ -19452,7 +19530,7 @@ const UsernameData = (() => { const lib = {}; for (const k in D.unames) lib[k] =
 let CV = null, X = null, DPR = 1;
 const SCR = { w: 0, h: 0, k: 1, x: 0, y: 0, w0: 1600, h0: 1000 };
 function scrResize(){
-  const w = innerWidth, h = innerHeight; DPR = min(2, devicePixelRatio || 1);
+  const w = innerWidth, h = innerHeight; DPR = usingTouch ? 1 : max(.75, min(2, devicePixelRatio || 1, Math.sqrt(2.5e6 / max(1, w * h))));   // 手機：1 倍（整張全螢幕每幀重畫，DPR 2.6 時只剩 12fps → 1 倍約 26fps）
   if (CV.width !== Math.round(w * DPR) || CV.height !== Math.round(h * DPR)){ CV.width = Math.round(w * DPR); CV.height = Math.round(h * DPR); }
   SCR.w = w; SCR.h = h; SCR.x = 0; SCR.y = 0;
   if (h / w >= SCR.h0 / SCR.w0){ SCR.k = w / SCR.w0; SCR.y = (h - SCR.h0 * SCR.k) / 2; } else { SCR.k = h / SCR.h0; SCR.x = (w - SCR.w0 * SCR.k) / 2; }
@@ -19661,7 +19739,7 @@ const M = { EX:0, NH:0, MS:0, GV:0, VL:0, DH:0, IN:0, AS:0, DP:0 };
 const G = {
   completion: { EX:0, NH:0, MS:0, GV:0, VL:0, DH:0, IN:0, AS:0, DP:0 }, revUnlocked: true,
   speedrunning: false, buttonHeld: {},
-  clr_board: [1, 1, 1], clr_text: [.7, .5, .3], clr_shade: [.3, .15, 0], clr_BaseText: [.7, .5, .3], clr_BaseShade: [.3, .15, 0], clr_combo: [],
+  clr_board: [1, 1, 1], clr_text: [.933, .69, .569], clr_shade: [.243, .102, .059], clr_BaseText: [.933, .69, .569], clr_BaseShade: [.243, .102, .059],   /* THE WORLD：跟本站 QP 面板同色（#eeb091／#3e1a0f） */ clr_combo: [],
   bgm_playing: false, bgm_beat: 0,
   bgX: 0, bgXdir: 0, bgH: 0, bgLastH: 0, bgK: 1,
   giga_r: 0, giga_g: 0, giga_b: 0, giga_a: 0, giga_bgAlpha: 0, giga_textTimer: false, giga_isTera: false,
@@ -20543,7 +20621,7 @@ const TEXF = { star0: 'crystal-dark.png', star1: 'crystal.png', star2: 'crystal-
   rev_norm: 'revive/norm.png', rev_left: 'revive/rev_left.png', rev_right: 'revive/rev_right.png' };
 // TETR.IO 有的一律先抓 TETR.IO（/res/…），載不到才用 ZC 的
 const TIO_F = { star0: 'zenith-mods/crystal-dark.png', star1: 'zenith-mods/crystal.png', outline1: 'zenith-mods/outline.png', outline2: 'zenith-mods/outline.png',
-  glass_a: 'zenith-mods/glass-a.png', glass_b: 'zenith-mods/glass-b.png', throb_a: 'zenith-mods/throb-a.png', throb_b: 'zenith-mods/throb-b.png', stars: 'particles/star.png' };
+  glass_a: 'zenith-mods/glass-a.png', glass_b: 'zenith-mods/glass-b.png', throb_a: 'zenith-mods/throb-a.png', throb_b: 'zenith-mods/throb-b.png' };   // stars 不用官方 particles/star.png：那是單顆星（會被放大成整片巨大星芒），ZC 的 stars.png 是整片星空貼圖
 const tioBase = () => { try { return TIO_RES(); } catch(e){ return 'https://tetr.io/res/'; } };
 const tioFile = (key, path, zc) => { const im = tioSrc([tioBase() + path], 'tf_' + key); return ready(im) ? im : im.bad ? (zc ? img(zc) : null) : null; };
 const TEX = n => TIO_F[n] ? tioFile(n, TIO_F[n], TEXF[n]) : img(TEXF[n]);
@@ -20579,11 +20657,21 @@ const STARS = [], SPARK = { rate: 0, acc: 0, ps: [] }, WOUND = { ps: [], acc: 0 
 const floorColors = [[0x79, 0x2B, 0x12], [0x98, 0x77, 0x3E], [0x56, 0x32, 0x0C], [0x99, 0x30, 0x19], [0x81, 0x8A, 0x8A], [0xC8, 0x6A, 0x3C], [0x19, 0x6F, 0xA3], [0x9B, 0x21, 0x2D], [0x0B, 0x5D, 0x38], [0x13, 0x00, 0x31]].map(c => c.map(v => v / 255));
 const FC = [0, 1, 2].map(j => floorColors.map(c => c[j]));
 const f10c = [[.9, .3, .9], [.6, .3, .8], [.4, .2, .7], [.2, .5, .7], [.4, .6, .4], [1, 0, .5], [1, 0, .6], [.8, 0, 1], [0, 0, 1]], F10C = [0, 1, 2].map(j => f10c.map(c => c[j]));
+const WOB = { id: null, prev: null, t: 0 };
+function worldOffBg(h){
+  let st; try { st = offBgImg(offBgId(max(0, h))); } catch(e){ return false; }
+  if (!st || !st.ok){ if (!WOB.id) return false; } else if (WOB.id !== st){ WOB.prev = WOB.id; WOB.id = st; WOB.t = performance.now(); }
+  const W = SCR.w, H = SCR.h, cover = im => { const k = max(W / im.width, H / im.height); X.drawImage(im, (W - im.width * k) / 2, (H - im.height * k) / 2, im.width * k, im.height * k); };
+  const a = clamp((performance.now() - WOB.t) / 500, 0, 1);                // 官方 ql.setBackground：換圖 0.5s 交叉淡入
+  X.save(); if (WOB.prev && a < 1) cover(WOB.prev.img); X.globalAlpha = a; cover(WOB.id.img); X.restore();
+  return true;
+}
 function DrawBG(brightness, showRuler){
   TF('origin'); const W = SCR.w, H = SCR.h, bgH = G.bgH, bgFloor = calculateFloor(abs(bgH)), imgBG = !G.invisUI && bgH > -50, sc = G.bgK;
   setColor(0, 0, 0); rect('fill', 0, 0, W, H);
   // 背景：ZC 的捲動塔圖（隨高度上下捲、逆位時左右捲）；官方 MINIMAL_BGS 是靜態圖，會失去捲動，所以不用
-  if (imgBG){
+  const obg = imgBG ? worldOffBg(bgH) : false;          // THE WORLD：跟一般 QP 同一套官方背景（/res/bg/zenith/<id>.jpg）；載不到才用 ZC 塔圖
+  if (imgBG && !obg){
     if (bgFloor < 10){
       setColor(1, 1, 1); const bottom = Floors[bgFloor - 1].top, top = Floors[bgFloor].top, bg = towerBG(bgFloor);
       if (ready(bg)){ const w = bg.width, h = bg.height, qs = interpolate(bottom, h, top, 0, bgH) - 640;
@@ -20652,8 +20740,10 @@ function drawBoard(){
   const hw = hpW * G.fullHealth / G.startingHealth + 4; holes.rect(-hw / 2, hpY - (hpH + 4) / 2, hw, hpH + 4);
   const op = (G.playing ? G.boardAnim ** 4.2 : 1) * 50 / 100, bc = G.clr_board;
   const both = new Path2D(); both.addPath(board); both.addPath(holes);
-  X.fillStyle = CSS([bc[0], bc[1], bc[2]], op); X.fill(both, 'evenodd');
-  X.save(); X.clip(board); X.fillStyle = CSS([.05, .05, .05], op); X.fill(holes); X.restore();
+  X.fillStyle = CSS([.243, .102, .059], min(1, op * 1.8)); X.fill(both, 'evenodd');   // QP 面板底 #3e1a0f
+  X.save(); X.clip(board); X.fillStyle = CSS([.09, .035, .02], min(1, op * 1.8)); X.fill(holes);
+  X.fillStyle = CSS([.69, .239, .102], min(1, op * 2)); X.fillRect(-boardRX, -boardRY, boardRX * 2, 5); X.restore();   // 上緣橘紅線 #b03d1a
+  X.lineWidth = 2; X.strokeStyle = CSS([bc[0], bc[1], bc[2]], op * .9); X.stroke(board);
   if (M.EX > 0){ setColor(1, 0, 0); fillCur(); X.beginPath(); X.moveTo(boardRX, boardRY); X.lineTo(boardRX - 15, boardRY); X.lineTo(boardRX, boardRY - 15); X.fill();
     X.beginPath(); X.moveTo(-boardRX, boardRY); X.lineTo(-boardRX + 15, boardRY); X.lineTo(-boardRX, boardRY - 15); X.fill(); }
   const safeHP = G.playing ? max(G.dmgWrong + G.dmgWrongExtra, G.dmgTime) : 0;
@@ -20702,9 +20792,34 @@ function drawModIcons(x0, y0, sz, res){                                 // refre
   else if (hand.length === 2){ one(hand[1], 35, 0, res ? (hand[1].length === 3 ? .567 : .432) : .5); one(hand[0], -35, 0, res ? (hand[0].length === 3 ? .567 : .432) : .5); }
   else for (let x = 3; x >= 2; x--) for (let i = hand.length - 1; i >= 0; i--) if (hand[i].length === x) one(hand[i], pos[i][0] * 35, pos[i][1] * 35, res ? (x === 3 ? .36 : .3) : (URM && x === 3 ? .35 : .28));
 }
+// THE WORLD：用 QP 的盤面框（skins/board/zenith 的 frame，九宮格）把遊玩區域（任務面板＋卡牌）框起來；沒載官方盤面就畫一個同樣配色的框
+// 開著的 mod：照 QP 盤面（TETR.IO 實機）放在遊玩區右下角、兩欄、彩色徽章（跟一般 QP 同一套圖：pbicons／FLIPSIDE／ABYSS）
+function worldModBadges(){
+  const ids = [];
+  for (const id in SITE_MAP){ const v = G.playing ? (G.modSnap || M)[id] : M[id], m = SITE_MAP[id]; if (!v) continue;   // M：這局選的 mod（0 沒選／1 正位／2 逆位）
+    if (v === 1) ids.push(m[0]); else { ids.push(m[1]); if (URM) ids.push('fs_' + m[1]); } }
+  const show = ids.filter(id => !/^(fs|ab)_/.test(id)); if (!show.length) return;
+  TF('xOy'); const s = 72, gap = 80, rows = Math.ceil(show.length / 2), x0 = 1590 - 2 * gap + (gap - s), y0 = 890 - rows * gap + (gap - s);
+  X.save(); X.globalAlpha = M.IN === 2 && G.playing ? .5 : 1;
+  show.forEach((id, i) => { try { drawModBadge(X, ids, id, x0 + (i % 2) * gap, y0 + Math.floor(i / 2) * gap, s); } catch(e){} });
+  X.restore();
+}
+function worldFrame(){
+  TF('xOy'); const x = 4, y = 4, w = 1592, h = 900;
+  let im = null; try { im = (typeof boardSkins !== 'undefined' && (boardSkins.normal || boardSkins.expert)) || (typeof TIO_X !== 'undefined' && TIO_X.normal) || null; } catch(e){}
+  if (im && im.width){ const f = im.width / 4096, a = BOARD_ATLAS.frame, N = ATLAS_NINE.frame, k = .55;
+    try { nine(X, im, a[0] * f, a[1] * f, a[2] * f, a[3] * f, N[0] * f, N[1] * f, N[2] * f, N[3] * f, x - 79 * k, y - 29 * k, w + 160 * k, h + 188 * k, k / f); return; } catch(e){} }
+  X.save(); X.lineJoin = 'miter';                                        // 沒官方盤面：照本站 QP 面板（#2a0f08 粗框＋#b03d1a 細線）
+  X.fillStyle = 'rgba(20,6,3,.28)'; X.fillRect(x, y, w, h);
+  X.strokeStyle = 'rgba(42,15,8,.95)'; X.lineWidth = 14; X.strokeRect(x, y, w, h);
+  X.strokeStyle = '#b03d1a'; X.lineWidth = 3; X.strokeRect(x + 8, y + 8, w - 16, h - 16);
+  X.fillStyle = '#b03d1a'; X.fillRect(x - 7, y - 7, w + 14, 5);
+  X.restore();
+}
 function sceneDraw(){
   const t = performance.now() / 1000;
   DrawBG(40, true);
+  if (!G.invisUI) worldFrame();
   if (!G.invisUI){
     if (G.height <= 1650){ TF('origin'); const dh = G.bgH - G.bgLastH; G.bgLastH = G.bgH;
       setColor(1, 1, 1, G.uiHide * clamp((G.rank - 2) / 6, .26, 1) * .26 * cLerp(.62, 1, abs(dh * 26))); fillCur();
@@ -20727,7 +20842,7 @@ function sceneDraw(){
     setColor(G.clr_text); setAlpha(.626); mRect('fill', 800, panelH - 303, 1586 + 6, -3);
     if (G.playing || G.boardAnim > 0 && !G.invisUI){ TF('xOy'); drawBoard(); }
     if (G.uiHide > 0){ TF('xOy'); setColor(1, 1, 1, G.uiHide * (M.IN === 0 ? 1 : 1 - M.IN * (.26 + .1 * sin(t * 2.6)))); const y = 330 + (G.height - G.bgH) * (M.VL + 1);
-      X.save(); X.translate(1490, y); X.rotate(M.AS * .026 * sin(t)); drawModIcons(0, 0); X.restore(); }
+      void y; worldModBadges(); }
     if (!G.playing && ST.maxFloor >= 10){ TF('xOy'); setColor(G.clr_text); setAlpha(.12 + abs(Math.log(G.comboZP)) * 2); TX.zpPreview.draw(1370, 275, 0, 1, 1, TX.zpPreview.getWidth());
       if (G.comboMP >= 6){ setAlpha(clampInterpolate(5, 0, 8, 1, G.comboMP)); TX.mpPreview.draw(1370, 235, 0, 1, 1, TX.mpPreview.getWidth()); } }
   }
@@ -20838,6 +20953,7 @@ function drawWound(c){ const W = WOUND_PS; for (const p of W.ps){ const l = p.t 
   setColor(c[0], c[1], c[2], a); draw(GT.wound, p.x, p.y, 0, s, s, 8, 8); } }
 // ================== overDraw（scene/tower.lua）==================
 let usingTouch = matchMedia('(pointer: coarse)').matches;
+const WINGS_S = {};
 function overDraw(){
   const t = performance.now() / 1000;
   TF('xOy'); X.translate(0, G.deckPress);
@@ -20856,18 +20972,14 @@ function overDraw(){
   }
   if (G.uiHide > 0 && !G.invisUI){
     X.save(); X.translate(0, 100 - G.uiHide * 100); const rank = G.rank;
-    setColor(rankColor[rank - 1] || CLR.dL); if (G.DPlock) setAlpha(.26); lineW(26 / (G.leakSpeed + 2)); mRect('line', 800, 965, 426, 26); rect('fill', 765, 985, 70, 6);
-    for (let i = 1; i <= min(rank - 1, 6); i++){ rect('fill', 815 + 28 * i, 985, 22, 6); rect('fill', 785 - 28 * i, 985, -22, 6); }
-    if (rank >= 8){ for (let i = 0; i <= min(rank - 8, 3); i++){ rect('fill', 580 + 45 * i, 945, 35, -10); rect('fill', 1020 - 45 * i, 945, -35, -10); }
-      if (rank >= 12) for (let i = 0; i <= rank - 12; i++){ rect('fill', 1022 + 15 * i, 955, 10, 32); rect('fill', 578 - 15 * i, 955, -10, 32); } }
-    if (G.rankupLast){ if (G.xpLockLevel < G.xpLockLevelMax && !(URM && M.NH === 2)){ mRect('fill', 695, 965, 2, 22); mRect('fill', 905, 965, 2, 22); } } else mRect('fill', 800, 965, 420, 1);
-    setColor(rankColor[rank] || CLR.L); if (G.xpLockTimer > 0) setAlpha((sin(6200 / (G.xpLockTimer + 4.2) ** 3) * .26 + .74) * (G.DPlock ? .26 : 1)); else if (G.DPlock) setAlpha(.26);
-    mRect('fill', 800, 965, 420 * G.xp / (4 * max(rank, 1)), 3 * min(G.xpLockLevel, 5));
-    TX.height.set([G.roundHeight.toFixed(1), CLR.dL, 'm']); TX.time.set(fmtTime(G.time));
-    setColor(CLR.D); let [w, h] = TX.height.getDimensions(); TX.height.strokeDraw(1, 800, 978, 0, 1, 1, w / 2, h / 2);
-    [w, h] = TX.time.getDimensions(); TX.time.strokeDraw(2, 375, 978, 0, 1, 1, w / 2, h / 2); [w, h] = TX.rank.getDimensions(); TX.rank.strokeDraw(1, 1027, 990, 0, .626, .626, w / 2, h / 2);
-    setColor(G.timerMul, .99, .99); TX.time.mDraw(375, 978); setColor(CLR.L); TX.rank.mDraw(1027, 990, 0, .626);
-    if (G.DPlock) setColor(lmod(G.time, .9) > .45 ? COLOR.R : CLR.D); TX.height.mDraw(800, 978);
+    { const S = WINGS_S;                                                   // THE WORLD：盤面下方改成 QP 的爬升翅膀（rank＝CSP、XP＝進度、高度數字一樣在中間）
+      S.csp = max(1, rank); S.alt = max(0, G.roundHeight); S.hyper = G.giga_a > 0; S.pauseLeft = G.DPlock ? 1 : 0; S.gutL = S.gutR = 3; S.elapsed = G.time * 1000; S.lockUntil = 0;
+      S.prog = clamp(G.xp / (4 * max(rank, 1)), 0, 1) * CLIMB_CFG.cspNeed(S.csp);
+      const CS = 92, bw = W * CS, avail = (SCR.h - SCR.y) / SCR.k - 100 + G.uiHide * 100 - 930;     // 下面還剩多少空間（手機直立很多、電腦橫向很少）→ 翅膀寬度跟著縮放
+      const ww = clamp(avail / .27, 380, 1000), k = ww / bw; X.save(); X.translate(800 - bw * k / 2, 930 - (H + .35) * CS * k); X.scale(k, k);
+      if (G.DPlock) X.globalAlpha = .4; try { drawThruster(X, CS, S); } catch(e){} X.restore(); }
+    TX.time.set(fmtTime(G.time)); { const [w, h] = TX.time.getDimensions(); setColor(CLR.D); TX.time.strokeDraw(2, 300, 978, 0, 1, 1, w / 2, h / 2); setColor(G.timerMul, .99, .99); TX.time.mDraw(300, 978); }
+    setColor(CLR.L); TX.rank.mDraw(1300, 978, 0, .8);
     if (G.attackMul < 1){ setColor(1, 0, 0, lmod(t, .52) < .26 ? .872 : .42); printT(30, 'x' + G.attackMul, 1024, 926, null, 'left', 0, .7); }
     X.restore();
   }
@@ -20969,19 +21081,20 @@ class Btn {
   draw(){
     if (!this.visible()) return; TF(this.anchor); const c = typeof this.color === 'function' ? this.color() : this.color, tc = typeof this.textColor === 'function' ? this.textColor() : this.textColor;
     const x = this.x - this.w / 2, y = this.y - this.h / 2, p = this.prs;
-    setColor(c[0], c[1], c[2], 1); rect('fill', x, y, this.w, this.h, 10);
-    setColor(1, 1, 1, .1 * this.hov + .26 * p); rect('fill', x, y, this.w, this.h, 10);
-    setColor(lerp(c[0], 1, .26 + .26 * this.hov), lerp(c[1], 1, .26 + .26 * this.hov), lerp(c[2], 1, .26 + .26 * this.hov)); lineW(4); rect('line', x, y, this.w, this.h, 10);
+    setColor(0, 0, 0, .35); rect('fill', x + 4, y + 6, this.w, this.h);                    // QP 按鈕：方角、平面、下方陰影
+    setColor(c[0], c[1], c[2], 1); rect('fill', x, y, this.w, this.h);
+    setColor(1, 1, 1, .08 * this.hov + .22 * p); rect('fill', x, y, this.w, this.h);
+    const e = this.edge || [lerp(c[0], 1, .3), lerp(c[1], .55, .3), lerp(c[2], .3, .3)]; setColor(e[0], e[1], e[2], .9); rect('fill', x, y, this.w, 4);
     if (this.text){ setColor(tc); const w = this.T.getWidth(), k = min(1, (this.w - 10) / max(w, 1)); this.T.mDraw(this.x, this.y, 0, k); }
   }
 }
 const BTN = {
-  back: new Btn({ anchor: 'xOy_ul', x: 60, y: 140, w: 160, h: 60, color: [.15, .15, .15], fontSize: 30, text: '    BACK', textColor: CLR.DL,
+  back: new Btn({ anchor: 'xOy_ul', x: 60, y: 140, w: 160, h: 60, color: [.141, .141, .141], edge: [.2, .2, .2], fontSize: 30, text: '    BACK', textColor: [.85, .85, .85],
     onPress(){ if (G.playing){ if (TASK.lock('sure_forfeit', 2.6)){ SFX.play('menuclick'); MSG('dark', 'PRESS AGAIN TO FORFEIT', 2.6); } else { SFX.play('menuback'); finish('forfeit'); } } else escQuit(); } }),
-  start: new Btn({ anchor: 'xOy_m', x: 0, y: -160, w: 800, h: 180, color: [.35, .12, .05], fontSize: 70, text: 'START', textColor: () => G.clr_text, visible: () => !G.playing || true,
+  start: new Btn({ anchor: 'xOy_m', x: 0, y: -160, w: 800, h: 180, color: [.565, .208, .094], edge: [.75, .3, .14], fontSize: 70, text: 'START', textColor: () => G.anyRev ? [1, .8, .75] : [1, 1, .894], visible: () => !G.playing || true,
     onPress(k){ if (k === 3) return; G.buttonHeld.startBtn = true; if (M.EX === 0){ SFX.play('move'); buttonStart(); } else SFX.play('rotate'); },
     onRelease(k){ if (k === 3 || !G.buttonHeld.startBtn) return; delete G.buttonHeld.startBtn; if (M.EX > 0) buttonStart(); } }),
-  reset: new Btn({ anchor: 'xOy_m', x: 500, y: -120, w: 160, h: 100, color: COLOR.DR, fontSize: 30, text: 'RESET', textColor: () => G.clr_text,
+  reset: new Btn({ anchor: 'xOy_m', x: 500, y: -120, w: 160, h: 100, color: [.243, .102, .059], edge: [.69, .239, .102], fontSize: 30, text: 'RESET', textColor: () => G.clr_text,
     onPress(k){ if (k === 3) return; G.buttonHeld.resetBtn = true; if (M.EX === 0){ SFX.play('move'); buttonReset(); } else SFX.play('rotate'); },
     onRelease(k){ if (k === 3 || !G.buttonHeld.resetBtn) return; delete G.buttonHeld.resetBtn; if (M.EX > 0) buttonReset(); } }),
 };
