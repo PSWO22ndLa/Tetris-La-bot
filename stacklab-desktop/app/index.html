@@ -3058,6 +3058,23 @@ document.documentElement.classList.add('booting'); addEventListener('load', func
   #modsel .qpl-pb.three{ grid-template-columns:1.5fr 1fr 1fr; gap:0 .6em; }
   #modsel .qpl-pb.three small{ font-size:1.05em; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   #modsel .qpl-pb.three b{ font-size:2em; white-space:nowrap; }
+  /* ===== 官方幾何對齊（電腦版）：用 /tmp 的官方 index.html＋TETR.IO.css 算出每個元件的位置大小，逐項量到跟本站一樣 =====
+     官方：#header 高 4.2em＋2px 邊、標題在 (.5em,.5em)；.right_scroller 從 4em 開始、上方留 2.5em；.scroller_item_giant 高 7em（不含上下各 3px 邊）、
+     h1 3em 在 (5.25em,.4em)、p 1.5em 在 (10.55em,3em)、人數牌 right 2.5em */
+  @media (hover:hover) and (pointer:fine){ .ocb small{ display:none !important; } }   /* 官方的勾選項只有一行字，說明放在 title（滑鼠停上去才出現）；觸控裝置沒有 hover 才把說明留在下面 */
+  @media (min-width:900px) and (min-height:560px){
+    header{ height:calc(4.2em + 2px) !important; min-height:calc(4.2em + 2px) !important; flex:0 0 auto !important; box-sizing:border-box !important; padding-left:0 !important; }
+    #foot{ min-height:calc(var(--ofs) * 3.2 + 2px) !important; height:calc(var(--ofs) * 3.2 + 2px) !important; flex:0 0 auto !important; box-sizing:border-box !important; }
+    header h1{ margin:0 0 0 .5em !important; line-height:normal !important; align-self:flex-start; position:relative; top:.5em; }
+    .tmenu{ padding-top:calc(2.3em - 2px) !important; margin-right:0 !important; }
+    .tmenu .tbar{ box-sizing:content-box !important; height:7em; display:block !important; padding:0 !important; width:calc(100% - 3px) !important; }
+    .tmenu .tbar b{ position:absolute !important; left:5.25em; right:2em; top:.4em; font:700 3em var(--hunf) !important; line-height:normal !important; margin:0 !important; }
+    .tmenu .tbar small{ position:absolute !important; left:10.55em; right:4em; top:3em; font-size:1.5em !important; line-height:normal !important; margin:0 !important; }
+    .tmenu.home{ margin-left:-16px !important; margin-top:-14px !important; }
+    .oblk.starter{ width:calc(70vw + 2em) !important; max-width:calc(100% - 6px) !important; }   /* 官方 .starter 跟其他 .scroller_block 一樣寬（70vw＋左右各 1em） */
+    .omusic{ padding-left:.5em !important; }
+    .tmenu.home .tbar{ font-size:var(--ofs) !important; }                 /* 官方首頁每一項也都是 giant（7em），放不下就捲動，不縮小 */
+  }
 </style>
 
 <div id="tiobg" aria-hidden="true"></div>
@@ -9569,7 +9586,7 @@ function opt(k){ const e = document.getElementById(k); if (!e){ if (k in OPT_NUM
 const optN = k => { const v = +opt(k); return isFinite(v) ? v : (OPT_NUM[k] || 0); };
 const ATK_SFX = new Set(['garbin', 'garbout', 'windup', 'offset', 'damage', 'counter', 'garbsmall', 'garbmed', 'garblarge', 'garbrise', 'warning']);
 const CLIMB_SFX = new Set(['upspeed', 'downspeed', 'speedup', 'speeddown']);
-let ihsSkip = false, lastHoldTap = -1e9;
+let ihsSkip = false, lastHoldTap = -1e9, IRS_TAP = 0, IHS_TAP = false;
 
 function prec2(){ return opt('oLessPrec') ? 1 : 2; }
 // 聊天：髒話過濾（⚠️ 字表是自己列的，官方清單未公開）、表情符號開關
@@ -9785,13 +9802,16 @@ function spawn(type){
   pTrack = { rotN: 0, dirs: 0, moved: false, held: false, sd: !!held.soft, das: !!(held.left || held.right) };
   const h = handling();
   dcdAfterRotate(); wallHit = false;                                    // 官方 Next()：上一顆撞過牆（STATE_WALL）→ 生成時也套 DCD，之後旗標清掉
-  let irsDir = 0;                                                       // 生成瞬間的預轉
-  if (h.irs === 'hold') irsDir = held.cw ? 1 : held.ccw ? 3 : held.flip ? 2 : 0;
-  else if (h.irs === 'tap' && performance.now() - lastRotTap.t < 150){ irsDir = lastRotTap.dir; lastRotTap = { dir: 0, t: -1e9 }; }   // 用過就清掉
-  if (irsDir){ sfxQuiet = true; const ok = rotate(irsDir); sfxQuiet = false; if (ok) sfxEv('irs', 'irs'); }
-  // IHS：生成瞬間 hold 鍵還按著（HOLD）或剛點過（TAP）→ 直接 hold；doHold 自己換出來的那顆不再觸發
-  if (!ihsSkip && !holdUsed && active === a && (h.ihs === 'hold' ? held.hold : h.ihs === 'tap' && performance.now() - lastHoldTap < 150)){
-    lastHoldTap = -1e9; ihsSkip = true; try { doHold(); } finally { ihsSkip = false; } if (active !== a){ sfxEv('ihs', 'ihs', 'hold'); return; } }
+  // 官方 Next()：先看 IHS（HOLD＝hold 鍵還按著；TAP＝方塊還沒出來的那段時間點過 hold）→ 直接 hold，換出來的那顆才套 IRS
+  //   IRS：HOLD＝生成當下按著的旋轉鍵加總（順 +1、逆 −1、180 +2）；TAP＝方塊還沒出來時點的旋轉累加（沒有時間限制，用掉才清）
+  if (!ihsSkip && !holdUsed && active === a && (h.ihs === 'hold' ? held.hold : h.ihs === 'tap' && IHS_TAP)){
+    IHS_TAP = false; ihsSkip = true; try { doHold(); } finally { ihsSkip = false; } if (active !== a){ sfxEv('ihs', 'ihs', 'hold'); return; } }
+  IHS_TAP = false;
+  let irsDir = 0;
+  if (h.irs === 'hold') irsDir = ((held.cw ? 1 : 0) + (held.ccw ? 3 : 0) + (held.flip ? 2 : 0)) % 4;
+  else if (h.irs === 'tap') irsDir = IRS_TAP;
+  IRS_TAP = 0;
+  if (irsDir && active === a){ sfxQuiet = true; const ok = rotate(irsDir); sfxQuiet = false; if (ok) sfxEv('irs', 'irs'); }
   if (rec && rec.mode === 'step') recCapture();
   draw();
 }
@@ -10215,6 +10235,17 @@ const cInput = () => { if (climb && !climb.over) climb.inputs = (climb.inputs ||
 // 官方 _ActivateShift／_ProcessShift：左右各自一組 DAS／ARR，只處理「最後按的方向」；放開較新的方向 → 回到另一個還按著的方向，
 //   不會多移一格、那個方向原本累積的 DAS 繼續算；CANCEL DAS 開著時，放開會把另一邊的 DAS 歸零
 const SH = { '-1': { held: false, das: 0, arr: 0 }, '1': { held: false, das: 0, arr: 0 } };
+// 官方 replay.Start()：倒數時就按著的鍵，在開始那一幀補一次 keydown（hoisted）→ 方向鍵立刻移一格、DAS 直接從「DAS − DCD」算起；
+//   第一顆的 IRS／IHS 也在這時候套（倒數中點的旋轉／hold 算 TAP，按著的算 HOLD）
+function goHoist(){
+  if (!active || (climb && climb.rp) || DEMO) { IRS_TAP = 0; IHS_TAP = false; return; }
+  const h = handling(), a = active;
+  if (!holdUsed && (h.ihs === 'hold' ? held.hold : h.ihs === 'tap' && IHS_TAP)){ IHS_TAP = false; ihsSkip = true; try { doHold(); } finally { ihsSkip = false; } if (active !== a) sfxEv('ihs', 'ihs', 'hold'); }
+  IHS_TAP = false;
+  const irs = h.irs === 'hold' ? ((held.cw ? 1 : 0) + (held.ccw ? 3 : 0) + (held.flip ? 2 : 0)) % 4 : h.irs === 'tap' ? IRS_TAP : 0; IRS_TAP = 0;
+  if (irs && active === a){ sfxQuiet = true; const ok = rotate(irs); sfxQuiet = false; if (ok) sfxEv('irs', 'irs'); }
+  if (dasDir && SH[dasDir].held && active){ const S = SH[dasDir]; S.das = Math.max(0, h.das - h.dcd); S.arr = h.arr; if (move(dasDir, 0) && is20G()) while (move(0, 1)); }
+}
 function startDir(d){
   if (climb && climb.rp) return;
   cInput();
@@ -10518,7 +10549,7 @@ function simTickBody(ts){
     const iv = cd.iv || CD_STEP, n = cd.n || 5, u = t - (cd.pre || 0), k = Math.min(n - 1, Math.floor(u / iv));
     if (cd.mis && !cd.mis.done && t >= cd.mis.at){ cd.mis.done = true; say(cd.mis.text); if (cd.mis.ban) tlOv(`<div class="ban">${cd.mis.text}</div>`, 2000); else clearMsg = { lines: [{ text: cd.mis.text, color: '#ffffff', size: 'md' }], t: performance.now() }; sfxEv('mission', cd.mis.snd); }   // 官方 GlobalShout(mission)
     if (u >= 0 && u < n * iv && k > cd.step){ cd.step = k; const nm = cd.snd ? cd.snd(k) : 'countdown' + Math.max(1, Math.min(5, n - k)); sfxEv('countdown', nm); }
-    if (t >= cd.dur){ active = cd.piece; climb.cd = null; climb.goT = performance.now(); climb.goStride = !!cd.labels; lastTs = ts; sfxEv('countdown', cd.goSnd || 'go'); if (climb.cdSong !== undefined){ bgm(climb.cdSong); climb.cdSong = undefined; } }
+    if (t >= cd.dur){ active = cd.piece; climb.cd = null; goHoist(); climb.goT = performance.now(); climb.goStride = !!cd.labels; lastTs = ts; sfxEv('countdown', cd.goSnd || 'go'); if (climb.cdSong !== undefined){ bgm(climb.cdSong); climb.cdSong = undefined; } }
     draw(); simRAF = requestAnimationFrame(simTick); return;
   }
   if (climb && climb.warp){ zenWarpTick(dt); if (!climb.warp) lastTs = ts; draw(); simRAF = requestAnimationFrame(simTick); return; }
@@ -10735,6 +10766,7 @@ function qpRunMods(src){
 }
 function startClimb(kind = 'qp', opts = {}){
   rpBar(false); rpBegin(kind, opts);
+  IRS_TAP = 0; IHS_TAP = false;
   { const d = document.getElementById('listReq'); if (d) d.remove(); }
   if (typeof boardFx === 'function') boardFx(kind === 'practice' && ['40l', 'blitz', 'zen'].includes(opts.sub || 'zen') ? (RETRYING ? 'open' : 'pre') : opts.custom && !opts.custom.tower && !opts.room && RETRYING ? 'open' : null);
   if ((kind !== 'qp' || (opts.custom && !opts.custom.tower)) && !climb && !opts.keepScore && typeof tbgNext === 'function') tbgNext();   // 官方 start_40l／blitz／zen／custom、房間開局 → ni() 換一張背景（局中 RETRY 不換）
@@ -14040,7 +14072,7 @@ document.querySelectorAll('#config .sl .rng').forEach(rng => rng.addEventListene
     $('sdfInf').checked = v >= mx;
     if (v < mx) $('sdf').value = String(Math.round(v));
   } else {
-    $(row.dataset.target).value = String(Math.round(v * FRAME));
+    $(row.dataset.target).value = String(+(v * FRAME).toFixed(2));   // 存到小數兩位（10F＝166.67ms，不要四捨五入成 167）
   }
   paintSlider(row);
 }));
@@ -14088,7 +14120,7 @@ $('splashOn').onchange = e => { try { localStorage.setItem('bp:splash', e.target
 
 // 官方 HANDLING › RESET：ARR 2F／DAS 10F／DCD 2F／SDF 6X、safelock on、cancel off、may20g on、IRS／IHS TAP
 function handlingReset(quiet){
-  const F = 1000 / 60; $('arr').value = String(Math.round(2 * F)); $('das').value = String(Math.round(10 * F)); $('dcd').value = String(Math.round(2 * F)); $('sdf').value = '6';
+  const F = 1000 / 60; $('arr').value = String(+(2 * F).toFixed(2)); $('das').value = String(+(10 * F).toFixed(2)); $('dcd').value = String(+(2 * F).toFixed(2)); $('sdf').value = '6';
   $('sdfInf').checked = false; $('hNoAcc').checked = true; $('hCancelDas').checked = false; $('hPreferSoft').checked = true; $('irs').value = 'tap'; $('ihs').value = 'tap';
   syncConfigUI(); saveHandling(); if (!quiet) notice('HANDLING RESET');
 }
@@ -14145,10 +14177,10 @@ document.querySelectorAll('[data-sim]').forEach(b => {
     else if (a === 'right'){ held.right = true; startDir(1); }
     else if (a === 'soft'){ held.soft = true; cInput(); }
     else if (a === 'drop'){ held.drop = true; hardDrop(); }
-    else if (a === 'hold'){ held.hold = true; if (!active) lastHoldTap = performance.now(); doHold(); }
+    else if (a === 'hold'){ held.hold = true; if (!active) IHS_TAP = true; doHold(); }
     else {
       const dir = a === 'ccw' ? 3 : a === 'flip' ? 2 : 1;
-      if (!active) lastRotTap = { dir, t: performance.now() };   // IRS（TAP）只記「沒有方塊可轉時」按的旋轉：轉了這顆再硬降，不能又套到下一顆
+      if (!active) IRS_TAP = (IRS_TAP + dir) % 4;                // 官方 Rotate()：方塊還沒出來（sleep）時點的旋轉累加成 IRS
       if (a === 'cw') held.cw = true; else if (a === 'ccw') held.ccw = true; else held.flip = true;
       rotate(dir);
     }
@@ -18846,11 +18878,11 @@ addEventListener('keydown', e => {
       else if (act === 'soft'){ held.soft = true; cInput(); }
       else if (act === 'forfeit'){ if (inGame()) holdKStart('forfeit'); else setMode('edit'); return; }   // 對戰中 ESC＝QUIT 回大廳，不會跑進編輯器（只有沙盒模擬 ESC 才回編輯）
       else if (act === 'retry'){ if (inGame() && !$('runRestart').classList.contains('hidden')){ if (strideOn() && !isZen()) $('runRestart').onclick(); else holdKStart('retry'); } return; }   // 官方：stride（ZEN 除外）一按就重來，其他要按住
-      else if (act === 'hold'){ held.hold = true; if (!active) lastHoldTap = performance.now(); doHold(); return; }
+      else if (act === 'hold'){ held.hold = true; if (!active) IHS_TAP = true; doHold(); return; }
       else if (act === 'hard'){ held.drop = true; dropLocked = false; hardDrop(); } else {   // 鍵盤每次 keydown（不含自動重複）都是新的一下：不受「上一顆還按著」的防誤觸影響，快速連按、兩個硬降鍵交替都不會被吃
         const dir = act === 'ccw' ? 3 : act === 'flip' ? 2 : 1;
         if (act === 'ccw') held.ccw = true; else if (act === 'flip') held.flip = true; else held.cw = true;
-        if (!active) lastRotTap = { dir, t: performance.now() };   // IRS（TAP）只記「沒有方塊可轉時」按的旋轉：轉了這顆再硬降，不能又套到下一顆
+        if (!active) IRS_TAP = (IRS_TAP + dir) % 4;                // 官方 Rotate()：方塊還沒出來（sleep）時點的旋轉累加成 IRS
         rotate(dir);
       }
       if (!simRAF) draw(); return;                                    // 模擬迴圈在跑就交給下一幀畫（同一幀多個按鍵不會重畫好幾次）
