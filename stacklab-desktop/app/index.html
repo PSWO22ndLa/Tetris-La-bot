@@ -5454,21 +5454,24 @@ function evIcon(id){
 }
 function drawSkinBadges(){
   if (!climb || climb.kind !== 'qp' || !climb.mods.size) return;
-  const img = boardImg(), kind = skinKind();
+  drawBadgeGrid(ctx, climb.mods, skinRects(), cell, boardImg(), skinKind(), DUO_FULL(), (H + GUTB()) * cell);
+}
+// 觀戰盤面也走這裡：徽章畫法（圖集、朝向、菱形斜格）跟自己盤面完全同一套
+function drawBadgeGrid(ctx, mods, R, cell, img, kind, duoF, bottom){
+  if (!img) return false;
   // 照實機截圖：NEXT 框左下、右側欄外面，菱形斜格（45° 格子）緊密排。
   // 先往下排一欄（奇數列往右錯半格），滿了換第二欄；每欄列數 = max(3, ⌈n/2⌉)（3→3+0、7→4+3、9→5+4，⚠️ 由三張截圖歸納）
   // 順序 = 選 mod 的順序
-  const R = skinRects(), f = img.width / 4096;
   let h = cell * 0.74;
   const list = [];
-  for (const id of climb.mods){
+  for (const id of mods){
     const d = DECK_ALL.find(c => c.base === id || c.rev === id); if (!d || list.some(e => e.d === d)) continue;
-    list.push({ d, st: climb.mods.has(d.rev) ? 2 : 1 });
+    list.push({ d, st: mods.has(d.rev) ? 2 : 1 });
   }
-  const duoF = DUO_FULL();                             // 實機 Duo：徽章在盤面外框下方的外側角（你：左下；隊友：右下），橫著排
+  // 實機 Duo：徽章在盤面外框下方的外側角（你：左下；隊友：右下），橫著排
   const rows = duoF ? 2 : Math.max(3, Math.ceil(list.length / 2));
   // 可視行數少（Last Stand 只剩 10–14 行）時盤面變矮，徽章會超出畫布底 → 等比例縮小塞得下
-  const room = (H + GUTB()) * cell - (R.next.y + R.next.h);
+  const room = bottom - (R.next.y + R.next.h);
   if (!duoF) h = Math.min(h, room / (rows + 1.3) / (list.some(e => e.st === 2 || e.d.ev) ? 1.3 : 1));
   const fb = R.frame.y + R.frame.h;
   const passes = duoF ? [{ x0: R.lbar.x + h * 1.05, y0: fb + h * 0.9, dir: 1 }, { x0: duoSkinX0() + R.frame.x + R.frame.w - h * 1.05, y0: fb + h * 0.9, dir: -1 }]
@@ -5477,13 +5480,13 @@ function drawSkinBadges(){
   const odd = list.some(e => e.st === 2 || e.d.ev), K = odd ? 1.3 : 1, cap = h * K * 1.36;
   for (const P of passes){ const x0 = P.x0, y0 = P.y0, dir = P.dir;
   list.forEach(({ d, st }, i) => {
-    const ai = st === 2 && climb.mods.has('ab_' + d.rev) ? abIcon(d.rev) : null;
+    const ai = st === 2 && mods.has('ab_' + d.rev) ? abIcon(d.rev) : null;
     if (ai){                                            // ABYSS：用 ABYSS 徽章（以前這裡只畫 FLIPSIDE 的，ABYSS 沒出現）
       const row = i % rows, col = Math.floor(i / rows), sz = Math.min(h * 2.1, cap);
       ctx.drawImage(ai, x0 + dir * (col * 2 * h * K + (row % 2) * h * K) - sz / 2, y0 + row * h * K - sz / 2, sz, sz);
       return;
     }
-    const fi = st === 2 && climb.mods.has('fs_' + d.rev) ? fsIcon(d.rev) : null;
+    const fi = st === 2 && mods.has('fs_' + d.rev) ? fsIcon(d.rev) : null;
     if (fi){                                            // FLIPSIDE 自製圖：跟逆位星形一樣大、不旋轉
       const row = i % rows, col = Math.floor(i / rows), sz = Math.min(h * 1.8, cap);   // 自製圖星形較實，縮小避免互相疊住
       const cx = x0 + dir * (col * 2 * h * K + (row % 2) * h * K), cy = y0 + row * h * K;
@@ -5517,6 +5520,7 @@ function drawSkinBadges(){
     ctx.restore();
   });
   }
+  return true;
 }
 // 雪球活動（使用者的官方錄影）：HOLD、NEXT 框上緣掛一串燈，NEXT 右邊垂下來；燈泡暖白、慢慢閃
 function drawSnowLights(R){
@@ -16048,6 +16052,9 @@ function specExtrasDraw(c, o, cs, R){
   const now = performance.now();
   // mod 徽章：NEXT 下面兩欄排
   const ids = [...(o.mods || [])], show = ids.filter(id => !MOD_FLAG(id) && !(id === 'duo' && ids.includes('hearts')));
+  const mset = o.mods instanceof Set ? o.mods : new Set(ids), anyRev = ids.some(id => DECK_ALL.some(q => q.rev === id));
+  const bk = anyRev && boardSkins.rev ? 'rev' : 'normal', TX = typeof TIO_X !== 'undefined' ? TIO_X : {}, bimg = boardSkins[bk] || TX[bk] || boardSkins.normal || TX.normal || boardSkins.rev || TX.rev;
+  if (!drawBadgeGrid(c, mset, R, cs, bimg, bimg && (bimg === boardSkins.rev || bimg === TX.rev) ? 'rev' : 'normal', false, 23.4 * cs))   // 沒有盤面圖集才退回單張圖示
   show.forEach((id, i) => drawModBadge(c, ids, id, R.next.x + cs * .3 + (i % 2) * cs * 1.7, R.next.y + R.next.h + cs * .5 + Math.floor(i / 2) * cs * 1.7, cs * 1.5));
   // LAST STAND：盤面底下標出現在的洞（白）和下一個洞（灰）
   if (o.mods && o.mods.has('laststand') && o.hole != null){
