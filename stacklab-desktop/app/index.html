@@ -9242,7 +9242,23 @@ const KICK_180 = {
 const CLEAR_NAME = ['', 'Single', 'Double', 'Triple', 'Quad', 'Penta', 'Hexa', 'Hepta', 'Octa', 'Ennea', 'Deca', 'Hendeca', 'Dodeca', 'Triadeca', 'Tessaradeca', 'Pentedeca', 'Hexadeca', 'Heptadeca', 'Octadeca', 'Enneadeca', 'Eicosa', 'Kagaris'];   // 官方 Strings.cleartypes
 
 let mode = 'edit', active = null, bag = [], queue = [], holdType = null, holdUsed = false;
-let gravAcc = 0, lockTimer = 0, lockResets = 0, simRAF = null, lastTs = 0;
+let gravAcc = 0, lockTimer = 0, lockResets = 0, rotResets = 0, G_EFF = 0, simRAF = null, lastTs = 0;
+// 官方 Fall／_InternalShift／_InternalRotate：每次成功的左右移動、旋轉 lockresets++（旋轉另外 rotresets++）；
+//   還沒到上限（lockresets 15）才把鎖定計時歸零；到上限後一碰地就立刻鎖（ACTION_FORCELOCK）；掉到比之前更低的一列 → 兩個計數歸零
+//   rotresets > 上限 + 15：每幀多掉 0.5 ×（超過的次數）格（防止在半空一直轉）
+const LOCK_RESETS = 15;
+const infMove = () => isZen() && ruleOf('gravity') === 'SUBZERO';                // 官方 SUBZERO：infinite_movement
+function lockBump(rot){
+  if (lockResets < 31) lockResets++;
+  if (rot && rotResets < 63) rotResets++;
+  if (infMove() || lockResets < LOCK_RESETS) lockTimer = 0;
+}
+// 官方 Is20G：重力 ≥ 盤面高度（BLITZ gravitymay20g 關）；按著軟降時 SDF 41（或 重力×SDF ≥ 20）且（PREFER SOFT DROP 開，或本來就 20G）
+function is20G(){
+  const h = handling(), n = G_EFF >= 20, s = !(climb && climb.kind === 'practice' && climb.sub === 'blitz');
+  if (held.soft) return (h.sdf === Infinity || G_EFF * h.sdf >= 20) && (h.preferSoft || (n && s));
+  return n && s;
+}
 let lastWasRotation = false, lastKick = -1, combo = -1, b2b = -1, lastClear = '';
 let spawnSeq = 0;                           // 每生成一顆 +1（DEMO 用來判斷換新的一顆了）
 let clutchArm = false, clutchN = 0;
@@ -9468,14 +9484,14 @@ function spawn(type){
     sfxEv('clutch', 'clutch');                                        // 官方：clutch 音
   } else if (clutchArm) clutchN = 0;
   clutchArm = false;
-  active = a; gravAcc = 0; lockTimer = 0; lockResets = 0; sinceSpawn = 0; lastWasRotation = false; spawnSeq++;
+  a.hy = a.y; active = a; gravAcc = 0; lockTimer = 0; lockResets = 0; rotResets = 0; sinceSpawn = 0; lastWasRotation = false; spawnSeq++;
   finIn0 = climb ? (climb.inputs || 0) : 0; finSoft = false;
   if (climb && climb.tut) climb.tut.inp0 = climb.inputs || 0;
   if (sfxOpt('piece') && queue && queue[0]) sfxEv('piece', pkSnd(queue[0]), 0.7);   // TETR.IO：下一顆的方塊音
   holdUsed = false;                        // 新方塊一律恢復 hold 權；doHold 會在換完後自己鎖上
   pTrack = { rotN: 0, dirs: 0, moved: false, held: false, sd: !!held.soft, das: !!(held.left || held.right) };
   const h = handling();
-  // 官方：生成時不套 DCD（DCD 只在旋轉撞牆時），按著方向鍵的 DAS 直接沿用
+  dcdAfterRotate(); wallHit = false;                                    // 官方 Next()：上一顆撞過牆（STATE_WALL）→ 生成時也套 DCD，之後旗標清掉
   let irsDir = 0;                                                       // 生成瞬間的預轉
   if (h.irs === 'hold') irsDir = held.cw ? 1 : held.ccw ? 3 : held.flip ? 2 : 0;
   else if (h.irs === 'tap' && performance.now() - lastRotTap.t < 150){ irsDir = lastRotTap.dir; lastRotTap = { dir: 0, t: -1e9 }; }   // 用過就清掉
@@ -9514,15 +9530,17 @@ function move(dx,dy){
   if (!active) return false;
   const a = { ...active, x:active.x+dx, y:active.y+dy };
   if (!fits(a)){
+    if (dx && !dy) wallHit = true;                                              // 官方 STATE_WALL
     if (dx && !dy && !active.wall){ active.wall = true; if (sfxOpt('move')) sfxEv('sidehit', 'sidehit', 0.8); }   // 撞牆只響一次，離開牆再重置
     return false;
   }
-  a.wall = false;
+  a.wall = false; if (dx) wallHit = false;
   active = a;
   if (dx && pTrack) pTrack.moved = true;
   if (dx && !dy && sfxOpt('move')) sfxEv('move', 'move', 0.8);                   // 只算左右移動；重力和硬降是 dy
   lastWasRotation = false;                  // 位移（含重力）取消 spin 資格
-  if (dy === 0 && lockResets < 15){ lockTimer = 0; lockResets++; }
+  if (dy === 0) lockBump(false);
+  else if (dy > 0 && a.y > (a.hy ?? -1e9)){ a.hy = a.y; lockResets = 0; rotResets = 0; }   // 掉到新的最低列 → 重置次數歸零
   if (rec && rec.mode === 'step') recCapture();
   return true;
 }
@@ -9552,7 +9570,7 @@ function rotate(dir){                       // 1 順時針 / 3 逆時針 / 2 為
     active = a; lastWasRotation = true; lastKick = ki;                         // ki 4＝官方 kick index 3（第 4 個踢）→ 官方 IsTSpin 把 Mini 升成正式
     if (pTrack){ pTrack.rotN++; pTrack.dirs |= dir === 1 ? 1 : dir === 2 ? 2 : 4; } duoPrEv('rot', 1);
     if (!sfxQuiet){ if (detectSpin(a)) sfxEv('spin', 'spin', 'rotate'); else sfxEv('rotate', 'rotate'); }          // 轉進 spin 位置有專屬音
-    if (lockResets < 15){ lockTimer = 0; lockResets++; }
+    lockBump(true);
     dcdAfterRotate();
     if (rec && rec.mode === 'step') recCapture();
     draw(); return true;
@@ -9905,7 +9923,7 @@ function startDir(d){
   cInput();
   const h = handling(), S = SH[d];
   S.held = true; S.das = 0; S.arr = h.arr; dasDir = d;
-  move(d,0);
+  if (move(d,0) && is20G()) while (move(0,1));                          // 官方 _InternalShift：20G 時每移一格就貼地（SlamToFloor）
 }
 function releaseDir(d){
   const h = handling(), S = SH[d], O = SH[-d];
@@ -9924,12 +9942,13 @@ function tickShift(dt){
   if (S.arr < h.arr) return;
   const n = h.arr <= 0 ? W : Math.floor(S.arr / h.arr);
   if (h.arr > 0) S.arr -= h.arr * n;
-  for (let k = 0; k < n; k++) if (!move(dasDir,0)) break;
+  const slam = is20G();
+  for (let k = 0; k < n; k++){ if (!move(dasDir,0)) break; if (slam) while (move(0,1)); }
 }
-// 官方 _InternalDCD：旋轉後方塊貼著牆（往 DAS 方向動不了）才套 DAS CUT DELAY
+// 官方 _InternalDCD：這顆（生成時＝上一顆）往旁邊移動撞過牆（STATE_WALL，成功移動一格才清掉）才套 DAS CUT DELAY；旋轉後、下一顆生成時各檢查一次
+let wallHit = false;
 function dcdAfterRotate(){
-  if (!dasDir || !active) return; const h = handling(); if (!h.dcd) return;
-  if (fits({ ...active, x: active.x + dasDir })) return;
+  if (!wallHit) return; const h = handling(); if (!h.dcd) return;
   for (const k of ['-1', '1']){ SH[k].das = Math.min(SH[k].das, h.das - h.dcd); SH[k].arr = h.arr; }
 }
 
@@ -9966,6 +9985,7 @@ function simTickBody(ts){
     let base = climb && !climb.over ? (sunGrav() ?? climb.gravity) : Math.max(0, +$('gravity').value || 0);   // THE SUN F4：0.2G → 20G
     if (climb && climb.kind === 'qp' && climb.glock > 0){                // 官方 GetEffectiveGravity：glock（幀）> 180 → 0；≤ 180 → (1 − glock/180)² × g
       base = climb.glock > 180 ? 0 : (1 - climb.glock / 180) ** 2 * base; climb.glock = Math.max(0, climb.glock - dt / (1000 / 60)); }
+    G_EFF = base;
     const doSoft = () => {
       if (!held.soft) return;
       if (h.sdf === Infinity){ let c = 0; while (move(0,1)) c++; dropPoints(c); if (c) sfxEv('softdrop', 'softdrop', 0.7); return; }
@@ -9974,6 +9994,7 @@ function simTickBody(ts){
     if (held.soft) finSoft = true;
     if (h.preferSoft){ doSoft(); tickShift(dt); } else { tickShift(dt); doSoft(); }
     gravAcc += (DEMO && climb && climb.demo) || (held.soft && h.sdf !== Infinity) ? 0 : base * (dt / (1000/60));   // DEMO：La bot 自己控制落下，不吃重力；軟降中不再另外加一般重力（官方是取代）
+    if (!(DEMO && climb && climb.demo) && !infMove() && rotResets > LOCK_RESETS + 15) gravAcc += .5 * (rotResets - (LOCK_RESETS + 15)) * (dt / (1000/60));   // 官方 ShouldFallFaster
     let steps = Math.floor(gravAcc);
     if (steps > 0){
       gravAcc -= steps;
@@ -9987,7 +10008,7 @@ function simTickBody(ts){
         ld = (hasMod('freefall') ? ZEN_GRLD : ZEN_GLD)[floorOf(climb.alt).n] * 1000 / 60   // 官方 GLockDelay／GRLockDelay（frames）
           * (isAb('freefall') ? 0.6 : isFs('freefall') && hasMod('freefall') ? 0.8 : 1);         // ⚠️ FLIPSIDE／ABYSS 縮短是本專案自創
       if (isZen() && ruleOf('gravity') === 'SUBZERO') ld = Infinity;          // 官方 SUBZERO：locktime 999999999、無限移動
-      if (lockTimer >= ld){ SAFELOCK_UNTIL = performance.now() + 7000 / 60; lockPiece(); }
+      if (lockTimer >= ld || (lockResets >= LOCK_RESETS && !infMove() && ld !== Infinity && !(DEMO && climb && climb.demo))){ SAFELOCK_UNTIL = performance.now() + 7000 / 60; lockPiece(); }
     } else { lockTimer = 0; if (active) active.landed = false; }
     draw();
   } else if (clearMsg || (climb && climb.duo && !climb.over)) draw();   // DUO：自己倒下時隊友盤面、倒數照樣要更新
@@ -12091,6 +12112,13 @@ function holePlan(N){
 /* --- 收垃圾：≥8 行觸發 Windup 拆成 4+4+… --- */
 function climbReceive(lines, plan, fresh = true, quiet = false){
   if (!climb || climb.over || climb.downed) return;                 // DUO：倒下等復活時不收垃圾
+  // 官方 AddPendingGarbage（QP）：抵銷疲勞。每份攻擊至少變成 min(原本 + k×cancelstreak², 該樓層上限)；
+  //   k＝0.001（只開 Volatile 0.0003、只開 All-Spin 0.002）；上限 F1–F7＝4/5/6/7/8/9/10，F8 起無上限；Windup 進行中上限最多 6
+  if (climb.kind === 'qp' && !(climb.custom && !climb.custom.tower) && (climb.cstreak || 0) > 0){
+    const r = climb.cstreak, vo = hasMod('volatile'), as = isAllSpin(), k = vo && !as ? 3e-4 : as && !vo ? .002 : .001;
+    let cap = [4, 4, 5, 6, 7, 8, 9, 10][floorOf(climb.alt).n] ?? Infinity; if (climb.windup) cap = Math.min(6, cap);
+    lines = Math.max(lines, Math.floor(Math.min(lines + k * r * r, cap)));
+  }
   let n = Math.round(lines * climb.gmul * sunGmul() * (climb.duo && !climb.hearts ? (climb.duo.alive ? 0.6 : 1.5) : 1) * (climb.hGmul || 1));   // DUO：隊友倒下時你多吃 50%；Bleeding Hearts 8:00 起 +25%
   const raw = n;
   if (hasMod('volatile')) n *= 2;            // Windup 判定在加倍之前
@@ -12100,13 +12128,17 @@ function climbReceive(lines, plan, fresh = true, quiet = false){
   if (!plan || plan.length < n) plan = holePlan(n);
   if (!quiet) windupShow(raw);                                        // 一次攻擊 ≥ 8 行才有警示（塔的攻擊拆成多份時由呼叫端整波算一次）
   if (raw >= 8){
+    // 官方 ExplodeAttack：上限 16 行（4000m 起每 500m +1；Volatile ×2）平均拆成 4 份，超過上限的部分直接丟掉
+    let capW = 16 + (climb.alt >= 4000 ? Math.floor((climb.alt - 3500) / 500) : 0);
+    capW = Math.max(4, Math.round(capW * n / raw));                    // Volatile／Last Stand 等倍率跟著放大上限
+    const qa = Math.floor(capW / 4), caps = [qa, qa, qa, qa]; for (let e = 0; e < capW - 4 * qa; e++) caps[3 - e]++;
     const parts = [];
     let left = n;
-    for (let i=0;i<3 && left>4;i++){ parts.push(4); left -= 4; }
-    parts.push(left);
+    for (let i = 0; i < 4 && left > 0; i++){ const m = Math.min(caps[i], left); left -= m; parts.push(m); }
+    climb.recv -= left;                                                 // 丟掉的不算收到
     let o = 0; const plans = parts.map(m => { const q = plan.slice(o, o + m); o += m; return q; });
     if (climb.windup) climb.wq.push({ parts, plans });       // wiki：同時只會有一個 Windup，後面的排隊
-    else climb.windup = { parts, plans, wait:1000 };
+    else climb.windup = { parts, plans, wait: 1000 + Math.max(0, (climb.wFree || 0) - performance.now()) };   // 官方 windupwaituntil：上一個 Windup 開始後 120＋30×份數 幀內不會開始下一個
     return raw;
   }
   climb.pending.push({ lines:n, t:performance.now(), fresh, plan: plan.slice(0, n) });
@@ -13122,7 +13154,8 @@ function climbTick(dt){
       climb.pending.push({ lines: wl, t: performance.now(), fresh:true, plan: wp || holePlan(wl) });
       const nx = climb.wq.length ? climb.wq.shift() : null;
       climb.windup = climb.windup.parts.length ? { parts: climb.windup.parts, plans: climb.windup.plans, wait:500, stage: climb.windup.stage }
-                   : nx ? (Array.isArray(nx) ? { parts: nx, wait:1000 } : { ...nx, wait:1000 }) : null;
+                   : nx ? (Array.isArray(nx) ? { parts: nx, wait:2500 } : { ...nx, wait:2500 }) : null;   // 官方：最後一份後 90 幀才輪到下一個 Windup，再 60 幀進第一份
+      if (!climb.windup) climb.wFree = performance.now() + 1500;
     }
   }
   const f = floorOf(climb.alt);
@@ -17110,7 +17143,7 @@ function tutGen(L){
 const TUT_FIN = {};
 function tutFinTargets(p){
   if (TUT_FIN[p]) return TUT_FIN[p];
-  const save = { active, lastWasRotation, lastKick, lockTimer, lockResets, q: sfxQuiet, inp: climb ? climb.inputs : 0, pt: pTrack ? { ...pTrack } : pTrack }, g0 = grid().slice(); grid().fill(0);   // rotate() 會算按鍵數，模擬完要還原
+  const save = { active, lastWasRotation, lastKick, lockTimer, lockResets, rotResets, q: sfxQuiet, inp: climb ? climb.inputs : 0, pt: pTrack ? { ...pTrack } : pTrack }, g0 = grid().slice(); grid().fill(0);   // rotate() 會算按鍵數，模擬完要還原
   const D = window.draw; window.draw = () => {}; sfxQuiet = true;
   const st = { type:p, rot:0, x: (W === 10 && PIECE_ORDER.includes(p)) ? (p === 'O' ? 4 : 3) : 3, y: Math.max(0, H - VISIBLE - 2) };
   const key = s => `${s.x},${s.y},${s.rot}`, seen = new Map([[key(st), 0]]), q = [st], out = new Map();
@@ -17124,7 +17157,7 @@ function tutFinTargets(p){
       for (const dir of [1, 3, 2]){ active = { type:p, rot:s.rot, x:s.x, y:s.y }; if (rotate(dir)) nx.push({ type:p, rot:active.rot, x:active.x, y:active.y }); }
       for (const n of nx){ const k = key(n); if (!seen.has(k)){ seen.set(k, c + 1); q.push(n); } }
     }
-  } finally { ({ active, lastWasRotation, lastKick, lockTimer, lockResets } = save); sfxQuiet = save.q; window.draw = D; grid().set(g0); if (climb) climb.inputs = save.inp; pTrack = save.pt; }   // 模擬會動到「這顆用過幾次旋轉」的紀錄，要還原（不然 ROTATION 練習／Duo 任務會算錯）
+  } finally { ({ active, lastWasRotation, lastKick, lockTimer, lockResets, rotResets } = save); sfxQuiet = save.q; window.draw = D; grid().set(g0); if (climb) climb.inputs = save.inp; pTrack = save.pt; }   // 模擬會動到「這顆用過幾次旋轉」的紀錄，要還原（不然 ROTATION 練習／Duo 任務會算錯）
   return (TUT_FIN[p] = out);
 }
 // 課程盤面一律貼底；預填格照 TUT_COL 上色（像真人疊的），沒有顏色資料的才用垃圾色
@@ -17225,7 +17258,7 @@ function tutFail(why){
 function tutOutOfPieces(){ if (climb.tut && !climb.tut.res) tutFail('OUT OF PIECES'); }
 // 提示：在目前盤面用遊戲自己的移動／旋轉做 BFS，找出能達成目標的落點
 function tutFind(goal, type){
-  const save = { active, lastWasRotation, lastKick, lockTimer, lockResets, q: sfxQuiet, inputs: climb.inputs };
+  const save = { active, lastWasRotation, lastKick, lockTimer, lockResets, rotResets, q: sfxQuiet, inputs: climb.inputs };
   const D = window.draw; window.draw = () => {}; sfxQuiet = true;
   const st = { type, rot:0, x: type === 'O' ? 4 : 3, y: Math.max(0, H - VISIBLE - 2), lr:false, k:-1 };
   const key = s => `${s.x},${s.y},${s.rot},${s.lr ? 1 : 0},${s.k}`;
@@ -17244,7 +17277,7 @@ function tutFind(goal, type){
       }
     }
   } finally {
-    ({ active, lastWasRotation, lastKick, lockTimer, lockResets } = save); sfxQuiet = save.q; climb.inputs = save.inputs; window.draw = D;
+    ({ active, lastWasRotation, lastKick, lockTimer, lockResets, rotResets } = save); sfxQuiet = save.q; climb.inputs = save.inputs; window.draw = D;
   }
   return best || [];
 }
@@ -17267,7 +17300,7 @@ const TDEMO = { key: '', plan: null, t0: 0, raf: 0 };
 const tutHintPps = () => { let v = 0.6; try { v = +localStorage.getItem('bp:tutHintPps') || 0.6; } catch(e){} return v; };
 function tutDemoPath(type, targetCells, goal){
   const want = targetCells.map(([x, y]) => x + ',' + y).sort().join(' ');
-  const save = { active, lastWasRotation, lastKick, lockTimer, lockResets, q: sfxQuiet, inputs: climb.inputs, pt: pTrack };
+  const save = { active, lastWasRotation, lastKick, lockTimer, lockResets, rotResets, q: sfxQuiet, inputs: climb.inputs, pt: pTrack };
   const D = window.draw; window.draw = () => {}; sfxQuiet = true;
   const x0 = (W === 10 && PIECE_ORDER.includes(type)) ? (type === 'O' ? 4 : 3) : Math.floor((W - (SHAPES[type].s || (type === 'I' ? 4 : type === 'O' ? 2 : 3))) / 2);
   const st = { type, rot: spawnRotOf(type), x: x0, y: Math.max(0, H - VISIBLE - 2), lr: false, k: -1, par: null, act: null };
@@ -17294,7 +17327,7 @@ function tutDemoPath(type, targetCells, goal){
       { const g = drop(s); if (g.y > s.y) push({ ...g, lr: false, k: -1 }, 'soft'); }
     }
   } finally {
-    ({ active, lastWasRotation, lastKick, lockTimer, lockResets } = save); sfxQuiet = save.q; climb.inputs = save.inputs; pTrack = save.pt; window.draw = D;
+    ({ active, lastWasRotation, lastKick, lockTimer, lockResets, rotResets } = save); sfxQuiet = save.q; climb.inputs = save.inputs; pTrack = save.pt; window.draw = D;
   }
   if (!best) return null;
   const acts = []; for (let c = best; c && c.par; c = c.par) acts.unshift({ k: c.act, from: { x: c.par.x, y: c.par.y, rot: c.par.rot }, to: { x: c.x, y: c.y, rot: c.rot } });
@@ -21292,7 +21325,7 @@ return QPK;
 /* ==================================================================================================
    LOCAL 2P（CUSTOM 房間）：同一台電腦、兩組按鍵對戰
    規則照本站 TETRA LEAGUE：SRS+、7-bag、HOLD、NEXT 5、攻擊表＝lbAttack（TL 規則）、All-Mini+（T 以外的 spin 算 mini）、
-   垃圾延遲 0.5 秒、每次鎖定最多進 8 行、重力 0.02G 起 2 分鐘後上升、鎖定延遲 0.5 秒（最多 15 次重置）、開局 glock 240 幀
+   垃圾延遲 0.5 秒、每次鎖定最多進 8 行、重力 0.02G 起 2 分鐘後上升、鎖定延遲 0.5 秒（最多 15 次重置）
    按鍵（e.code，不受輸入法影響）：
      P1  A/D 左右  S 軟降  W 硬降  Q 逆轉  E 順轉  R 180  左 Shift 或 C HOLD
      P2  ←/→ 左右  ↓ 軟降  ↑ 硬降  , 逆轉  . 順轉  / 180  右 Shift 或 Enter HOLD
@@ -21313,7 +21346,7 @@ function bag(p){                                                       // 兩邊
     p.q.push(S.seq[p.qi++]); } }
 function mkPlayer(i){
   const p = { i, bd: new Uint8Array(BW * BH), q: [], hold: null, canHold: true, cur: null, grav: 0, lockT: 0, resets: 0, lowest: 0, combo: -1, b2b: -1,
-    pend: [], qi: 0, alive: true, sent: 0, recv: 0, pieces: 0, lines: 0, lastRot: false, lastKick: 0, held: {}, das: { dir: 0, t: 0, a: 0 }, msg: null, glock: 240, shake: 0 };
+    pend: [], qi: 0, alive: true, sent: 0, recv: 0, pieces: 0, lines: 0, lastRot: false, lastKick: 0, held: {}, das: { dir: 0, t: 0, a: 0 }, msg: null, glock: 0, shake: 0 };   // 官方 glock 240 只有 QP 第 1 層開局才有
   bag(p); spawn(p); return p;
 }
 const cells = (pc, x = pc.x, y = pc.y, r = pc.r) => SHAPES[pc.type][r & 3].map(([cx, cy]) => [x + cx, y + cy]);
@@ -21329,7 +21362,7 @@ function spawn(p, type){
 function topout(p){ if (!p.alive) return false; p.alive = false; snd('topout', 'topout'); endRound(1 - p.i); return false; }
 function move(p, dx){ const c = p.cur; if (!c || !fits(p, c, c.x + dx, c.y, c.r)) return false; c.x += dx; p.lastRot = false; touchLock(p); return true; }
 function drop1(p){ const c = p.cur; if (!fits(p, c, c.x, c.y + 1, c.r)) return false; c.y++; p.lastRot = false; if (c.y > p.lowest){ p.lowest = c.y; p.resets = 0; } return true; }
-function touchLock(p){ const c = p.cur; if (!fits(p, c, c.x, c.y + 1, c.r) && p.resets < 15){ p.lockT = 0; p.resets++; } }
+function touchLock(p){ if (p.resets < 31) p.resets++; if (p.resets < 15) p.lockT = 0; }   // 官方：移動／旋轉都算一次（不管有沒有著地），15 次後一碰地就鎖
 function rotate(p, dir){
   const c = p.cur; if (!c || c.type === 'O') { if (c && c.type === 'O') snd('rotate', 'rotate'); return; }
   const from = c.r & 3, to = (from + dir) & 3, key = `${from}${to}`;
@@ -21391,7 +21424,7 @@ function tickPlayer(p, dt){
   if (p.held.soft){ if (h.sdf === Infinity){ while (drop1(p)); } else p.grav += Math.max(g * h.sdf, .05 * h.sdf) * dt / (1000 / 60); }
   else p.grav += g * dt / (1000 / 60);
   while (p.grav >= 1){ p.grav--; if (!drop1(p)) { p.grav = 0; break; } }
-  if (!fits(p, c, c.x, c.y + 1, c.r)){ p.lockT += dt; if (p.lockT >= 500 || p.resets >= 15 && p.lockT >= 500) lock(p); } else p.lockT = 0;
+  if (!fits(p, c, c.x, c.y + 1, c.r)){ p.lockT += dt; if (p.lockT >= 500 || p.resets >= 15) lock(p); } else p.lockT = 0;
   if (p.shake > 0) p.shake = Math.max(0, p.shake - dt / 200);
 }
 function endRound(w){ if (S.phase !== 'play') return; S.phase = 'end'; S.winner = w; S.wins[w]++; S.endT = S.t; snd('win', 'matchintro'); }
