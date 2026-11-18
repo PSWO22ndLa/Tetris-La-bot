@@ -75,6 +75,9 @@ function zc(u){
   const m = ZC_RE.exec(u.pathname); if (!m) return null;
   const sha = m[1] || m[2], rest = m[3], file = safeJoin(path.join(CACHE(), 'zc', sha), decodeURIComponent(rest));
   if (!file) return new Response(null, { status: 403 });
+  // 塔圖打包在 app/zc/ 裡（沒網路、第一次開也有 QP 背景）；音樂太大不打包 → 照舊抓一次存起來
+  const packed = safeJoin(path.join(APP_DIR, 'zc'), decodeURIComponent(rest));
+  if (packed && fs.existsSync(packed)) return fsp.readFile(packed).then(b => new Response(b, { headers: { 'content-type': mimeOf(packed), 'access-control-allow-origin': '*' } }));
   return cachedGet([`https://cdn.jsdelivr.net/gh/MrZ626/ZenithClicker@${sha}/assets/${rest}`, `https://raw.githubusercontent.com/MrZ626/ZenithClicker/${sha}/assets/${rest}`], file);
 }
 
