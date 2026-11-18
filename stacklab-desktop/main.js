@@ -95,6 +95,26 @@ async function packFromDownloads(req){
   } catch (e) { return new Response(null, { status: 404 }); }
 }
 
+// 回放存檔：%APPDATA%\Stack Lab\replays\<id>.slreplay（頁面用 PUT／GET／DELETE /__replay/<id>；GET /__replay/ 列清單；?open=1 打開資料夾）
+const RP_DIR = () => path.join(app.getPath('userData'), 'replays');
+async function replayIO(req, u){
+  const dir = RP_DIR(), name = decodeURIComponent(u.pathname.slice('/__replay/'.length));
+  try {
+    await fsp.mkdir(dir, { recursive: true });
+    if (!name){
+      if (u.searchParams.get('open')){ shell.openPath(dir); return new Response('ok'); }
+      const out = [];
+      for (const n of await fsp.readdir(dir)) if (n.endsWith('.slreplay')){ const st = await fsp.stat(path.join(dir, n)); out.push({ id: n.slice(0, -9), t: st.mtimeMs, size: st.size }); }
+      return new Response(JSON.stringify(out), { headers: { 'content-type': 'application/json' } });
+    }
+    if (!/^[\w.-]{1,80}$/.test(name)) return new Response(null, { status: 400 });
+    const f = path.join(dir, name + '.slreplay');
+    if (req.method === 'PUT'){ await fsp.writeFile(f, Buffer.from(await req.arrayBuffer())); return new Response('ok'); }
+    if (req.method === 'DELETE'){ await fsp.rm(f, { force: true }); return new Response('ok'); }
+    return new Response(await fsp.readFile(f), { headers: { 'content-type': 'application/octet-stream' } });
+  } catch (e) { return new Response(null, { status: 404 }); }
+}
+
 // 視窗大小／位置／全螢幕記起來（下次開一樣）
 const WIN_STATE = () => path.join(app.getPath('userData'), 'window-state.json');
 function loadWinState(){ try { return JSON.parse(fs.readFileSync(WIN_STATE(), 'utf8')); } catch (e) { return {}; } }
@@ -142,6 +162,7 @@ app.whenReady().then(() => {
     if (u.pathname.startsWith('/tio/')) return tio(req, u);
     if (u.pathname.startsWith('/plus/')) return plus(req, u);
     if (u.pathname === '/__pack') return packFromDownloads(req);
+    if (u.pathname.startsWith('/__replay/')) return replayIO(req, u);
     let p = decodeURIComponent(u.pathname); if (p === '/' || p === '') p = '/index.html';
     const f = path.join(APP_DIR, path.normalize(p).replace(/^(\.\.[\\/])+/, ''));
     if (!f.startsWith(APP_DIR)) return new Response('not found', { status: 404 });

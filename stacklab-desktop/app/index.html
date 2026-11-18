@@ -261,6 +261,20 @@ document.documentElement.classList.add('booting'); addEventListener('load', func
   }
 
   #stage{ position:relative; }
+  .gamerow.hasrp{ cursor:pointer; } .gamerow.hasrp:hover{ filter:brightness(1.18); }
+  .rptag{ text-decoration:none; color:#e6ffe6; letter-spacing:.06em; cursor:pointer; } .rptag:hover{ color:#fff; text-decoration:underline; }
+  /* 回放工具列（官方 #replay／#replaytools 的結構；樣式沿用遊戲內按鈕） */
+  body.rpmode #stage{ padding-bottom:84px; box-sizing:border-box; }
+  #rpHead{ position:fixed; left:0; right:0; top:max(10px, env(safe-area-inset-top)); z-index:60; pointer-events:none; text-align:center; font:600 clamp(13px, 2.2vw, 20px) var(--t-font); letter-spacing:.08em; color:rgba(255,255,255,.55); }
+  #rpHead span{ color:#fff; }
+  #rpBar{ position:fixed; left:0; right:0; bottom:0; z-index:80; padding:6px max(10px, env(safe-area-inset-left)) max(6px, env(safe-area-inset-bottom)); background:rgba(0,0,0,.72); border-top:2px solid rgba(255,255,255,.12); font:600 14px var(--t-font); color:#fff; }
+  #rpBar .rp-row{ display:flex; align-items:center; gap:6px; margin:2px auto; max-width:1100px; flex-wrap:wrap; }
+  #rpBar button{ min-width:38px; padding:5px 10px; font:600 14px var(--t-font); letter-spacing:.04em; }
+  #rpBar .grow{ flex:1; }
+  #rpBar .rp-tabs{ display:flex; gap:2px; } #rpBar .rp-tabs button{ opacity:.55; } #rpBar .rp-tabs button.active{ opacity:1; filter:brightness(1.35); }
+  #rpTime{ min-width:150px; font:700 20px var(--t-font); font-variant-numeric:tabular-nums; } #rpTime span{ margin-left:8px; font-size:12px; opacity:.6; letter-spacing:.06em; }
+  #rpSeek{ --progress:0%; flex:1; min-width:120px; height:14px; background:rgba(255,255,255,.14); cursor:pointer; touch-action:none; position:relative; }
+  #rpSeek i{ position:absolute; left:0; top:0; bottom:0; width:var(--progress); background:#fff; }
   #qpfx, #qpbg{ position:absolute; inset:0; width:100%; height:100%; pointer-events:none; z-index:0; }
   canvas#cv{ position:relative; z-index:1; }
   body.nopad #simPad [data-sim]{ display:none; }   /* 鍵盤玩家：藏掉觸控鍵，只留 REC 跟資訊 */
@@ -10144,21 +10158,25 @@ var RP_REC = null, RP_LAST = null, RP_OPENING = false;   // var：sfxEv 在這�
 const RP_KEYS = ['elapsed', 'lines', 'pieces', 'score', 'sent', 'recv', 'garbCleared', 'alt', 'csp', 'blvl', 'blLines', 'inputs', 'zenLv', 'zenProg', 'fire', 'cstreak', 'acs', 'kos', 'gravity', 'bonusRem', 'hyper'];
 function rpBegin(kind, opts){
   if (RP_OPENING) return;
-  RP_REC = (opts && (opts.room || opts.lv || opts.race)) || (typeof LOCAL_P !== 'undefined' && LOCAL_P) || (kind === 'practice' && ['tut', 'drill'].includes(opts && opts.sub)) ? null : { kind, opts: { ...opts }, frames: [], acc: 1e9, done: false };
+  const L = RP_LAST;                                                        // TL 下一回合（keepScore）：接在同一份回放後面，整場一份
+  if (kind === 'league' && opts && opts.keepScore && L && L.kind === 'league' && L.frames.length && !L.saved){
+    if (RP_SAVE_T) { clearTimeout(RP_SAVE_T); RP_SAVE_T = 0; }
+    L.done = false; L.off = L.frames[L.frames.length - 1].t + 1500; L.acc = 1e9; RP_REC = L; return; }
+  RP_REC = (opts && (opts.room || opts.lv || opts.race)) || (typeof LOCAL_P !== 'undefined' && LOCAL_P) || (kind === 'practice' && ['tut', 'drill'].includes(opts && opts.sub)) ? null : { kind, opts: { ...opts }, frames: [], acc: 1e9, done: false, off: 0, at: Date.now() };
 }
 function rpSnap(){
   const R = RP_REC, g = grid(), last = R.frames[R.frames.length - 1], now = performance.now();
   let same = !!last && last.g.length === g.length; if (same) for (let i = 0; i < g.length; i++) if (last.g[i] !== g[i]){ same = false; break; }
   const st = {}; for (const k of RP_KEYS) if (climb[k] !== undefined) st[k] = climb[k];
   const ob = climb.opp && climb.opp.bd instanceof Uint8Array ? climb.opp.bd : null;
-  R.frames.push({ t: climb.elapsed, g: same ? last.g : g.slice(), a: active ? [active.type, active.rot, active.x, active.y] : null, h: holdType, hu: holdUsed, q: queue.slice(0, 7), c: combo, b: b2b, st,
+  R.frames.push({ t: (R.off || 0) + climb.elapsed, sc: climb.me && climb.opp ? [climb.me.score, climb.opp.score] : null, g: same ? last.g : g.slice(), a: active ? [active.type, active.rot, active.x, active.y] : null, h: holdType, hu: holdUsed, q: queue.slice(0, 7), c: combo, b: b2b, st,
     m: clearMsg ? { lines: clearMsg.lines, age: now - clearMsg.t, dupe: clearMsg.dupe, keep: clearMsg.keep } : null,
     pd: (climb.pending || []).map(e => [e.lines, now - e.t]), sh: SHOUT_L.map(e => [e.k, e.txt, now - e.t]),
     ob: ob ? (last && last.ob && last.ob.length === ob.length && last.ob.every((v, i) => v === ob[i]) ? last.ob : ob.slice()) : null });
 }
 function rpRecTick(dt){
   const R = RP_REC; if (!R || R.done || !climb || climb.rp || climb.cd) return;
-  if (climb.over){ rpSnap(); R.done = true; if (R.frames.length > 5) RP_LAST = R; return; }
+  if (climb.over){ rpSnap(); R.done = true; if (R.frames.length > 5){ RP_LAST = R; rpSaveSoon(R); } return; }
   R.acc += dt; if (R.acc < 1000 / 30) return; R.acc = 0;
   if (R.frames.length < 60000) rpSnap();
 }
@@ -10169,48 +10187,156 @@ function rpApply(f){
   clearMsg = f.m ? { lines: f.m.lines, t: now - f.m.age, dupe: f.m.dupe, keep: f.m.keep } : null;
   climb.pending = f.pd.map(([lines, age]) => ({ lines, t: now - age, plan: [] }));
   SHOUT_L = f.sh.map(([k, txt, age]) => ({ k, txt, t: now - age }));
+  if (f.sc && climb.me && climb.opp){ climb.me.score = f.sc[0]; climb.opp.score = f.sc[1]; }
   if (f.ob && climb.opp && climb.opp.bd instanceof Uint8Array && climb.opp.bd.length === f.ob.length) climb.opp.bd.set(f.ob);
+}
+/* ---- 回放存檔 ----
+   桌面版（exe）：存成檔案 %APPDATA%\Stack Lab\replays\<時間>.slreplay（main.js 的 /__replay/ 端點）
+   網站：存在瀏覽器的 IndexedDB（sl-replays）；兩邊都只留最近 100 份，可以匯出／匯入 .slreplay 檔
+   格式：JSON（盤面去重成一個池）→ gzip；檔頭 { v, kind, opts, at, mode, sum } */
+let RP_SAVE_T = 0;
+const RP_MAX = 100, RP_EXE = location.hostname === 'stacklab.invalid';
+const rpB64e = u8 => { let s = ''; for (let i = 0; i < u8.length; i += 8192) s += String.fromCharCode.apply(null, u8.subarray(i, i + 8192)); return btoa(s); };
+const rpB64d = s => Uint8Array.from(atob(s), c => c.charCodeAt(0));
+const rpRound = o => { const r = {}; for (const k in o){ const v = o[k]; r[k] = typeof v === 'number' && !Number.isInteger(v) ? Math.round(v * 1000) / 1000 : v; } return r; };
+function rpSummary(R){
+  const f = R.frames[R.frames.length - 1], st = f.st || {}, z = n => String(n).padStart(2, '0'), secs = (st.elapsed || f.t || 0) / 1000;
+  const name = R.kind === 'qp' ? 'QUICK PLAY' : R.kind === 'league' ? 'TETRA LEAGUE' : ({ '40l': '40 LINES', blitz: 'BLITZ', zen: 'ZEN' }[R.opts.sub] || 'CUSTOM');
+  const val = R.kind === 'qp' ? `${(st.alt || 0).toFixed(1)}M` : R.kind === 'league' && f.sc ? `${f.sc[0]} - ${f.sc[1]}` : R.opts.sub === 'blitz' || R.opts.sub === 'zen' ? `${(st.score || 0).toLocaleString('en-US')}` : `${st.lines || 0} LINES`;
+  return { name, val, time: `${Math.floor(secs / 60)}:${z(Math.floor(secs % 60))}`, pieces: st.pieces || 0 };
+}
+async function rpEncode(R){
+  const pool = [], idx = new Map(), gi = g => { if (!g) return null; let i = idx.get(g); if (i == null){ i = pool.length; idx.set(g, i); pool.push(rpB64e(g)); } return i; };
+  const frames = R.frames.map(f => ({ ...f, g: gi(f.g), ob: gi(f.ob), st: rpRound(f.st), pd: f.pd.map(([a, b]) => [a, Math.round(b)]), sh: f.sh.map(([a, b, c]) => [a, b, Math.round(c)]), m: f.m ? { ...f.m, age: Math.round(f.m.age) } : null }));
+  let opts = {}; try { opts = JSON.parse(JSON.stringify(R.opts)); } catch(e){}
+  const txt = JSON.stringify({ v: 1, kind: R.kind, opts, at: R.at || Date.now(), sum: rpSummary(R), pool, frames });
+  if (typeof CompressionStream === 'undefined') return new Blob([txt], { type: 'application/json' });
+  return await new Response(new Blob([txt]).stream().pipeThrough(new CompressionStream('gzip'))).blob();
+}
+async function rpDecode(blob){
+  const head = new Uint8Array(await blob.slice(0, 2).arrayBuffer());
+  const txt = head[0] === 0x1f && head[1] === 0x8b ? await new Response(blob.stream().pipeThrough(new DecompressionStream('gzip'))).text() : await blob.text();
+  const J = JSON.parse(txt); if (!J || !Array.isArray(J.frames) || !J.frames.length) throw new Error('not a replay');
+  const pool = (J.pool || []).map(rpB64d);
+  return { kind: J.kind, opts: J.opts || {}, at: J.at, sum: J.sum, saved: true, done: true, frames: J.frames.map(f => ({ ...f, g: pool[f.g], ob: f.ob == null ? null : pool[f.ob] })) };
+}
+const rpIdx = () => { try { return JSON.parse(localStorage.getItem('bp:rpidx') || '[]'); } catch(e){ return []; } };
+const rpIdxSave = L => { try { localStorage.setItem('bp:rpidx', JSON.stringify(L.slice(0, RP_MAX))); } catch(e){} };
+async function rpStorePut(id, blob){
+  if (RP_EXE){ const r = await fetch('/__replay/' + id, { method: 'PUT', body: blob }); if (!r.ok) throw new Error('save ' + r.status); return; }
+  await idbPut('sl-replays', 'r', id, blob);
+}
+async function rpStoreGet(id){
+  if (RP_EXE){ const r = await fetch('/__replay/' + id); if (!r.ok) throw new Error('missing'); return await r.blob(); }
+  const b = await idbGet('sl-replays', 'r', id); if (!b) throw new Error('missing'); return b;
+}
+async function rpStoreDel(id){ if (RP_EXE) await fetch('/__replay/' + id, { method: 'DELETE' }).catch(() => {}); else await idbDel('sl-replays', 'r', id); }
+async function rpList(){
+  if (RP_EXE){ try { const r = await fetch('/__replay/'); if (r.ok){ const L = await r.json(); const meta = new Map(rpIdx().map(e => [e.id, e]));
+    return L.map(n => meta.get(n.id) || { id: n.id, at: n.t, sum: { name: 'REPLAY', val: '', time: '', pieces: 0 } }).sort((a, b) => b.at - a.at); } } catch(e){} }
+  return rpIdx();
+}
+function rpSaveSoon(R){
+  if (RP_SAVE_T) clearTimeout(RP_SAVE_T);
+  RP_SAVE_T = setTimeout(() => { RP_SAVE_T = 0; rpSave(R); }, R.kind === 'league' ? 9000 : 300);   // TL：等確定沒有下一回合再存（整場一份）
+}
+async function rpSave(R){
+  if (R.saved || !R.frames.length) return;
+  try {
+    const id = 'r' + (R.at || Date.now()), blob = await rpEncode(R);
+    await rpStorePut(id, blob); R.saved = true; R.id = id;
+    let L = rpIdx().filter(e => e.id !== id); L.unshift({ id, at: R.at || Date.now(), kind: R.kind, sub: R.opts.sub || '', sum: rpSummary(R), size: blob.size });
+    for (const old of L.slice(RP_MAX)) rpStoreDel(old.id);
+    rpIdxSave(L);
+  } catch(e){ console.warn('replay save failed', e); }
+}
+async function rpOpenId(id){
+  try { rpOpen(await rpDecode(await rpStoreGet(id))); } catch(e){ say('REPLAY NOT FOUND'); }
+}
+function rpExport(R){
+  (async () => { const blob = R.id && R.saved ? await rpStoreGet(R.id).catch(() => null) || await rpEncode(R) : await rpEncode(R);
+    const a = document.createElement('a'), d = new Date(R.at || Date.now()), z = n => String(n).padStart(2, '0');
+    a.href = URL.createObjectURL(blob); a.download = `StackLab-${(rpSummary(R).name).replace(/\s+/g, '')}-${d.getFullYear()}${z(d.getMonth() + 1)}${z(d.getDate())}-${z(d.getHours())}${z(d.getMinutes())}.slreplay`;
+    document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000); })();
+}
+function rpImport(){
+  const i = document.createElement('input'); i.type = 'file'; i.accept = '.slreplay,application/json,application/gzip';
+  i.onchange = async () => { const f = i.files && i.files[0]; if (!f) return; try { const R = await rpDecode(f); R.saved = false; R.at = R.at || Date.now(); await rpSave(R); rpOpen(R); } catch(e){ say('NOT A STACK LAB REPLAY FILE'); } };
+  i.click();
 }
 function rpTick(dt){
   const P = climb.rp, F = P.R.frames;
-  if (P.playing){ P.t = Math.min(P.dur, P.t + dt * P.speed); if (P.t >= P.dur) P.playing = false; }
+  if (P.playing){ P.t = Math.min(P.dur, P.t + dt * P.speed); if (P.t >= P.dur){ if (P.loop){ if (!P.loopT) P.loopT = performance.now(); else if (performance.now() - P.loopT > 500){ P.loopT = 0; P.t = F[0].t; P.i = 0; } } else P.playing = false; } }   // 官方 LOOP：停 0.5 秒再從頭
   if (F[P.i].t > P.t) P.i = 0;                                              // 往回拖
   while (P.i + 1 < F.length && F[P.i + 1].t <= P.t) P.i++;
   rpApply(F[P.i]); rpBarSync();
 }
-function rpOpen(){
-  const R = RP_LAST; if (!R){ say('NO REPLAY YET — FINISH A GAME FIRST'); return false; }
+function rpOpen(R0){
+  const R = R0 || RP_LAST; if (!R){ say('NO REPLAY YET — FINISH A GAME FIRST'); return false; }
   for (const id of ['tlRes', 'soloRes']){ const e = $(id); if (e){ e.classList.remove('on'); if (id === 'soloRes') e.className = ''; } }
   RP_OPENING = true;
-  try { if (climb) $('climbStop').onclick(); if (mode !== 'sim') setMode('sim'); startClimb(R.kind, { ...R.opts, keepScore: undefined }); }
+  try { if (climb) $('climbStop').onclick(); if (mode !== 'sim') setMode('sim'); if (typeof setScreen === 'function') try { setScreen('edit'); } catch(e){} startClimb(R.kind, { ...R.opts, keepScore: undefined }); }
   finally { RP_OPENING = false; }
   if (!climb) return false;
   climb.cd = null; climb.goT = 0; climb.cdSong = undefined; climb.floorToast = null; boardFx(null); tlOvClear();
   climb.rp = { R, t: R.frames[0].t, i: 0, speed: 1, playing: true, dur: R.frames[R.frames.length - 1].t };
   rpBar(true); rpApply(R.frames[0]); draw(); return true;
 }
+/* 回放工具列：照官方 #replay／#replaytools 的結構（官方的 CSS 拿不到，外觀用本站遊戲內按鈕的樣式）
+   上方一行「WATCHING <名字> PLAY <模式>」；下方：上一顆／上一幀／播放暫停／下一幀／下一顆、時間「m:ss.mmm FRAME n」、進度條、
+   速度 0.25×／0.5×／1×／2×／5×／10×、播完 STOP／LOOP。按鍵照官方：SPACE／K 播放暫停、←／→ 上下一顆、SHIFT＋←／→ 或 ,／. 上下一幀、CTRL＋←／→ 或 J／L 跳 5 秒 */
+function rpSeek(P, t){ const t0 = P.R.frames[0].t; P.t = Math.max(t0, Math.min(P.dur, t)); }
+function rpStep(kind, dir){
+  const P = climb && climb.rp; if (!P) return; const F = P.R.frames; P.playing = false;
+  if (kind === 'large') return rpSeek(P, P.t + dir * 5000);
+  let i = P.i;
+  if (kind === 'frame') i = Math.max(0, Math.min(F.length - 1, i + dir));
+  else { const n = (F[i].st || {}).pieces || 0; if (dir > 0){ while (i < F.length - 1 && ((F[i].st || {}).pieces || 0) <= n) i++; } else { while (i > 0 && ((F[i].st || {}).pieces || 0) >= n) i--; while (i > 0 && ((F[i - 1].st || {}).pieces || 0) === ((F[i].st || {}).pieces || 0)) i--; } }
+  rpSeek(P, F[i].t);
+}
+function rpKey(e){
+  const P = climb && climb.rp; if (!P || /^(INPUT|SELECT|TEXTAREA)$/.test((e.target && e.target.tagName) || '')) return;
+  const k = e.code; let hit = true;
+  if (k === 'Space' || k === 'KeyK') $('rpPlay').click();
+  else if (k === 'ArrowLeft' || k === 'ArrowRight'){ const d = k === 'ArrowLeft' ? -1 : 1; rpStep(e.shiftKey ? 'frame' : e.ctrlKey ? 'large' : 'piece', d); }
+  else if (k === 'Comma') rpStep('frame', -1); else if (k === 'Period') rpStep('frame', 1);
+  else if (k === 'KeyJ') rpStep('large', -1); else if (k === 'KeyL') rpStep('large', 1);
+  else hit = false;
+  if (hit){ e.preventDefault(); e.stopImmediatePropagation(); }
+}
 function rpBar(on){
-  let b = $('rpBar');
-  if (!on){ if (b) b.remove(); return; }
-  if (!b){ b = document.createElement('div'); b.id = 'rpBar';
-    b.style.cssText = 'position:fixed;left:50%;bottom:max(10px,env(safe-area-inset-bottom));transform:translateX(-50%);z-index:80;display:flex;gap:8px;align-items:center;padding:8px 10px;background:rgba(10,13,18,.92);border:1px solid #2d3947;color:#eef2f7;font:600 13px ' + (typeof UI_FONT !== 'undefined' ? UI_FONT : 'sans-serif') + ';width:min(640px,94vw);box-sizing:border-box';
-    const btn = 'background:#1b2430;color:#eef2f7;border:1px solid #2d3947;padding:6px 10px;font:inherit;cursor:pointer;border-radius:0';
-    b.innerHTML = `<button id="rpPlay" style="${btn};min-width:44px">❚❚</button><input id="rpSeek" type="range" min="0" max="1000" value="0" style="flex:1;min-width:60px"><span id="rpTime" style="min-width:92px;text-align:right;font-variant-numeric:tabular-nums">0:00 / 0:00</span>`
-      + `<select id="rpSpeed" style="${btn}"><option value=".25">0.25×</option><option value=".5">0.5×</option><option value="1" selected>1×</option><option value="2">2×</option><option value="4">4×</option></select><button id="rpExit" style="${btn}">EXIT</button>`;
-    document.body.appendChild(b);
-    $('rpPlay').onclick = () => { const P = climb && climb.rp; if (!P) return; if (!P.playing && P.t >= P.dur){ P.t = P.R.frames[0].t; P.i = 0; } P.playing = !P.playing; };
-    $('rpSeek').oninput = e => { const P = climb && climb.rp; if (!P) return; const t0 = P.R.frames[0].t; P.t = t0 + (P.dur - t0) * e.target.value / 1000; P.seeking = performance.now(); };
-    $('rpSpeed').onchange = e => { const P = climb && climb.rp; if (P) P.speed = +e.target.value || 1; e.target.blur(); };
-    $('rpExit').onclick = () => { rpBar(false); if (climb && climb.rp) $('climbStop').onclick(); };
-    b._iv = setInterval(() => { if (!(climb && climb.rp)){ clearInterval(b._iv); b.remove(); } }, 400);
-  }
+  let b = $('rpBar'), h = $('rpHead');
+  if (!on){ if (b) b.remove(); if (h) h.remove(); window.removeEventListener('keydown', rpKey, true); if (document.body.classList.contains('rpmode')){ document.body.classList.remove('rpmode'); try { fit(); } catch(e){} } return; }
+  if (b) return;
+  document.body.classList.add('rpmode'); try { fit(); } catch(e){}                 // 盤面往上讓出工具列的高度
+  const R = climb.rp.R, who = (typeof profName === 'function' ? profName() : 'YOU'), md = (R.sum || rpSummary(R)).name;
+  h = document.createElement('div'); h.id = 'rpHead'; h.innerHTML = `WATCHING <span>${tlEsc(String(who).toUpperCase())}</span> PLAY <span>${tlEsc(md)}</span>`; document.body.appendChild(h);
+  b = document.createElement('div'); b.id = 'rpBar';
+  const sp = [['.25', '0.25×'], ['.5', '0.5×'], ['1', '1×'], ['2', '2×'], ['5', '5×'], ['10', '10×']];
+  b.innerHTML = `<div class="rp-row"><button id="rpBP" title="Previous piece (←)">⏮</button><button id="rpBF" title="Previous frame (,)">◀</button><button id="rpPlay" title="Play / pause (SPACE)">❚❚</button><button id="rpFF" title="Next frame (.)">▶</button><button id="rpFP" title="Next piece (→)">⏭</button>
+      <div id="rpTime">0:00.000<span>FRAME 0</span></div><div id="rpSeek"><i></i></div></div>
+    <div class="rp-row"><div class="rp-tabs" id="rpSpeed">${sp.map(([v, n]) => `<button data-v="${v}"${v === '1' ? ' class="active"' : ''}>${n}</button>`).join('')}</div>
+      <div class="rp-tabs" id="rpEnd"><button data-v="stop" class="active">STOP</button><button data-v="loop">LOOP</button></div><span class="grow"></span><button id="rpFile" title="Save this replay as a .slreplay file">SAVE FILE</button><button id="rpExit">EXIT</button></div>`;
+  document.body.appendChild(b);
+  const P0 = () => climb && climb.rp;
+  $('rpPlay').onclick = () => { const P = P0(); if (!P) return; if (!P.playing && P.t >= P.dur){ P.t = P.R.frames[0].t; P.i = 0; } P.playing = !P.playing; };
+  $('rpBP').onclick = () => rpStep('piece', -1); $('rpFP').onclick = () => rpStep('piece', 1); $('rpBF').onclick = () => rpStep('frame', -1); $('rpFF').onclick = () => rpStep('frame', 1);
+  const seek = e => { const P = P0(); if (!P) return; const r = $('rpSeek').getBoundingClientRect(), t0 = P.R.frames[0].t; rpSeek(P, t0 + (P.dur - t0) * Math.max(0, Math.min(1, (e.clientX - r.left) / r.width))); };
+  $('rpSeek').onpointerdown = e => { $('rpSeek').setPointerCapture(e.pointerId); seek(e); $('rpSeek').onpointermove = seek; };
+  $('rpSeek').onpointerup = $('rpSeek').onpointercancel = () => { $('rpSeek').onpointermove = null; };
+  $('rpSpeed').querySelectorAll('button').forEach(x => x.onclick = () => { const P = P0(); if (P) P.speed = +x.dataset.v; $('rpSpeed').querySelectorAll('button').forEach(y => y.classList.toggle('active', y === x)); x.blur(); });
+  $('rpEnd').querySelectorAll('button').forEach(x => x.onclick = () => { const P = P0(); if (P) P.loop = x.dataset.v === 'loop'; $('rpEnd').querySelectorAll('button').forEach(y => y.classList.toggle('active', y === x)); x.blur(); });
+  $('rpFile').onclick = () => { const P = P0(); if (P) rpExport(P.R); };
+  $('rpExit').onclick = () => { rpBar(false); if (P0()) $('climbStop').onclick(); };
+  window.addEventListener('keydown', rpKey, true);
+  b._iv = setInterval(() => { if (!P0()){ clearInterval(b._iv); rpBar(false); } }, 400);
 }
 function rpBarSync(){
   const P = climb.rp, b = $('rpBar'); if (!b) return;
-  const t0 = P.R.frames[0].t, f = s => `${Math.floor(s / 60000)}:${String(Math.floor(s / 1000) % 60).padStart(2, '0')}`;
+  const t0 = P.R.frames[0].t, ms = P.t, z = (n, w = 2) => String(n).padStart(w, '0');
   $('rpPlay').textContent = P.playing ? '❚❚' : '▶';
-  if (!(P.seeking && performance.now() - P.seeking < 250)) $('rpSeek').value = Math.round((P.t - t0) / Math.max(1, P.dur - t0) * 1000);
-  $('rpTime').textContent = `${f(P.t)} / ${f(P.dur)}`;
+  $('rpSeek').style.setProperty('--progress', ((P.t - t0) / Math.max(1, P.dur - t0) * 100).toFixed(2) + '%');
+  $('rpTime').innerHTML = `${Math.floor(ms / 60000)}:${z(Math.floor(ms / 1000) % 60)}.${z(Math.floor(ms % 1000), 3)}<span>FRAME ${Math.round(ms * 60 / 1000)}</span>`;
 }
 function drawReplayTag(){
   if (!climb || !climb.rp) return;
@@ -12190,7 +12316,7 @@ let meTab = 'recent';
 document.addEventListener('click', e => { if (e.target && e.target.id === 'meMyPage'){ const t = loadProfile().tio; if (t && t.user) window.open('https://ch.tetr.io/u/' + encodeURIComponent(t.user), '_blank', 'noopener'); else openProfile(); } });   // 官方 MY PAGE：有連結 TETR.IO 帳號就開 TETRA CHANNEL，沒有就開本機個人頁
 function renderMe(){
   const p = loadProfile();
-  const TABS = [['recent','RECENT'],['40l','40 LINES'],['blitz','BLITZ'],['qp','QUICK PLAY'],['exqp','EXPERT QUICK PLAY'],['chqp','CHALLENGE QUICK PLAY'],['tl','TETRA LEAGUE']];
+  const TABS = [['recent','RECENT'],['40l','40 LINES'],['blitz','BLITZ'],['qp','QUICK PLAY'],['exqp','EXPERT QUICK PLAY'],['chqp','CHALLENGE QUICK PLAY'],['tl','TETRA LEAGUE'],['replays','REPLAYS']];
   $('meTabs').innerHTML = TABS.map(([k, n]) => `<button data-k="${k}" aria-pressed="${k === meTab}">${n}</button>`).join('');
   $('meTabs').querySelectorAll('button').forEach(b => b.onclick = () => { meTab = b.dataset.k; renderMe(); });
   const NAMES = { '40l':'40 LINES', blitz:'BLITZ', zen:'ZEN', qp:'QUICK PLAY', exqp:'EXPERT QUICK PLAY', chqp:'CHALLENGE QUICK PLAY', tl:'TETRA LEAGUE' };
@@ -12198,7 +12324,9 @@ function renderMe(){
   const stamp = t => { const d = new Date(t); return `${d.getFullYear()}/${d.getMonth()+1}/${d.getDate()} ${z(d.getHours())}:${z(d.getMinutes())}:${z(d.getSeconds())}`; };
   const dur = s => s == null ? '' : `<span class="n">${Math.floor(s/60)}:${z(Math.floor(s%60))}<small>.${(s % 1).toFixed(3).slice(2)}</small></span>`;
   const big = (n, unit) => { const [i, f] = n.split('.'); return `<span class="n">${(+i).toLocaleString('en-US')}${f !== undefined ? `<small>.${f}</small>` : ''}${unit ? `<u>${unit}</u>` : ''}</span>`; };
+  if (meTab === 'replays'){ renderMeReplays(stamp); return; }
   const games = (p.recent || []).filter(g => meTab === 'recent' || g.mode === meTab);
+  RP_IDX_ME = rpIdx().slice().sort((a, b) => a.at - b.at);
   $('meRecent').innerHTML = games.length ? games.map(g => {
     let val = '', ico = '', stats = [];
     const sp = (g.apm != null) ? [`<b>${(+g.apm).toFixed(2)}</b> APM`, `<b>${(+g.pps).toFixed(2)}</b> PPS`] : [];
@@ -12225,9 +12353,26 @@ function renderMe(){
       val = big(String(g.v), 'PCS');
       stats = [dur(g.secs), ...sp];
     }
-    return `<div class="gamerow"><div class="r1"><b>${NAMES[g.mode]}</b><div class="gv">${ico}${val}</div></div>
-      <div class="r2"><small>${stamp(g.t)}</small><div class="gs">${stats.filter(Boolean).join(' · ')}</div></div></div>`;
+    const rp = RP_IDX_ME.find(e => Math.abs(e.at - g.t) < 15 * 60 * 1000 && e.at <= g.t + 2000 && (g.mode === 'tl' ? e.kind === 'league' : ['qp', 'exqp', 'chqp'].includes(g.mode) ? e.kind === 'qp' : e.sub === g.mode));
+    if (rp) RP_IDX_ME = RP_IDX_ME.filter(e => e !== rp);
+    return `<div class="gamerow${rp ? ' hasrp' : ''}"${rp ? ` data-rp="${rp.id}" title="WATCH REPLAY"` : ''}><div class="r1"><b>${NAMES[g.mode]}</b><div class="gv">${ico}${val}</div></div>
+      <div class="r2"><small>${stamp(g.t)}${rp ? ' · <u class="rptag">▶ REPLAY</u>' : ''}</small><div class="gs">${stats.filter(Boolean).join(' · ')}</div></div></div>`;
   }).join('') : '<p class="dim">NO GAMES YET</p>';
+  $('meRecent').querySelectorAll('.gamerow.hasrp').forEach(r => r.onclick = () => rpOpenId(r.dataset.rp));   // 官方：點紀錄那一列就開回放
+}
+let RP_IDX_ME = [];
+// ME › REPLAYS：存下來的回放，一份一列（跟對局紀錄同一種列）；點列＝看、右下 SAVE FILE／DELETE；最上面一列是匯入檔案
+async function renderMeReplays(stamp){
+  const L = await rpList(); if (meTab !== 'replays') return;
+  $('meRecent').innerHTML = `<div class="gamerow hasrp" id="meRpImp"><div class="r1"><b>IMPORT REPLAY FILE</b><div class="gv"><span class="n"><small>.SLREPLAY</small></span></div></div>
+      <div class="r2"><small>${RP_EXE ? 'REPLAYS ARE SAVED AS FILES ON THIS PC' : 'REPLAYS ARE SAVED IN THIS BROWSER'} · LAST ${RP_MAX}</small><div class="gs">${RP_EXE ? '<u class="rptag" id="meRpDir">OPEN FOLDER</u>' : ''}</div></div></div>`
+    + (L.length ? L.map(e => `<div class="gamerow hasrp" data-rp="${e.id}" title="WATCH REPLAY"><div class="r1"><b>${tlEsc(e.sum && e.sum.name || 'REPLAY')}</b><div class="gv"><span class="n">${tlEsc(e.sum && e.sum.val || '')}</span></div></div>
+      <div class="r2"><small>${stamp(e.at)}</small><div class="gs">${e.sum ? `<b>${e.sum.time}</b> · <b>${e.sum.pieces}</b> PIECES · ` : ''}<u class="rptag" data-a="exp">SAVE FILE</u> · <u class="rptag" data-a="del">DELETE</u></div></div></div>`).join('') : '<p class="dim">NO REPLAYS YET — FINISH A GAME AND IT IS SAVED HERE AUTOMATICALLY</p>');
+  $('meRpImp').onclick = e => { if (e.target.id === 'meRpDir'){ fetch('/__replay/?open=1').catch(() => {}); return; } rpImport(); };
+  $('meRecent').querySelectorAll('.gamerow[data-rp]').forEach(r => r.onclick = async e => { const id = r.dataset.rp, a = e.target.dataset && e.target.dataset.a;
+    if (a === 'exp'){ try { const R = await rpDecode(await rpStoreGet(id)); R.id = id; rpExport(R); } catch(err){ say('REPLAY NOT FOUND'); } }
+    else if (a === 'del'){ await rpStoreDel(id); rpIdxSave(rpIdx().filter(x => x.id !== id)); renderMeReplays(stamp); }
+    else rpOpenId(id); });
 }
 function renderPlayers(){  const p = loadProfile(), r = tlRankOf(p);
   $('plTable').innerHTML = `<div class="lbrow head"><i>RANK</i><b>TR</b><em>APM · PPS · VS</em><small>TOP</small></div>` + TL_RANKS.map(k =>
@@ -18607,7 +18752,7 @@ function fit(){
   const pad = 28;
   syncVisible();
   const lv = document.getElementById('qplLive'), lw = lv && document.body.classList.contains('game') && getComputedStyle(lv).display !== 'none' ? lv.offsetWidth : 0;   // QP 右邊的即時排行會蓋住：置中的盤面兩邊都讓出它的寬度
-  cell = Math.max(4, Math.floor(Math.min((stage.clientHeight-pad)/(H - VIEW_TOP() + GUTB()), (stage.clientWidth-pad-2*lw)/(W + GUTL() + GUTR())) * (mode === 'sim' ? optN('oZoom') / 100 : 1)));   // 官方 board zoom
+  cell = Math.max(4, Math.floor(Math.min((stage.clientHeight-pad-(document.body.classList.contains('rpmode') ? 84 : 0))/(H - VIEW_TOP() + GUTB()), (stage.clientWidth-pad-2*lw)/(W + GUTL() + GUTR())) * (mode === 'sim' ? optN('oZoom') / 100 : 1)));   // 官方 board zoom
   draw();
 }
 addEventListener('resize', fit);
