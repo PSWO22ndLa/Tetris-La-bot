@@ -3956,12 +3956,12 @@ function fxSpawn(n, x, y, o = {}){
   if (!fxOn() || !tioImgOn() || FX.length > 400) return;
   const img = fxImg(n); if (img.bad) return;
   FX.push({ img, x, y, vx: o.vx || 0, vy: o.vy || 0, g: o.g || 0, life: 0, max: o.max || 600, size: o.size || 1, grow: o.grow || 0,
-    rot: o.rot || 0, vr: o.vr || 0, a: o.a ?? 1, add: o.add !== false, len: o.len || 0, tint: o.tint || null });
+    rot: o.rot || 0, vr: o.vr || 0, a: o.a ?? 1, add: o.add !== false, len: o.len || 0, tint: o.tint || null, dk: o.dk ?? 1 });   // dk：壽命結束時速度剩幾成（官方 speed from → to）
   if (!fxRAF) fxRAF = requestAnimationFrame(fxStep);
 }
 function fxStep(t){
   const dt = fxLast ? Math.min(50, t - fxLast) : 16; fxLast = t;
-  for (const p of FX){ p.life += dt; p.x += p.vx * dt / 1000; p.y += p.vy * dt / 1000; p.vy += p.g * dt / 1000; p.rot += p.vr * dt / 1000; }
+  for (const p of FX){ p.life += dt; const f = p.dk === 1 ? 1 : 1 - (1 - p.dk) * Math.min(1, p.life / p.max); p.x += p.vx * f * dt / 1000; p.y += p.vy * f * dt / 1000; p.vy += p.g * dt / 1000; p.rot += p.vr * dt / 1000; }
   for (let i = FX.length - 1; i >= 0; i--) if (FX[i].life >= FX[i].max) FX.splice(i, 1);
   if (!simRAF) try { draw(); } catch(e){}                      // 效能：simTick 在跑就由它畫，不重複畫第二次
   fxRAF = FX.length || SHOCK.length ? requestAnimationFrame(fxStep) : 0;
@@ -3984,6 +3984,84 @@ function fxDraw(){
   }
 }
 const fxR = (a, b) => a + Math.random() * (b - a);
+/* ---- 官方 El 背景粒子（Bl 層：畫在盤面後面、鋪滿整個視窗；只有畫質 HIGH／ULTRA 才有）----
+   bgsplash：bigbox 白、壽命 2–5 秒、α .02–.15 淡入再淡出、速度 0–100 → 0、大小 1.8×(.02–.2)、出界從另一邊回來；硬降往下 5 顆、每消一行往左右各 5 顆
+   bgsplashdanger：同上但 #FF2200、壽命 .1–1 秒、大小到 .3；頂死 50 顆、警報每響一次（越危險越多）
+   bgcircle：particle、畫面正中半徑 10 格的圓上往外噴、壽命 .35–3 秒、α .02–.4 → 0、速度 0–150 → 0、大小 1.8×(.02–.25)；
+     預設 100 顆（升級、B2B 延續、ALL CLEAR）；通關／ZEN 過關／TL 勝利 300 顆速度 300；頂死 #FF2200 300 顆速度 300
+   數量 × PARTICLE COUNT（預設 60%）；座標換算：官方 1 格＝30，這裡乘 cell/30 */
+const BGP = []; let bgpRAF = 0, bgpLast = 0;
+const bgpOn = () => fxOn() && tioImgOn() && ['high', 'ultra'].includes(opt('oGraphics')) && uiDetail() >= 2 && mode === 'sim';   // 手機預設 UI DETAIL＝MED → 不開（整個視窗每幀重畫）
+function bgpCanvas(){ let c = document.getElementById('bgfx'); if (!c){ const q = document.getElementById('qpfx'); if (!q) return null; c = document.createElement('canvas'); c.id = 'bgfx'; c.setAttribute('aria-hidden', 'true'); c.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:0'; q.parentNode.insertBefore(c, q.nextSibling); } return c; }
+function bgpAdd(tex, n, mk){
+  if (!bgpOn()) return; const c = bgpCanvas(); if (!c) return;
+  const r = c.getBoundingClientRect(), u = Math.max(8, cell) / 30, cnt = n * optN('oParticles') / 100;
+  for (let i = 0, m = Math.floor(cnt) + (Math.random() < cnt % 1 ? 1 : 0); i < m && BGP.length < 700; i++) BGP.push({ img: fxImg(tex), life: 0, ...mk(r.width, r.height, u) });
+  if (!bgpRAF){ bgpLast = 0; bgpRAF = requestAnimationFrame(bgpStep); }
+}
+function bgSplash(o = {}, danger){
+  const { amt = 30, direction: d = [0, 360], speed: sp = [0, 100] } = o, D = Array.isArray(d) ? d : [d, d];
+  bgpAdd('bigbox', amt, (w, h, u) => { const a = fxR(D[0], D[1]) * Math.PI / 180, v = fxR(sp[0], sp[1]) * u;      // 方向：0＝上、90＝右、180＝下
+    return { x: Math.random() * w, y: Math.random() * h, vx: Math.sin(a) * v, vy: -Math.cos(a) * v, max: danger ? fxR(100, 1000) : fxR(2000, 5000), a0: fxR(.02, .15), am: true, sc: 1.8 * fxR(.02, danger ? .3 : .2) * u, tint: danger ? '#FF2200' : null, wrap: true }; });
+}
+function bgCircle(o = {}){
+  const { radius = 10, color = null, amt = 100, speed = 150 } = o;
+  bgpAdd('particle', amt, (w, h, u) => { const a = Math.random() * Math.PI * 2, R = radius * 30 * u, v = fxR(0, speed) * u;
+    return { x: w / 2 + Math.cos(a) * R, y: h / 2 + Math.sin(a) * R, vx: Math.cos(a) * v, vy: Math.sin(a) * v, max: fxR(350, 3000), a0: fxR(.02, .4), sc: 1.8 * fxR(.02, .25) * u, tint: color }; });
+}
+function bgpStep(t){
+  const dt = bgpLast ? Math.min(50, t - bgpLast) : 16; bgpLast = t;
+  const c = bgpCanvas(); if (!c){ bgpRAF = 0; return; }
+  const r = c.getBoundingClientRect(), w = Math.round(r.width), h = Math.round(r.height);
+  if (c.width !== w || c.height !== h){ c.width = w; c.height = h; }
+  const x = c.getContext('2d'); x.clearRect(0, 0, w, h);
+  if (mode !== 'sim') BGP.length = 0;
+  x.globalCompositeOperation = 'lighter';
+  for (let i = BGP.length - 1; i >= 0; i--){ const p = BGP[i]; p.life += dt; if (p.life >= p.max){ BGP.splice(i, 1); continue; }
+    const k = p.life / p.max, f = 1 - k; p.x += p.vx * f * dt / 1000; p.y += p.vy * f * dt / 1000;                    // 速度線性降到 0
+    if (p.wrap){ p.x = (p.x % w + w) % w; p.y = (p.y % h + h) % h; }
+    if (!p.img.ok) continue;
+    const src = p.tint ? fxTinted(p.img, p.tint) : p.img, sw = p.img.width * p.sc, sh = p.img.height * p.sc;
+    x.globalAlpha = Math.max(0, Math.min(1, p.a0 * f * (p.am ? 2 * k : 1)));
+    x.drawImage(src, p.x - sw / 2, p.y - sh / 2, sw, sh); }
+  bgpRAF = BGP.length ? requestAnimationFrame(bgpStep) : 0;
+}
+// 頂死（官方 GameOver topout／garbagesmash）：背景紅色濺射＋紅色圓圈，盤面邊框往外噴 death_flair
+let bgDeathT = 0;
+function bgDeath(){
+  const now = performance.now(); if (now - bgDeathT < 600) return; bgDeathT = now;
+  bgSplash({ direction: 0, amt: 50 }, true); bgCircle({ color: '#FF2200', amt: 300, speed: 300 });
+  if (!opt('oDanger') || !['high', 'ultra'].includes(opt('oGraphics'))) return;
+  // death_flair：盤面外框上 100 顆 chirp（#FF88FF／#FF0000，壽命 .2–2 秒，速度 0–1000 → 0–200）＋100 顆白色 star（.2–1 秒，0–300 → 0–50），都往外
+  const top = H - VISIBLE, per = () => { const q = Math.random() * 2 * (W + VISIBLE); return q < W ? [q, top, 0, -1] : q < W + VISIBLE ? [W, top + q - W, 1, 0] : q < 2 * W + VISIBLE ? [q - W - VISIBLE, H, 0, 1] : [0, top + q - 2 * W - VISIBLE, -1, 0]; };
+  const sz = (n, e) => 1.8 * e * ((fxImg(n).width || 64) / 30);
+  for (let i = 0; i < 100; i++){ const [x, y, nx, ny] = per(), v = fxR(0, 1000) / 30; fxSpawn('chirp', x, y, { vx: nx * v, vy: ny * v, dk: .2, max: fxR(200, 2000), size: sz('chirp', fxR(.15, .5)), a: fxR(.7, 1), tint: Math.random() < .5 ? '#FF88FF' : '#FF0000' }); }
+  for (let i = 0; i < 100; i++){ const [x, y, nx, ny] = per(), v = fxR(0, 300) / 30; fxSpawn('star', x, y, { vx: nx * v, vy: ny * v, dk: .17, max: fxR(200, 1000), size: sz('star', fxR(.15, .5)), a: fxR(.7, 1) }); }
+}
+// b2b_flair（官方：B2B 加成到第 3 級，btb_2 響的時候）：盤面左、右、底邊各一排橘黃星星（#FF8000／#FFFF80）往外飄
+function b2bFlair(){
+  if (!['high', 'ultra'].includes(opt('oGraphics'))) return;
+  const top = H - VISIBLE, sz = e => 1.8 * e * ((fxImg('star').width || 64) / 30);
+  const one = (x, y, ax, ay) => { const a = Math.random() * Math.PI * 2, v = fxR(0, 150) / 30; fxSpawn('star', x, y, { vx: Math.cos(a) * v + ax, vy: Math.sin(a) * v + ay, dk: .33, max: fxR(200, 1000), size: sz(fxR(.15, .3)), a: fxR(.7, 1), tint: Math.random() < .5 ? '#FF8000' : '#FFFF80' }); };
+  for (let i = 0; i < 5 * VISIBLE; i++){ one(0, fxR(top, H), -2, 0); one(W, fxR(top, H), 2, 0); }
+  for (let i = 0; i < 5 * W; i++) one(fxR(0, W), H, 0, 2);
+}
+// confetti（官方：TL 勝利 15 條、色相 30–60；刷新個人紀錄只有 ULTRA 才有）：從畫面下方兩個角落拋上來再落下的彩帶
+const CONF = [];
+function confetti(count = 15, hue = [30, 60]){
+  if (!bgpOn()) return; const c = bgpCanvas(); if (!c) return; const r = c.getBoundingClientRect(), w = r.width, h = r.height;
+  for (let i = 0; i < count; i++){ const right = Math.random() > .5, ph = (.3 + .65 * Math.random()) * h, pw = (.05 + .4 * Math.random()) * w;
+    CONF.push({ t0: performance.now(), dur: 700 + 1000 * Math.random(), col: `hsl(${fxR(hue[0], hue[1])},100%,50%)`, len: .05 + .2 * Math.random(),
+      P: [[right ? w + 30 * Math.random() : -30 * Math.random(), h + 30 * Math.random()], [right ? w - pw : pw, h - ph], [right ? w - 2 * pw : 2 * pw, h + ph]] }); }
+  const step = () => { const x = c.getContext('2d'), now = performance.now(); if (!bgpRAF) x.clearRect(0, 0, c.width, c.height);
+    x.save(); x.globalCompositeOperation = 'lighter'; x.lineCap = 'round'; x.lineWidth = Math.max(2, cell * .2);
+    for (let i = CONF.length - 1; i >= 0; i--){ const q = CONF[i], k = (now - q.t0) / q.dur; if (k >= 1){ CONF.splice(i, 1); continue; }
+      const e = ftBez(.08, .7, .6, .26, k), at = t => { const m = 1 - t; return [m * m * q.P[0][0] + 2 * m * t * q.P[1][0] + t * t * q.P[2][0], m * m * q.P[0][1] + 2 * m * t * q.P[1][1] + t * t * q.P[2][1]]; };
+      x.strokeStyle = q.col; x.beginPath(); for (let j = 0; j <= 8; j++){ const [px, py] = at(Math.max(0, e - q.len * j / 8)); j ? x.lineTo(px, py) : x.moveTo(px, py); } x.stroke(); }
+    x.restore(); if (CONF.length) requestAnimationFrame(step); else if (!bgpRAF) x.clearRect(0, 0, c.width, c.height); };
+  if (c.width !== Math.round(w)){ c.width = Math.round(w); c.height = Math.round(h); }
+  requestAnimationFrame(step);
+}
 // PIXI 的 tint＝乘上顏色：先畫原圖、multiply 填色、再用原圖的透明度裁回來（每張圖×顏色快取一份）
 const FX_TINT = new Map();
 /* 官方 fire meter（tetrio.js fim，display_fire）：fire 0–700。來源：一次送 ≥10 → +3×送出量；spike 累計 ≥10 → +5；B2B 加成 ≥2 → +20×(⌊加成⌋−1)−10；combo power ≥7 → +5
@@ -4051,6 +4129,7 @@ function fxBoardDust(){
 // 消行：每行噴 particle；四消加 box、spin 加 star、PC 加 bigbox＋直立光柱；combo 加 chirp
 function fxClear(ys, o){
   for (const y of ys){
+    bgSplash({ direction: 90, amt: 5 }); bgSplash({ direction: 270, amt: 5 });   // 官方 ExplodeLine
     for (let i = 0; i < 12; i++) fxSpawn('particle', fxR(0, W), y + .5, { vx: fxR(-4, 4), vy: fxR(-8, -2), g: 14, max: fxR(450, 800), size: fxR(.5, .9) });
     if (o.quad) for (let i = 0; i < 5; i++) fxSpawn('box', fxR(0, W), y + .5, { vx: fxR(-3, 3), vy: fxR(-6, -2), g: 10, max: fxR(600, 900), size: fxR(.7, 1.1), vr: fxR(-6, 6) });
     if (o.spin) for (let i = 0; i < 6; i++) fxSpawn('star', fxR(0, W), y + .5, { vx: fxR(-3, 3), vy: fxR(-7, -2), g: 8, max: fxR(600, 1000), size: fxR(.6, 1), vr: fxR(-8, 8) });
@@ -4181,6 +4260,7 @@ function boardFx(k){
   BX_T.forEach(clearTimeout); BX_T = [];
   st.classList.remove(...BX);
   if (!k) return;
+  if (k === 'top') bgDeath(); else if (k === 'clear') bgCircle({ amt: 300, speed: 300 });   // 官方 GameOver：頂死／通關的背景粒子
   if (k === 'top') st.style.setProperty('--bxr', (Math.random() < .5 ? -17 : 17) + 'deg');
   if (k === 'pre'){ st.classList.add('bx-pre'); BX_T.push(setTimeout(() => { st.classList.remove('bx-pre'); st.classList.add('bx-in'); BX_T.push(setTimeout(() => st.classList.remove('bx-in'), 600)); }, 1000)); return; }   // 官方 prestart 1 秒後 PlayZoomInto("slow")
   if (k === 'open'){ st.classList.add('bx-open0'); requestAnimationFrame(() => requestAnimationFrame(() => { st.classList.remove('bx-open0'); st.classList.add('bx-open'); BX_T.push(setTimeout(() => st.classList.remove('bx-open'), 300)); })); return; }   // zoominto "fast"
@@ -5904,17 +5984,65 @@ function sirenTick(dt){
   const g = grid(), top0 = H - VISIBLE; let hi = H; for (let i = 0; i < g.length; i++) if (g[i]){ hi = (i / W) | 0; break; }
   const p = climbPending(), i = hi - Math.min(8, p), S = climb.siren || (climb.siren = { it: 0, alert: false });
   if ((i > top0 - 1 || !p) && S.alert) S.alert = false;
-  if (i > top0 + 2){ S.it = 0; return; }
-  if (!S.alert && i <= top0 - 1 && p){ S.alert = true; sfxEv('alert', 'damage_alert'); }
+  if (i > top0 + 2){ S.it = 0; S.panic = false; return; }
+  S.panic = true;
+  if (!S.alert && i <= top0 - 1 && p){ S.alert = true; S.alertT = performance.now(); sfxEv('alert', 'damage_alert'); }
   if (active){ const gh = ghostOf(active), lo = gh && cellsOf(gh).every(([, y]) => y < top0);   // 官方 HyperTopoutWarning：這顆放下去會 lock out → hyperalert 一次
     if (lo && !S.hyperW){ S.hyperW = true; sfxEv('hyperw', 'hyperalert'); } else if (!lo) S.hyperW = false; }
   S.it += dt / (1000 / 60); const iv = Math.max(50, 100 - 15 * (top0 + 2 - i));
-  if (S.it >= iv){ S.it -= iv; sfxEv('warning', 'warning'); dangerFlair(); }
+  if (S.it >= iv){ S.it -= iv; sfxEv('warning', 'warning'); dangerFlair(); bgSplash({ direction: 0, amt: top0 + 6 - i }, true); }
 }
 // 官方 danger_flair：每響一次 siren，盤面上冒一把紅橘色小光點（往上飄，閃爍）
 function dangerFlair(){
   const top0 = H - VISIBLE;
   for (let i = 0; i < 28; i++) fxSpawn('particle', fxR(0, W), fxR(top0, H), { vx: fxR(-3, 3), vy: fxR(-6, -.5), max: fxR(500, 1500), size: fxR(.25, .5), tint: Math.random() < .5 ? '#ff0000' : '#ff9900' });
+}
+// 官方 WarningSiren 的三個元件（board.png 上的小圖；沒載到官方圖就用線條代替）：
+//   skyline (98,2,9,73)：快頂到（panicking）而且有 lock out 的模式才有（40L／BLITZ／TL 是 nolockout，沒有）；盤面頂端一條，高 300px＝3.26 格，α .5–.75 亂閃
+//   garbagedangericon (2,118,92,92)：等著進場的垃圾會把你頂死時，盤面左緣中間的警告圖示；5 秒內 0 → 4 格 → 2 → 4 → 2 → 4 → 2 格，之後停在 2 格
+//   holdwarn (2,316,92,92)：panicking 時，hold 換出來的那顆（沒有 hold 就是下一顆）出生位置被擋住 → HOLD 框旁（−23,45）閃爍的 #FF2200 圖示
+function drawSirenEls(){
+  const S = climb && climb.siren; if (!S || !S.panic || climb.over || !opt('oDanger')) return;
+  const top = (H - VISIBLE) * cell, k = cell / 92, u = cell / 30, B = genTex('gBoard');
+  const noLock = climb.kind === 'league' || (climb.kind === 'practice' && ['40l', 'blitz'].includes(climb.sub)) || (climb.custom && climb.custom.nolockout);
+  ctx.save();
+  if (!noLock){ ctx.globalAlpha = .5 + .25 * Math.random();
+    if (B) nine(ctx, B, 98, 2, 9, 73, 0, 11, 0, 0, 0, top, W * cell, 300 * k, k);
+    else { const g = ctx.createLinearGradient(0, top, 0, top + 300 * k); g.addColorStop(0, 'rgba(255,51,0,.9)'); g.addColorStop(.08, 'rgba(255,51,0,.35)'); g.addColorStop(1, 'rgba(255,51,0,0)'); ctx.fillStyle = g; ctx.fillRect(0, top, W * cell, 300 * k); } }
+  if (S.alert){ const p = ftBez(.03, .8, .5, .93, Math.min(1, (performance.now() - (S.alertT || 0)) / 5000));
+    const [sc] = clKeyAt(p, [[0, 0], [.05, 2], [.1, 1], [.2, 2], [.3, 1], [.5, 2], [1, 1]]), sz = 2 * sc * cell, cy = top + VISIBLE * cell / 2;
+    ctx.globalAlpha = 1;
+    if (B) ctx.drawImage(B, 2, 118, 92, 92, -sz / 2, cy - sz / 2, sz, sz);
+    else if (sz > 2){ ctx.fillStyle = '#FF2200'; ctx.beginPath(); ctx.moveTo(0, cy - sz * .42); ctx.lineTo(sz * .46, cy + sz * .38); ctx.lineTo(-sz * .46, cy + sz * .38); ctx.closePath(); ctx.fill();
+      ctx.fillStyle = '#fff'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.font = `900 ${sz * .5}px ${CANVAS_FONT}`; ctx.fillText('!', 0, cy + sz * .08); } }
+  const nt = holdType || nextList()[0], canHold = !holdUsed && !hasMod('nohold') && !hasMod('ascetic') && !(climb.custom && !climb.custom.holdq);
+  if (active && canHold && nt && SHAPES[nt]){
+    const sp = { type: nt, rot: spawnRotOf(nt), x: (W === 10 && PIECE_ORDER.includes(nt)) ? (nt === 'O' ? 4 : 3) : Math.floor((W - (SHAPES[nt].s || (nt === 'I' ? 4 : nt === 'O' ? 2 : 3))) / 2), y: Math.max(0, H - VISIBLE - 2) };
+    const g = grid(), blocked = cellsOf(sp).some(([x, y]) => y >= 0 && g[y * W + x]);                  // 不看手上這顆（它會被換走）
+    if (blocked){ ctx.globalAlpha = .7 + .3 * Math.sin(performance.now() / 1000 * 60 / 3);
+      const hx = (typeof genL === 'function' ? -genL() : 0) - 23 * u, hy = top + 45 * u;
+      if (B) ctx.drawImage(gTint(B, 2, 316, 92, 92, '#FF2200'), hx - cell / 2, hy - cell / 2, cell, cell);
+      else { ctx.strokeStyle = '#FF2200'; ctx.lineWidth = Math.max(2, cell * .14); ctx.lineCap = 'round'; const m = cell * .3; ctx.beginPath(); ctx.moveTo(hx - m, hy - m); ctx.lineTo(hx + m, hy + m); ctx.moveTo(hx + m, hy - m); ctx.lineTo(hx - m, hy + m); ctx.stroke(); } } }
+  ctx.restore();
+}
+// 官方 PRO MODE（40L／BLITZ）：backer＝盤面後面的大字（40L 剩幾行、BLITZ 剩 m:ss；size 138、白 α .2、頂端在 3.25 格）；
+//   stackhint (177,152,64,100)＝「剩下的行數」那一列的橘色（#FFAE00）標線，剩 20 行以內才出現，越接近越亮
+function drawProEls(){
+  if (!climb || climb.over || !(climb.opts && climb.opts.pro) || climb.kind !== 'practice' || !['40l', 'blitz'].includes(climb.sub) || climb.cd) return;
+  const top = (H - VISIBLE) * cell, k = cell / 92, u = cell / 30, B = genTex('gBoard');
+  let txt = '';
+  if (climb.sub === '40l'){ const rem = Math.max(0, raceLines() - climb.lines); txt = String(rem);
+    const t = VISIBLE - rem, a = rem <= 0 ? 0 : Math.min(1, Math.max(0, t < 0 ? 0 : .25 + .25 * t));
+    if (a > 0){ const y = top + t * cell; ctx.save(); ctx.globalAlpha = a;
+      if (B) nine(ctx, gTint(B, 177, 152, 64, 100, '#FFAE00'), 0, 0, 64, 100, 33, 37, 33, 0, 0, y - 30.5 * k, W * cell, 330.5 * k, k);
+      else { ctx.fillStyle = '#FFAE00'; ctx.fillRect(0, y - Math.max(1, cell * .04), W * cell, Math.max(2, cell * .08)); }
+      ctx.restore(); } }
+  else if (!raceNoClock()){ const left = Math.ceil(Math.max(0, BLITZ.secs - climb.elapsed / 1000)), m = Math.floor(left / 60), sc = left % 60;
+    txt = left <= 10 && opt('oActText') === 'all' && opt('oGraphics') !== 'minimal' ? '' : `${m ? m : ''}:${String(sc).padStart(2, '0')}`; }
+  if (!txt) return;
+  const fs = 138 * u; ctx.save(); ctx.globalAlpha = .2; ctx.textAlign = 'center'; ctx.textBaseline = 'top'; ctx.font = `600 ${fs}px ${CANVAS_FONT}`;
+  const w = ctx.measureText(txt).width, z = Math.min(1, W * cell * .96 / Math.max(1, w)); ctx.translate(W * cell / 2, top + 3.25 * cell); ctx.scale(z, z);
+  ctx.lineWidth = fs * .06; ctx.strokeStyle = '#000'; ctx.strokeText(txt, 0, 0); ctx.fillStyle = '#fff'; ctx.fillText(txt, 0, 0); ctx.restore();
 }
 function drawDanger(){
   if (!dangerNow) return;
@@ -6062,6 +6190,10 @@ const SHOUTS = {
     keys: [[0, { sx: 2.5, sy: 0, a: 1, w: 700, c: [255, 255, 255] }], [.1, { sx: .8, sy: 1.9, a: 1, w: 700, c: [255, 172, 42] }], [.2, { sx: 1.4, sy: 1.4, a: 1, w: 700, c: [255, 102, 102] }], [.3, { sx: 1.3, sy: 1.3, a: 1, w: 700, c: [255, 255, 255] }],
       [.8, { sx: 1, sy: 1, a: .9, w: 630, c: [255, 159, 0] }], [1, { sx: .9, sy: .9, a: 0, w: 100, c: [255, 128, 0] }]],
     sh: { col: '#221B0E', dur: 2500, keys: [[0, { sx: 1, a: 0 }], [.2, { sx: 1, a: 0 }], [.4, { sx: 1, a: 1 }], [1, { sx: 5, a: 0 }]] } },
+  zenlevel: { size: 60, y: 0, dur: 5000, ez: [.06, .18, .65, 1.01], col: [255, 255, 255],
+    keys: [[0, { sx: 2.5, sy: 0, a: 1, w: 700, c: [255, 255, 255] }], [.05, { sx: .8, sy: 1.9, a: 1, w: 700, c: [255, 172, 42] }], [.1, { sx: 1.4, sy: 1.4, a: 1, w: 700, c: [255, 102, 102] }], [.15, { sx: 1.3, sy: 1.3, a: 1, w: 700, c: [255, 255, 255] }],
+      [1, { sx: 1, sy: 1, a: .9, w: 630, c: [255, 162, 0] }]],
+    sh: { col: '#221B0E', dur: 5000, keys: [[0, { sx: 1, a: 0 }], [.09, { sx: 1, a: 0 }], [.1, { sx: 1, a: 1 }], [1, { sx: 5, a: 0 }]] } },
   clutch: { size: 30, y: 't-1', dur: 1000, ez: [.2, .65, .88, .64], col: [255, 232, 127],
     keys: [[0, { a: 1.5, w: 900, ls: 0 }], [.05, { a: 1.5, w: 900, ls: 30 }], [1, { a: 0, w: 100, ls: 50 }]] },
   levelup: { size: 120, y: 5, dur: 1500, ez: [.2, .65, .88, .64], col: [95, 117, 131],
@@ -6198,21 +6330,27 @@ function drawClimbHUD(wide){
   // 有盤面皮膚時 NEXT 框比較長，數據欄要擠進框底到盤面底之間
   const lines = climb.custom && !climb.custom.tower ? 6 : climb.kind === 'practice' ? (climb.sub === 'zen' ? 6 : 5) : climb.kind === 'league' ? 5 : (climb.hyper ? 4 : 3);
   const avail = bare ? Infinity : skin ? (H*cell - (SR.frame.y + SR.frame.h * .36 + cell * 2.4) - fs) : SR ? (H*cell - (SR.next.y + SR.next.h) - fs) : Infinity;
-  const step = Math.max(fs * 1.9, Math.min(fs * 2.5, avail / lines));
+  let step = Math.max(fs * 1.9, Math.min(fs * 2.5, avail / lines));
+  // 官方 Kc.generic.ns.counter（generic 板子、非 QP）：由下往上每 70 一欄；標題 size 20、數值 size 38（後半段 \f3＝0.6 倍），靠右對齊在盤面左邊 −10
+  //   官方 HUN 點陣字的字高 ≈ size × 0.86（跟樓層字卡同一個換算）→ 數值字高 1.09 格、標題 0.575 格；超過 4 欄（本站把右邊的 counter5 也放左邊）就等比縮
+  const GC = bare && genBoard() && climb.kind !== 'qp' && !(climb.snow && W < 10);
+  const gu = cell / 30, gf = GC ? Math.min(1, 4 / lines) : 1, gk = GC ? ftCap(ctx) / 100 : 1, gV = 1.09 * cell * gf / gk, gT = .575 * cell * gf / gk;
+  if (GC){ step = 70 * gu * gf; y = H * cell - 2 * gu; }
   // val 可以是 [大字, 小字]：TETR.IO 的「1248, 2.08/S」「10:00.267」後半段比較小
   const line = (label, val, color) => {
     const [main, tail] = Array.isArray(val) ? val : [val, ''];
-    const big = `700 ${fs*1.35}px ${CANVAS_FONT}`, sm = `600 ${fs*0.82}px ${CANVAS_FONT}`;
+    const big = GC ? `600 ${gV}px ${CANVAS_FONT}` : `700 ${fs*1.35}px ${CANVAS_FONT}`, sm = GC ? `600 ${gV * .6}px ${CANVAS_FONT}` : `600 ${fs*0.82}px ${CANVAS_FONT}`;
     const wm = tioMeasure(ctx, main, big), wt = tail ? tioMeasure(ctx, tail, sm) : 0;
     const k = maxW && wm + wt > maxW ? maxW / (wm + wt) : 1;              // 放不下就整串縮小
     const x0 = skin ? hx - (wm + wt) * k : hx;
-    ctx.save(); ctx.translate(x0, y); ctx.scale(k, 1);
+    ctx.save(); ctx.translate(GC ? hx : x0, y); ctx.scale(k, GC ? k : 1); if (GC) ctx.translate(-(wm + wt), 0);
     ctx.shadowColor = 'rgba(0,0,0,.6)'; ctx.shadowOffsetY = 1; ctx.shadowOffsetX = 1;   // 效能：每幀都畫，不用模糊陰影（點陣字是一個字一個字畫，模糊很貴）
     tioText(ctx, main, 0, 0, color, big);
     if (tail) tioText(ctx, tail, wm, 0, color, sm);
     ctx.restore();
     ctx.save(); ctx.globalAlpha = .75;
-    tioText(ctx, label, hx, y - fs*1.25, color, `600 ${fs*0.7}px ${CANVAS_FONT}`, skin ? 'right' : 'left');
+    if (GC) tioText(ctx, label, hx, y - 38.5 * gu * gf, color, `500 ${gT}px ${CANVAS_FONT}`, 'right');
+    else tioText(ctx, label, hx, y - fs*1.25, color, `600 ${fs*0.7}px ${CANVAS_FONT}`, skin ? 'right' : 'left');
     ctx.restore();
     y -= step;
   };
@@ -8639,7 +8777,7 @@ function drawFrame(){
   }
   if (mode === 'sim' && climb && climb.snow) drawSnowCaps();
   if (mode === 'sim' && climb) drawWindupAlert();
-  if (mode === 'sim' && climb && !climb.over) drawDanger();
+  if (mode === 'sim' && climb && !climb.over){ drawDanger(); drawSirenEls(); drawProEls(); }
   fxDraw(); shockDraw();
   // 效能：syncUI 會改二十幾個 DOM 文字／class，每幀做會逼瀏覽器每幀重排版。遊戲中改成每 250ms 同步一次（重要事件走 say() 仍會即時同步）
   const nowT = performance.now();
@@ -9772,7 +9910,7 @@ function lockPiece(){
     combo++;
     b2b = difficult ? b2b + 1 : -1;
     if (difficult && climb) climb.b2bPop = performance.now();
-    if (isPC) shout('allclear', 'ALL\nCLEAR');                               // 官方 fx("allclear")：Strings.extra.clear，只有盤面中間的大字，左邊動作字沒有這一行
+    if (isPC){ shout('allclear', 'ALL\nCLEAR'); bgCircle(); }                               // 官方 fx("allclear")：Strings.extra.clear，只有盤面中間的大字，左邊動作字沒有這一行
     // 官方：有 B2B 充能（TL／QP）時不出 back-to-back 字（看旁邊的 B2B 計數）；其他模式寫 back-to-back，第 3 次起加 X2、X3…
     if (b2b > 0 && !(climb && surgeOn())) push(b2b >= 2 ? `back-to-back X${b2b}` : 'back-to-back', '#f7d33e', 'sm');
     if (combo > 0) push(`${combo} Combo`, '#eef2f7', 'combo');
@@ -9780,6 +9918,7 @@ function lockPiece(){
     combo = -1;
   }
   lockSfx(r.cleared, spin, difficult, prevCombo, prevB2b, isPC, combo);
+  if (b2b > prevB2b && r.cleared) bgCircle();                              // 官方：B2B 每延續一次放一圈 bgcircle
   if (spin && opt('oSpinBoard') && fxOn() && cv.animate){ const d = (spin.dir || (Math.random() < .5 ? -1 : 1)) * (spin.mini ? .8 : 1.6);   // 官方 SPIN BOARD：spin 時盤面晃一下（幅度 ⚠️ 推估）
     try { cv.animate([{ transform:'rotate(0deg)' }, { transform:`rotate(${d}deg)` }, { transform:'rotate(0deg)' }], { duration: 240, easing:'ease-out' }); } catch(e){} }
   if (clearedYs.length) fxClear(clearedYs, { quad: r.cleared >= 4, spin: !!spin, pc: isPC, combo });
@@ -9945,7 +10084,7 @@ function hardDrop(){
   if (handling().noAcc && performance.now() < SAFELOCK_UNTIL) return;   // 官方 safelock：方塊「自己鎖定」後 7 幀內硬降無效（硬降鎖的不算；按著不放也不擋下一顆）
   let cells = 0;
   while (move(0,1)) cells++;
-  sfxEv('harddrop', 'harddrop');
+  sfxEv('harddrop', 'harddrop'); bgSplash({ direction: 180, amt: 5 });   // 官方 Harddrop
   fxHardDrop(cellsOf(active), cells);
   dropPoints(2 * cells);                         // BLITZ：硬降每格 2 分
   finesseCheck();
@@ -10782,7 +10921,7 @@ function blitzScore(res){
   climb.score += Math.round(pts);
   climb.blLines += res.cleared;                                  // 升級：本級需要的行數清完才升，多的帶到下一級
   while (climb.blLines >= blitzNeed(climb.blvl)){ climb.blLines -= blitzNeed(climb.blvl); climb.blvl++; sfxEv('levelup', 'levelup');
-    shout('levelup', climb.blvl); }                                   // 官方 fx("levelup").create(等級)：盤面中間往上飄的大數字
+    shout('levelup', climb.blvl); bgCircle(); }                                   // 官方 fx("levelup").create(等級)：盤面中間往上飄的大數字
 }
 const dropPoints = n => { if (climb && !climb.over && (climb.sub === 'blitz' || climb.sub === 'zen')){ climb.score += n; zenProgAdd(n); } };
 // ZEN 計分（tetrio.wiki.gg/wiki/ZEN）：表跟 BLITZ 一樣，但不乘等級；combo 50×combo；B2B ×1.5；All Clear 3500
@@ -10809,11 +10948,11 @@ function zenLevelCheck(){
   const L = ruleOf('leveling'); if (L === 'OFF') return;
   if (L === 'DISCREET'){
     sfxEv('levelup', 'levelup'); climb.zenLv = (climb.zenLv || 1) + 1; climb.zenProg = 0;
-    if (opt('oActText') === 'all') clearMsg = { lines: [{ text: `LEVEL ${climb.zenLv}`, color: '#7fe0ff', size: 'md', k: 'level' }], t: performance.now() };
+    shout('levelup', climb.zenLv); bgCircle();                           // 官方：fx("levelup").create(zenlevel)＋bgcircle
     zenStore(); tbgNext(); if (!BGM_CALM.includes(BGM.cur)) bgm(bgmCalmNext()); return;
   }
   climb.warp = { t: 0, piece: active, step: 0 }; active = null;
-  if (opt('oActText') !== 'off') clearMsg = { lines: [{ text: 'LEVEL', color: '#ffffff', size: 'lg' }, { text: 'COMPLETE', color: '#ffffff', size: 'lg' }], t: performance.now() };
+  shout('zenlevel', 'LEVEL\nCOMPLETE'); bgCircle({ amt: 300, speed: 300 });   // 官方 fx("zenlevel")：盤面中間壓扁彈出的大字，5 秒
   bgmFadeOut(3); sfxEv('warp', 'warp', 1.25);
   const cv = $('cv'); if (cv){ cv.style.transition = 'transform 3.1s cubic-bezier(.93,0,.83,-.89)'; requestAnimationFrame(() => { cv.style.transform = 'scale(0) rotate(-1rad)'; }); }
   let f = $('zenWarpFx'); if (!f){ f = document.createElement('div'); f.id = 'zenWarpFx'; f.style.cssText = 'position:fixed;inset:0;background:#ddd;opacity:0;pointer-events:none;z-index:70'; document.body.appendChild(f); }
@@ -11155,7 +11294,7 @@ function soloResults(done, pr0){
   const o = soloOpt(sub === 'custom' ? '40l' : sub), songs = songList(), sName = (songs.find(s => s[0] === o.song) || songs[0])[1];
   const rid = 'R:' + Array.from({ length: 12 }, () => '0123456789abcdef'[(Math.random() * 16) | 0]).join('');
   sfxEv('showscore', 'showscore'); bgm({ '40l':'success-story', blitz:'philosophy', custom:'kaiser-hige-na-neko' }[sub]);   // 官方：結算頁 showscore＋該模式結算曲
-  if (best && sub !== 'custom' && (sub === '40l' ? pr0.sprint : pr0.blitz)) setTimeout(() => sfxEv('pb', 'personalbest'), 300);
+  if (best && sub !== 'custom' && (sub === '40l' ? pr0.sprint : pr0.blitz)) setTimeout(() => { sfxEv('pb', 'personalbest'); if (opt('oGraphics') === 'ultra') confetti(15, [30, 60]); }, 300);
   const el = $('soloRes');
   el.className = 'on t' + sub; el.dataset.t = sub;
   const LT = { '40l':'40 LINES', blitz:'BLITZ', custom:'CUSTOM GAME' }[sub] || M.t;    // 官方 Li.results：標題 RESULTS，底列「<模式> played by <名字> on <時間>」
@@ -12017,6 +12156,7 @@ function renderPlayers(){  const p = loadProfile(), r = tlRankOf(p);
 
 function endClimb(reason){
   if (!climb || climb.over) return;
+  bgDeath();
   if (climb.smashT && performance.now() - climb.smashT < 120) sfxEv('smash', 'garbagesmash');   // 官方：垃圾頂上來把方塊擠死 → garbagesmash
   if (climb.kind === 'league' && climb.opp && climb.opp.remote){     // RIVALS TL：先停住，等外層判定（兩邊幾乎同時死時才不會兩邊都算輸）
     climb.over = true; active = null; sfxEv('topout', 'topout'); draw();
@@ -12770,7 +12910,7 @@ function climbOnLock(res){
     if (atk === undefined) atk = bigClear(nC, !!res.spin, !!(res.spin && res.spin.mini));   // 官方 PENTA 5、TSPIN QUAD 10、TSPIN PENTA 12、MINI QUAD 4
     if (res.b2b > 0 && chainOn()){                                           // 官方 b2bchaining：BACKTOBACK_BONUS ×（⌊1+log1p(0.8x)⌋ + (x=1 ? 0 : (1 + log1p(0.8x) mod 1)/3)），x = B2B 次數
       const x = res.b2b, L = Math.log1p(x * 0.8), n = Math.floor(1 + L) + (x === 1 ? 0 : (1 + L % 1) / 3); atk += n;
-      const pw = Math.floor(n); if (pw >= 2) fireAdd(20 * (pw - 1) - 10); if (pw > (climb.btbPow || 0)){ climb.btbPow = Math.min(pw, 255); if (pw === 2) sfxEv('btbpow', 'btb_1'); else if (pw === 3) sfxEv('btbpow', 'btb_2', 1.25); else if (pw >= 4) sfxEv('btbpow', 'btb_3', 1.5); }
+      const pw = Math.floor(n); if (pw >= 2) fireAdd(20 * (pw - 1) - 10); if (pw > (climb.btbPow || 0)){ if (pw >= 3) b2bFlair(); climb.btbPow = Math.min(pw, 255); if (pw === 2) sfxEv('btbpow', 'btb_1'); else if (pw === 3){ sfxEv('btbpow', 'btb_2', 1.25); } else if (pw >= 4) sfxEv('btbpow', 'btb_3', 1.5); }
     } else if (res.b2b > 0) atk += 1;
     if (hasMod('warlock') && res.spin && res.b2b > 4) atk += 1;            // 官方 allspin_reversed：spin 且 btb−1 > b2bcharge_at → 攻擊 +1
     if (res.cleared && b2b <= 0) climb.btbPow = 0;                           // 官方：B2B 斷了 btbpower 歸零
@@ -13060,7 +13200,7 @@ function roundEnd(winner){
   sfxEv('topout', 'topout'); sfxEv('roundloss', 'losestock');
   // 官方 game.end：3 秒後 VICTORY／DEFEAT（Pi lg_victory）＋換歌（asayake-no-taiyou／in-sorrow-and-pains），8 秒後才進 TETRA LEAGUE / RESULTS
   if (matchOver && !climb.opts.room && !climb.opts.lv){ const c0 = climb, w = me.score > o.score; setTimeout(() => { if (climb !== c0) return; sfxEv(w ? 'victory' : 'defeat', w ? 'victory' : 'failure'); bgm(w ? 'asayake-no-taiyou' : 'in-sorrow-and-pains');
-    if (w && !(climb.opts && climb.opts.room)){ setTimeout(() => { document.body.classList.add('shaking'); setTimeout(() => document.body.classList.remove('shaking'), 100); }, 1250); } }, 3000); }
+    if (w && !(climb.opts && climb.opts.room)){ setTimeout(() => { document.body.classList.add('shaking'); bgCircle({ amt: 300, speed: 300 }); confetti(15, [30, 60]); setTimeout(() => document.body.classList.remove('shaking'), 100); }, 1250); } }, 3000); }
   if (matchOver && !climb.opts.unranked) recordMatch(me.score > o.score, myVS, T.sent / T.secs * 60, T.pieces / T.secs, T.secs, o.rank.tr, o.rank.glicko ? { r: o.rank.glicko, rd: o.rank.rd || 60 } : null);
   say(matchOver
     ? `Match over ${me.score}-${o.score} · APM ${(T.sent/T.secs*60).toFixed(1)} · PPS ${(T.pieces/T.secs).toFixed(2)} · VS ${myVS.toFixed(1)} → ≈ ${myRank.r} (${myRank.tr.toLocaleString()} TR level)`
