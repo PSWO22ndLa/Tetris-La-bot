@@ -5169,7 +5169,7 @@ function skinRects(){
 const ATLAS_PART = { garbA:[18,793,64,56], garbB:[18,857,64,56], b2bBurst:[9,1346,89,89] };
 const partCache = new Map();
 function atlasPart(key, tint, mix = 1){            // 從圖集切出零件並上色（source-atop 疊色，保留明暗）
-  const img = boardImg(); if (!img) return null;
+  const img = (SPEC_SKIN && SPEC_SKIN.img) || boardImg(); if (!img) return null;
   const id = key + '|' + tint + '|' + mix + '|' + img.src.length + img.width;
   if (partCache.has(id)) return partCache.get(id);
   const f = img.width / 4096, a = ATLAS_PART[key], c = document.createElement('canvas');
@@ -5232,6 +5232,43 @@ const b2bTier = v => {
   return { c: rgbStr(c), star: rgbStr(c.map(x => x * (1 - dark * .78))), num: rgbStr(c.map(x => x + (17 - x) * (1 - dark))),
     k: lerpStops(B2B_SIZE, v), fx: Math.max(0, Math.min(1, (v - 18) / 6)), outline: dark > .05 };
 };
+// ── 官方 Kc.generic.ns.b2b（tetrio.js）照抄 ──
+//   顏色 _makeTint：未蓄力（t<4）金 #FFD964；蓄力後照 B2B 數 t 走 B2B_COLOR_GRADIENT
+//   星星：盤面圖集的 92px 星星貼圖（zenith 圖集 7,1346）染色；t < at+7−base 時 alpha .3（暗），之後 1
+//   數字：暗的時候＝彩色字黑框；亮的時候＝黑字白框。字級 size/(.5·max(2,位數))·l
+//   大小 l = clamp((t−at+1)/6, 1, 4)；轉速每幀 clamp(1+.1(t−at+1), 1, 4)°
+const B2B_OFF = [[0,4,0x0099FF,0x00FFCC],[4,8,0x00FFCC,0x00FF00],[8,12,0x00FF00,0xFFFF00],[12,30,0xFFFF00,0xFF0000],[30,60,0xFF0000,0xFF00FF],
+  [60,100,0xFF00FF,0x0091FF],[100,150,0x0091FF,9764836],[150,250,9764836,16768391],[250,500,16768391,0xFFFFFF],[500,1/0,0xFFFFFF,0xFFFFFF]];
+const b2bColor = t => t < 4 ? '#FFD964' : b2bGrad(B2B_OFF, t);
+const b2bL = t => Math.min(4, Math.max(1, (t - 3) / 6));
+const B2B_ROT = { a: 0, last: 0 };
+function b2bStarImg(col){                                                  // 圖集星星染色（multiply 保留貼圖明暗）；沒有圖集回 null
+  const TX = typeof TIO_X !== 'undefined' ? TIO_X : {}, img = boardSkins.normal || TX.normal || boardSkins.rev || TX.rev || (typeof boardImg === 'function' && boardImg());
+  if (!img || !img.width) return null;
+  const id = 'b2bstar|' + col + '|' + img.width + (img.src ? img.src.length : 0);
+  if (partCache.has(id)) return partCache.get(id);
+  const f = img.width / 4096, sz = Math.round(92 * f), c = document.createElement('canvas'); c.width = c.height = sz;
+  const x = c.getContext('2d'); x.drawImage(img, 7 * f, 1346 * f, 92 * f, 92 * f, 0, 0, sz, sz);
+  x.globalCompositeOperation = 'multiply'; x.fillStyle = col; x.fillRect(0, 0, sz, sz);
+  x.globalCompositeOperation = 'destination-in'; x.drawImage(img, 7 * f, 1346 * f, 92 * f, 92 * f, 0, 0, sz, sz);
+  if (partCache.size > 60) partCache.clear();
+  partCache.set(id, c); return c;
+}
+// 星星＋裡面的數字。t＝B2B 數、num＝星星裡的數字（t−at+1+base）、bright＝t ≥ at+7−base
+function b2bStar(c, scx, cy, d, t, num, bright, pop = 0){
+  const now = performance.now(), col = b2bColor(t), dt = B2B_ROT.last ? Math.min(100, now - B2B_ROT.last) : 0;
+  if (dt > 0 || !B2B_ROT.last){ B2B_ROT.a += dt * .06 * Math.max(1, Math.min(4, 1 + .1 * (t - 3))); B2B_ROT.last = now; }
+  const D = d * (1 + .2 * pop), im = b2bStarImg(col);
+  c.save(); c.translate(scx, cy); c.rotate(B2B_ROT.a * Math.PI / 180); c.globalAlpha *= bright ? 1 : .3;
+  if (im) c.drawImage(im, -D / 2, -D / 2, D, D);
+  else { c.beginPath(); for (let i = 0; i < 24; i++){ const a = -Math.PI / 2 + i * Math.PI / 12, rr = D / 2 * (i % 2 ? .8 : 1); c.lineTo(rr * Math.cos(a), rr * Math.sin(a)); } c.closePath(); c.fillStyle = col; c.fill(); }
+  c.restore();
+  const txt = String(num), fs = d / 40.48 * 22 / (.5 * Math.max(2, txt.length)) * (1 + .4 * pop);
+  c.save(); c.textAlign = 'center'; c.textBaseline = 'middle'; c.shadowBlur = 0; c.font = `800 ${fs}px ${CANVAS_FONT}`;
+  c.lineJoin = 'round'; c.lineWidth = Math.max(1.5, fs * .16); c.strokeStyle = bright ? '#fff' : '#000'; c.strokeText(txt, scx, cy + fs * .06);
+  c.fillStyle = bright ? '#000' : col; c.fillText(txt, scx, cy + fs * .06);
+  c.restore();
+}
 // 動作文字（左邊的 DOUBLE／B2B x4…）還在畫面上、而且已經寫了 B2B，就不要在星星旁邊再寫一次（使用者：兩個 B2B）
 function clearShowsB2B(){ return !!(clearMsg && clearMsg.lines && clearMsg.lines.some(l => /^B2B /.test(l.text))); }
 function drawB2BBurst(){
@@ -5240,86 +5277,41 @@ function drawB2BBurst(){
   const edge = sk ? R.frame.x + cell * .2 : -cell * .3 - genL();                  // 標示靠著盤面左緣（星星稍微壓到框）
   // 官方 Kc.generic.ns.b2b（generic 板子）：文字 size 22、靠右、頂端 y 220；有蓄力星星時星星中心在 (−14−10a, 229)、直徑 92×22/50×a＝40.5a，
   //   文字右緣退到 −25−25a；a＝clamp((btb−at+1)/6, 1, 4)（btb＝本站 b2b＋1、at＝4）
-  const gu = cell / 30, ga = Math.min(4, Math.max(1, (b2b - 2) / 6)), gx = -genL();
+  const gu = cell / 30, ga = b2bL(b2b), gx = -genL();
   const cy = sk ? R.frame.y + R.frame.h * .36 : (H - VISIBLE) * cell + 229 * gu;
-  const now = performance.now(), sv = surgeOf(b2b), T = sv >= 4 || (sv >= 1 && climb.kind === 'qp') ? b2bTier(Math.max(4, sv)) : null;
-  const pop = climb.b2bPop ? Math.max(0, 1 - (now - climb.b2bPop) / 180) : 0;
-  const lab = cell * .62;
+  const now = performance.now(), sv = surgeOf(b2b), base = chargeBase(), charged = surgeOn() && b2b >= 4, col = b2bColor(charged ? b2b : 0);
+  const pop = climb.b2bPop ? Math.max(0, 1 - (now - climb.b2bPop) / 150) : 0;
+  const lab = cell * 22 / 30;                                             // 官方 size 22（1 格＝30u）
   ctx.save(); ctx.textBaseline = 'middle'; ctx.textAlign = 'right';
-  ctx.font = `700 ${lab}px ${CANVAS_FONT}`;
-  if (!T){                                                                // 1–3：金色文字
-    ctx.fillStyle = '#dabb59'; ctx.shadowColor = 'rgba(0,0,0,.7)'; ctx.shadowBlur = 4;
+  ctx.font = `600 ${lab}px ${CANVAS_FONT}`; try { ctx.letterSpacing = (lab * 10 / 22 * .35).toFixed(1) + 'px'; } catch(e){}
+  ctx.shadowColor = 'rgba(0,0,0,.7)'; ctx.shadowBlur = 4;
+  if (!charged){                                                          // 1–3：金色文字
+    ctx.fillStyle = col;
     if (!clearShowsB2B()) ctx.fillText(`B2B x${b2b}`, sk ? edge - cell * .3 : gx - 10 * gu, cy); ctx.restore(); return;
   }
-  const d = (sk ? cell * T.k : 40.48 * ga * gu) * (1 + .18 * pop), scx = sk ? edge - d * .42 : gx - (14 + 10 * ga) * gu, lx = sk ? scx - d * .55 : gx - (25 + 25 * ga) * gu;
-  if (hasMod('warlock')){ drawB2BWarlock(sv, d, scx, cy, edge, now); ctx.restore(); return; }
-  // 「B2B ×」（QP 時 B2B 數跟星星數不同，數字也寫出來）
-  ctx.fillStyle = T.c; ctx.shadowColor = T.c; ctx.shadowBlur = cell * .3;
-  const lt = clearShowsB2B() ? '' : climb.kind === 'qp' ? `B2B x${b2b}` : 'B2B x', lw = ctx.measureText(lt).width;
+  const d = 40.48 * ga * gu, scx = sk ? edge - d * .42 : gx - (14 + 10 * ga) * gu, lx = sk ? scx - d * .55 : gx - (25 + 25 * ga) * gu;
+  if (hasMod('warlock')){ drawB2BWarlock(sv, d * (1 + .18 * pop), scx, cy, edge, now); ctx.restore(); return; }
+  // 官方：at === base+1（TL／ZEN）只寫「B2B X」，其餘（QP）寫「B2B X<t>」
+  ctx.fillStyle = col;
+  const lt = clearShowsB2B() ? '' : base === 3 ? 'B2B x' : `B2B x${b2b}`, lw = ctx.measureText(lt).width;
   if (lx - lw < -GUTL() * cell + 4){ ctx.textAlign = 'center'; ctx.fillText(lt, scx, cy - d * .62); ctx.textAlign = 'right'; }   // 左邊放不下（手機）→ 放到星星上面
-  else ctx.fillText(lt, lx, cy);
-  ctx.shadowBlur = 0;
-  // 24 以上：星星後面的電路紋（直角折線，慢慢閃）
-  if (T.fx > 0){
-    const seed = Math.floor(sv / 4) + 7;
-    ctx.strokeStyle = T.c; ctx.lineWidth = Math.max(1.5, cell * .07); ctx.shadowColor = T.c; ctx.shadowBlur = cell * .5;
-    for (let i = 0; i < 9; i++){
-      const r1 = Math.sin(seed * 9.1 + i * 3.7) * 1e4, r2 = Math.sin(seed * 4.3 + i * 7.9) * 1e4, f1 = r1 - Math.floor(r1), f2 = r2 - Math.floor(r2);
-      ctx.globalAlpha = (.25 + .35 * (.5 + .5 * Math.sin(now / 300 + i))) * T.fx;
-      const x0 = scx + (f1 - .5) * d * 1.3, y0 = cy + (f2 - .5) * d * 1.1, L = d * (.2 + .3 * f2);
-      ctx.beginPath(); ctx.moveTo(x0, y0); ctx.lineTo(x0 + (i % 2 ? L : -L), y0); ctx.lineTo(x0 + (i % 2 ? L : -L), y0 + (f1 > .5 ? L : -L) * .6); ctx.stroke();
-    }
-    ctx.globalAlpha = 1; ctx.shadowBlur = 0;
-  }
-  // 12 角星：順時針約 85°/秒（影片量的）
-  ctx.save(); ctx.translate(scx, cy); ctx.rotate(now / 1000 * 85 * Math.PI / 180);
-  ctx.beginPath();
-  for (let i = 0; i < 24; i++){ const a = -Math.PI / 2 + i * Math.PI / 12, rr = d / 2 * (i % 2 ? .8 : 1); ctx.lineTo(rr * Math.cos(a), rr * Math.sin(a)); }
-  ctx.closePath(); ctx.fillStyle = T.star; ctx.shadowColor = T.c; ctx.shadowBlur = cell * .6; ctx.fill();
-  if (T.outline){ ctx.shadowBlur = 0; ctx.lineWidth = Math.max(1, cell * .06); ctx.strokeStyle = T.c; ctx.stroke(); }
+  else ctx.fillText(lt, lx - pop * 20 * gu, cy);
   ctx.restore();
-  // 數字：平常靜止，每 ~1.6 秒有 0.15 秒切片抖動
-  const txt = String(sv), fs = d * (txt.length > 2 ? .34 : txt.length > 1 ? .44 : .5);
-  ctx.textAlign = 'center'; ctx.font = `800 ${fs}px ${CANVAS_FONT}`; ctx.shadowBlur = 0;
-  if (now % 1600 < 150){
-    const seed = Math.floor(now / 1600), bands = 5, bh = fs * 1.1 / bands, y0 = cy - fs * .55;
-    for (let i = 0; i < bands; i++){
-      const r = Math.sin(seed * 12.9898 + i * 78.233) * 43758.5453, off = ((r - Math.floor(r)) - .5) * d * .12;
-      ctx.save(); ctx.beginPath(); ctx.rect(scx - d / 2, y0 + i * bh, d, bh); ctx.clip();
-      ctx.fillStyle = T.num; ctx.fillText(txt, scx + off, cy + fs * .04);
-      if (Math.abs(off) > d * .03){ ctx.globalAlpha = .55; ctx.fillStyle = '#fff'; ctx.fillText(txt, scx + off * 1.6, cy + fs * .04); }
-      ctx.restore();
-    }
-  } else { ctx.fillStyle = T.num; ctx.fillText(txt, scx, cy + fs * .04); }
-  ctx.restore();
+  b2bStar(ctx, scx, cy, d, b2b, sv, b2b >= 11 - base, pop);
 }
 // 別人盤面（QP 觀戰、TL 對手）的 B2B／SURGE 標示：跟你自己的 drawB2BBurst 同一套（金字 → 12 角星＋SURGE 數字、電路紋），座標和格子大小用傳進來的
-function drawSurgeAt(c, edge, cy, cs, n, qp, hideLabel){
+function drawSurgeAt(c, edge, cy, cs, n, qp, hideLabel, minX = -Infinity){
   if (!(n >= 1)) return;
-  const now = performance.now(), sv = n < 4 ? 0 : qp ? n - 3 : n, T = sv >= 4 || (sv >= 1 && qp) ? b2bTier(Math.max(4, sv)) : null;
-  c.save(); c.textBaseline = 'middle'; c.textAlign = 'right'; c.font = `700 ${cs * .62}px ${CANVAS_FONT}`;
-  if (!T){ if (!hideLabel){ c.fillStyle = '#dabb59'; c.shadowColor = 'rgba(0,0,0,.7)'; c.shadowBlur = 4; c.fillText(`B2B x${n}`, edge - cs * .3, cy); } c.restore(); return; }
-  const d = cs * T.k, scx = edge - d * .42;
-  if (!hideLabel){ c.fillStyle = T.c; c.shadowColor = T.c; c.shadowBlur = cs * .3; c.fillText(qp ? `B2B x${n}` : 'B2B x', scx - d * .55, cy); c.shadowBlur = 0; }
-  if (T.fx > 0){
-    const seed = Math.floor(sv / 4) + 7;
-    c.strokeStyle = T.c; c.lineWidth = Math.max(1.2, cs * .07); c.shadowColor = T.c; c.shadowBlur = cs * .5;
-    for (let i = 0; i < 9; i++){
-      const r1 = Math.sin(seed * 9.1 + i * 3.7) * 1e4, r2 = Math.sin(seed * 4.3 + i * 7.9) * 1e4, f1 = r1 - Math.floor(r1), f2 = r2 - Math.floor(r2);
-      c.globalAlpha = (.25 + .35 * (.5 + .5 * Math.sin(now / 300 + i))) * T.fx;
-      const x0 = scx + (f1 - .5) * d * 1.3, y0 = cy + (f2 - .5) * d * 1.1, L = d * (.2 + .3 * f2);
-      c.beginPath(); c.moveTo(x0, y0); c.lineTo(x0 + (i % 2 ? L : -L), y0); c.lineTo(x0 + (i % 2 ? L : -L), y0 + (f1 > .5 ? L : -L) * .6); c.stroke();
-    }
-    c.globalAlpha = 1; c.shadowBlur = 0;
-  }
-  c.save(); c.translate(scx, cy); c.rotate(now / 1000 * 85 * Math.PI / 180); c.beginPath();
-  for (let i = 0; i < 24; i++){ const a = -Math.PI / 2 + i * Math.PI / 12, rr = d / 2 * (i % 2 ? .8 : 1); c.lineTo(rr * Math.cos(a), rr * Math.sin(a)); }
-  c.closePath(); c.fillStyle = T.star; c.shadowColor = T.c; c.shadowBlur = cs * .6; c.fill();
-  if (T.outline){ c.shadowBlur = 0; c.lineWidth = Math.max(1, cs * .06); c.strokeStyle = T.c; c.stroke(); }
+  const base = qp ? 0 : 3, charged = n >= 4, col = b2bColor(charged ? n : 0), lab = cs * 22 / 30;
+  c.save(); c.textBaseline = 'middle'; c.textAlign = 'right'; c.font = `600 ${lab}px ${CANVAS_FONT}`; try { c.letterSpacing = (lab * 10 / 22 * .35).toFixed(1) + 'px'; } catch(e){}
+  c.fillStyle = col; c.shadowColor = 'rgba(0,0,0,.7)'; c.shadowBlur = 4;
+  if (!charged){ if (!hideLabel) c.fillText(`B2B x${n}`, edge - cs * .3, cy); c.restore(); return; }
+  const d = 40.48 * b2bL(n) * cs / 30, scx = edge - d * .42;
+  if (!hideLabel){ const lt = base === 3 ? 'B2B x' : `B2B x${n}`;
+    if (scx - d * .55 - c.measureText(lt).width < minX){ c.textAlign = 'center'; c.fillText(lt, scx, cy - d * .62); }   // 左邊放不下 → 放到星星上面（跟自己盤面同一條規則）
+    else c.fillText(lt, scx - d * .55, cy); }
   c.restore();
-  const txt = String(sv), fs = d * (txt.length > 2 ? .34 : txt.length > 1 ? .44 : .5);
-  c.textAlign = 'center'; c.font = `800 ${fs}px ${CANVAS_FONT}`; c.shadowBlur = 0; c.fillStyle = T.num; c.fillText(txt, scx, cy + fs * .04);
-  c.restore();
+  b2bStar(c, scx, cy, d, n, n - 3 + base, n >= 11 - base);
 }
 // WARLOCK（逆位 All-Spin）的 B2B 標示：照官方 tetrio.js b2b 元件的 evil 模式
 //   文字／描邊顏色：B2B_COLOR_GRADIENT_EVIL（照 B2B 數：0→4 #12005B→#9327FF、4→12 →#B0082C、12→26 →#FF009D）
@@ -5397,12 +5389,13 @@ function tintPart(img, key){
 // 官方 Kc.zenith.ns.Board 的 border：base.2x (989,69,1220,2110) 九宮格 [182,182,182,202]；換算成我們切的 frame 範圍＝左 111、上 111、右 113、下 191
 // 側欄（garbage bar）只拉中間：上 111、下 80（⚠️ 這兩個是照圖量的）
 const ATLAS_NINE = { frame:[111, 111, 113, 191], lbar:[0, 111, 0, 80], rbar:[0, 111, 0, 80] };
+let SPEC_SKIN = null;                           // 觀戰盤面：{ img, tint }——圖集照被看的人的 mod 選、框色照高度（跟自己玩的時候同一套規則）
 function atlasDraw(c, key, r){
-  const img = boardImg(), f = img.width / 4096, a = BOARD_ATLAS[key];
+  const img = (SPEC_SKIN && SPEC_SKIN.img) || boardImg(), f = img.width / 4096, a = BOARD_ATLAS[key];
   let src = img, sx = a[0]*f, sy = a[1]*f, sw = a[2]*f, sh = a[3]*f;
   if (dangerNow && DANGER_KEYS.has(key)){ src = tintPart(img, key); sx = sy = 0; sw = src.width; sh = src.height; }
-  else if (c === ctx && DANGER_KEYS.has(key)){ const col = frameTintNow(); if (col){ src = tintPartColor(img, key, col); sx = sy = 0; sw = src.width; sh = src.height; } }
-  const N = ATLAS_NINE[key], k = key === 'frame' ? cell / 92 / (sw / a[2]) : r.w / sw;   // 主框：角跟格子同比例（1 格＝92px）；側欄：寬度原比例                                      // 寬高比跟原圖不一樣（雪球、MUTATION）→ 九宮格，邊框不變形
+  else if ((c === ctx || SPEC_SKIN) && DANGER_KEYS.has(key)){ const col = SPEC_SKIN ? SPEC_SKIN.tint : frameTintNow(); if (col){ src = tintPartColor(img, key, col); sx = sy = 0; sw = src.width; sh = src.height; } }
+  const N = ATLAS_NINE[key], k = key === 'frame' ? ((SPEC_SKIN && SPEC_SKIN.cs) || cell) / 92 / (sw / a[2]) : r.w / sw;   // 主框：角跟格子同比例（1 格＝92px）；側欄：寬度原比例                                      // 寬高比跟原圖不一樣（雪球、MUTATION）→ 九宮格，邊框不變形
   if (N && Math.abs(r.h / sh - k) > .01){ const g = sw / a[2]; nine(c, src, sx, sy, sw, sh, N[0]*g, N[1]*g, N[2]*g, N[3]*g, r.x, r.y, r.w, r.h, k); return; }
   c.drawImage(src, sx, sy, sw, sh, r.x, r.y, r.w, r.h);
 }
@@ -8097,7 +8090,8 @@ function duoInit(){
   if (!(climb && climb.kind === 'qp' && !climb.custom && (hasMod('duo') || hasMod('hearts')) && duoMate)) return;
   climb.hearts = hasMod('hearts');
   const k = TL_RANKS.find(x => x.r === 'A') || TL_RANKS[7];
-  climb.duo = { name: duoMate, rank: k, pps: 1.4, apm: 0, pending: [], alive: true, revives: 0, tasks: null, deadT: 0, hold: null, b2b: -1, combo: -1, fixedPps: duoPps };
+  climb.duo = { name: duoMate, rank: k, pps: 1.4, apm: 0, pending: [], alive: true, revives: 0, tasks: null, deadT: 0, hold: null, b2b: -1, combo: -1, fixedPps: duoPps, rising: [] };
+  climb.duo.contGarb = !(hasMod('expert') || hasMod('tyrant'));   // 官方：EXPERT（含逆位）garbageentry=instant，其他 continuous（一行一行長上來）
   botInit(climb.duo);
 }
 // 每幀：隊友放方塊、打攻擊（算一半）、收塔的垃圾；倒下時等你完成任務
@@ -8172,6 +8166,15 @@ function duoTick(dt){
     // b_nocancel8：一放方塊就可能送攻擊抵銷垃圾 → 整段停手；c_top3：塔已經碰到上 3 行 → 停住撐 3 秒；b_nogarb4：盤面沒垃圾了 → 停手（垃圾只在放方塊時進場）
     if (id === 'b_nocancel8' || (id === 'c_top3' && bb.top3) || (id === 'b_nogarb4' && !bb.garb)){ o.clock = 0; return; }
   }
+  if (!o.busy && o.rising && o.rising.length){                        // 垃圾一行一行長上來（跟觀戰的 La bot 同一段）
+    o.riseT = Math.min(CLIMB_CFG.rollMs, (o.riseT || 0) + dt);
+    if (o.riseT >= CLIMB_CFG.rollMs){ o.riseT = 0; const g = o.rising.shift();
+      for (let x = 0; x < W; x++) if (o.bd[x]){ duoMateDown(); return; }
+      const PM = o.perm || 0; o.bd.copyWithin(0, W, (BOT_H - PM) * W); const base = (BOT_H - 1 - PM) * W, row = o.garbRow ? o.garbRow(o, g) : null;
+      for (let x = 0; x < W; x++) o.bd[base + x] = row ? row[x] : x === g.hole ? 0 : 8;
+      o.last = (o.last || []).map(k => k - W).filter(k => k >= 0); }
+    if (o.rising.length) return;                                       // 還在長：先別放下一顆
+  } else if (!o.busy) o.riseT = 0;
   if (o.busy || o.clock < o.nextPc) return;
   o.clock = Math.min(o.clock - o.nextPc, 400); o.nextPc = 1000 / botPpsNow(o.pps, o.bd.some(v => v === 8)) * (0.7 + Math.random() * 0.6);
   o.busy = true;
@@ -8206,7 +8209,7 @@ function duoPlace(o, d, meta){
     o.apm = (climb.duoSent || 0) / (Math.max(5000, climb.elapsed) / 60000);   // 之前分母最少算 1 分鐘，開局第一分鐘 APM 會被低估
 }
 function duoMateDown(){
-  const o = climb.duo; o.alive = false; o.pending = []; o.anim = null;
+  const o = climb.duo; o.alive = false; o.pending = []; o.rising = []; o.anim = null;
   for (let i = 0; i < o.bd.length; i++) if (o.bd[i]) o.bd[i] = 8;      // 實機：倒下的盤面整個變灰
   if (climb.downed){ endClimb('both players topped out'); return; }
   o.tasks = duoTasks(duoLevel()); o.tasks.koT = performance.now();
@@ -8714,7 +8717,8 @@ function drawGarbageMeter(){
   for (const g of climb.pending){
     const age = (now - g.t) / delay;
     ctx.fillStyle = age < 0.5 && !tl ? 'rgba(224,212,15,.6)' : age < 1 ? 'rgba(255,24,0,.45)' : 'rgba(255,24,0,.95)';
-    const h = Math.min(y, g.lines * cell);
+    const h = Math.min(y - (H - VISIBLE) * cell, g.lines * cell);         // 條只到盤面可視區頂端，不往上長出框外
+    if (h <= 0) break;
     if (boardSkinOn()){
       const L = skinRects().lbar, k = skinRects().k;
       const part = atlasPart(age < 1 ? 'garbA' : 'garbB', age < 0.5 && !tl ? '#E0D40F' : '#FF1800', .7);
@@ -15968,15 +15972,31 @@ function specView(o){
   return { kind: 'qp', custom: null, snow: false, csp, prog: ((x + .5) % 1) * CLIMB_CFG.cspNeed(csp), alt: o.dead && o.deadAlt != null ? o.deadAlt : o.p.alt, hyper: !!o.hyper, pauseLeft: 0, gutL: 0, gutR: 0 };
 }
 function qplSpecDraw(c, o, w, h){
-  const sk = !!(boardSkins && boardSkins.normal), gl = sk ? 6.5 : 5, gr = sk ? 5.2 : 5, VT = H - VISIBLE;   // 跟 GUTL／GUTR0 一樣
+  const sk = !!(typeof boardImg === 'function' && boardImg()), gl = sk ? 6.5 : 5, gr = sk ? 5.2 : 5, VT = H - VISIBLE;   // 跟 GUTL／GUTR0 一樣
   const top = 40, bot = 104, rows = VISIBLE + 3.6;                         // 盤面＋底下的爬速翅膀
-  let cs = Math.max(8, Math.floor(Math.min((h - top - bot) / rows, (Math.min(w, 1100) - 40) / (gl + W + gr))));
-  const dx = o.mate ? .32 * 800 * (w / 1600) : 0;                          // 官方 DUO：被看的人在左（−0.32）、隊友在右（+0.32），一樣大
-  if (dx) cs = Math.max(6, Math.min(cs, Math.floor(2 * dx / (gl + W + gr + 1))));
-  const bx = Math.round(w / 2 - dx - W * cs / 2), by = Math.round(top + (h - top - bot - rows * cs) / 2); o.mateDx = 2 * dx;
-  const V = specView(o); V.gutL = gl; V.gutR = gr;
+  const pitch = gl + W + gr, total = o.mate ? pitch * 2 : pitch;           // DUO：兩個盤面一樣大、並排（被看的人在左）
+  const cs = Math.max(5, Math.floor(Math.min((h - top - bot) / rows, (Math.min(w, o.mate ? 1500 : 1100) - (o.mate ? 8 : 40)) / total)));
+  const bx = Math.round((w - total * cs) / 2 + gl * cs), by = Math.round(top + (h - top - bot - rows * cs) / 2); o.mateDx = pitch * cs;
+  const V = specView(o); V.gutL = gl; V.gutR = gr; V.duo = !!o.mate;
   const keepD = dangerNow; dangerNow = false;
-  c.save(); c.translate(bx, by - VT * cs);                                 // ← 自己盤面的座標系
+  // 盤面很小（直式手機看 DUO）：用 16px 一格去畫再整個縮小，尺／高度／CSP 這些有最小字級的字才會跟著盤面一起縮（官方也是整個場景等比縮）
+  const CS = Math.max(cs, 16), zk = cs / CS;
+  c.save(); c.translate(bx, by - VT * cs); c.scale(zk, zk);               // ← 自己盤面的座標系
+  qplSpecBoard(c, o, CS, sk, gl, gr, V, true);
+  if (o.mate){ c.save(); c.translate(pitch * CS, 0); qplSpecBoard(c, o.mate, CS, sk, gl, gr, V, false); c.restore(); }
+  c.restore(); dangerNow = keepD;
+}
+// 一個盤面（main＝被看的人：多畫尺、數據、爬速翅膀、徽章；隊友只畫盤面本體＋名字）
+function qplSpecBoard(c, o, cs, sk, gl, gr, V, main){
+  const keepS = SPEC_SKIN; SPEC_SKIN = null;
+  if (sk){ const M = o.mods || new Set(), TX = typeof TIO_X !== 'undefined' ? TIO_X : {}, anyRev = [...M].some(id => DECK_ALL.some(q => q.rev === id));
+    const img = (anyRev && (boardSkins.rev || TX.rev)) || (M.has('expert') && boardSkins.expert) || boardSkins.normal || TX.normal || boardImg();
+    const plain = img === boardSkins.normal || img === TX.normal;
+    SPEC_SKIN = { img, cs, tint: plain && !V.duo && uiDetail() > 0 && QFT.tint ? QFT.tint : null }; }
+  try { qplSpecBoard0(c, o, cs, sk, gl, gr, V, main); } finally { SPEC_SKIN = keepS; }
+}
+function qplSpecBoard0(c, o, cs, sk, gl, gr, V, main){
+  const VT = H - VISIBLE;
   const R0 = qplRectsFor(cs), R = {}; for (const k in R0) R[k] = typeof R0[k] === 'object' ? { ...R0[k], y: R0[k].y + VT * cs } : R0[k];   // skinRects 同款（y 換到自己的座標）
   // 盤面：底圖／格線／框照 renderBoard（遊戲中設定：出生區不畫格線、沒皮膚才畫框）
   if (sk) atlasDraw(c, 'bg', { x: 0, y: VT * cs, w: W * cs, h: VISIBLE * cs });
@@ -15985,7 +16005,7 @@ function qplSpecDraw(c, o, w, h){
   renderBoard(c, inv ? new Uint8Array(W * H) : B, { scale: cs, grid: showGrid, buffer: false, noBufGrid: true, transparent: sk, keepUnder: true, frame: !sk });
   c.save(); c.translate(0, (H - BOT_H + 4) * cs); qplBoardCells(c, o, cs); c.restore();
   // 尺（先畫，HOLD／NEXT 蓋在上面）
-  drawRuler(c, cs, V);
+  if (main) drawRuler(c, cs, V);
   if (sk){
     atlasDraw(c, 'lbar', R.lbar); atlasDraw(c, 'frame', R.frame);
     atlasDraw(c, 'holdBg', R.holdIn); atlasDraw(c, 'queueBg', R.nextIn); atlasDraw(c, 'hold', R.hold); atlasDraw(c, 'next', R.next);
@@ -15996,29 +16016,33 @@ function qplSpecDraw(c, o, w, h){
     const nq = o.mods && o.mods.has('ab_ascetic') ? 0 : o.mods && o.mods.has('ascetic') ? 1 : 5;   // nextShown 同款
     c.save(); c.translate(W * cs, 0); drawSlot('NEXT', (o.q || []).slice(1, 1 + nq), 0, gr * cs, false, c, cs, V); c.restore();
   }
-  // 垃圾條（drawGarbageMeter 同款）
-  { let y = H * cs; const wpx = Math.max(3, cs * .22);
-    for (const g of o.pending){ const hh = Math.min(y, g.lines * cs); c.fillStyle = 'rgba(239,75,75,.95)';
-      if (sk) c.fillRect(R.lbar.x + 86 * R.k, y - hh, 58 * R.k, hh - 1); else c.fillRect(-wpx - 2, y - hh, wpx, hh - 1);
-      y -= hh; if (y <= 0) break; } }
-  // 左邊數據（drawClimbHUD 同款：沒皮膚 fs≤14、靠盤面左邊 0.35 格；有皮膚 fs≤19、靠側欄）
-  { const fs = sk ? Math.max(9, Math.min(cs * .5, 19)) : Math.max(9, Math.min(cs * .42, 14)), pad = Math.max(4, cs * .2), QC = '#eef2f7';
+  // 垃圾條（drawGarbageMeter 同款：黃＝剛到、空心紅＝快進場、實心紅＝要進場；只到可視區頂端）
+  { let y = H * cs; const wpx = Math.max(3, cs * .22), now = performance.now();
+    for (const g of o.pending || []){ const hh = Math.min(y - VT * cs, g.lines * cs); if (hh <= 0) break;
+      const age = (now - (g.t || 0)) / 1800, col = age < .5 ? '#E0D40F' : '#FF1800';
+      const part = sk ? atlasPart(age < 1 ? 'garbA' : 'garbB', col, .7) : null;
+      c.fillStyle = age < .5 ? 'rgba(224,212,15,.6)' : age < 1 ? 'rgba(255,24,0,.45)' : 'rgba(255,24,0,.95)';
+      if (part) drawPart3(c, part, R.lbar.x + 86 * R.k, y - hh, 58 * R.k, hh - 1);
+      else if (sk) c.fillRect(R.lbar.x + 86 * R.k, y - hh, 58 * R.k, hh - 1); else c.fillRect(-wpx - 2, y - hh, wpx, hh - 1);
+      y -= hh; } }
+  // 左邊數據（drawClimbHUD 同款：沒皮膚 fs≤14、靠盤面左邊 0.35 格；有皮膚 fs≤19、靠側欄）。盤面很小（DUO 直式手機）時字跟著縮，不設下限
+  if (main){ const tiny = cs < 16, fs = sk ? (tiny ? cs * .5 : Math.max(9, Math.min(cs * .5, 19))) : (tiny ? cs * .42 : Math.max(9, Math.min(cs * .42, 14))), pad = Math.max(tiny ? 1 : 4, cs * .2), QC = '#eef2f7';
     const secs = Math.max(.001, (performance.now() - o.t0) / 1000), PC = (o.pieces0 || 0) + o.pieces, SN = (o.sent0 || 0) + o.sent;
-    const xr = sk ? R.lbar.x - 4 : -cs * .35, lines = o.hyper ? 4 : 3;
+    const xr = sk ? R.lbar.x - cs * .1 : -cs * .35, lines = o.hyper ? 4 : 3;
     const avail = sk ? (H * cs - (R.frame.y + R.frame.h * .36 + cs * 2.4) - fs) : Infinity, step = Math.max(fs * 1.9, Math.min(fs * 2.5, avail / lines));
     let y = H * cs - pad - fs * .4;
     const stat = (lab, a, b) => { const big = `700 ${fs * 1.35}px ${CANVAS_FONT}`, sm = `600 ${fs * .82}px ${CANVAS_FONT}`, wa = tioMeasure(c, a, big), wb = b ? tioMeasure(c, b, sm) : 0;
       c.save(); c.shadowColor = 'rgba(0,0,0,.6)'; c.shadowOffsetX = c.shadowOffsetY = 1; tioText(c, a, xr - wa - wb, y, QC, big); if (b) tioText(c, b, xr - wb, y, QC, sm); c.restore();
       c.globalAlpha = .75; tioText(c, lab, xr, y - fs * 1.25, QC, `600 ${fs * .7}px ${CANVAS_FONT}`, 'right'); c.globalAlpha = 1; y -= step; };
-    stat('TIME', ...statSecs(secs * 1000)); stat('ATTACK', String(Math.round(SN)), `, ${(SN / secs * 60).toFixed(2)}/M`); stat('PIECES', String(PC), `, ${(PC / secs).toFixed(2)}/S`); stat("KO'S", String(o.kos || 0)); }
-  // 爬速翅膀＋高度＋CSP（drawThruster 同款）
-  drawThruster(c, cs, V);
-  const ay = H * cs + cs * 1.2;
-  if (o.gain && performance.now() - o.gain.t < 1100){ const t = (performance.now() - o.gain.t) / 1100; c.globalAlpha = 1 - t; tioText(c, '+' + o.gain.n.toFixed(1), W * cs / 2 + cs * 3, ay - t * cs, '#fff', `700 ${cs * .7}px ${CANVAS_FONT}`); c.globalAlpha = 1; }
-  drawWindupAlert(o, W * cs / 2, (VT + 3) * cs, cs, c);
+    stat('TIME', ...statSecs(secs * 1000)); stat('ATTACK', String(Math.round(SN)), `, ${(SN / secs * 60).toFixed(2)}/M`); stat('PIECES', String(PC), `, ${(PC / secs).toFixed(2)}/S`); stat("KO'S", String(o.kos || 0));
+    // 爬速翅膀＋高度＋CSP（drawThruster 同款）
+    drawThruster(c, cs, V);
+    const ay = H * cs + cs * 1.2;
+    if (o.gain && performance.now() - o.gain.t < 1100){ const t = (performance.now() - o.gain.t) / 1100; c.globalAlpha = 1 - t; tioText(c, '+' + o.gain.n.toFixed(1), W * cs / 2 + cs * 3, ay - t * cs, '#fff', `700 ${cs * .7}px ${CANVAS_FONT}`); c.globalAlpha = 1; }
+    drawWindupAlert(o, W * cs / 2, (VT + 3) * cs, cs, c); }
   // B2B／SURGE（drawB2BBurst 同款位置）
   { const showsB = !!(o.clearMsg && o.clearMsg.lines && o.clearMsg.lines.some(l => /^B2B /.test(l.text)));
-    drawSurgeAt(c, sk ? R.frame.x + cs * .2 : -cs * .3, sk ? R.frame.y + R.frame.h * .36 : VT * cs + cs * 6, cs, o.b2b ?? -1, true, showsB); }
+    drawSurgeAt(c, sk ? R.frame.x + cs * .2 : -cs * .3, sk ? R.frame.y + R.frame.h * .36 : VT * cs + cs * 6, cs, o.b2b ?? -1, true, showsB, -gl * cs + 4); }
   // 動作文字（drawClearLines 同款）
   if (o.clearMsg){ const age = performance.now() - o.clearMsg.t; if (age > 6000) o.clearMsg = null; else { c.save();
     c.translate(-gl * cs, 0); drawClearLines(c, o.clearMsg.lines, sk ? gl * cs + R.lbar.x - 4 : gl * cs, cs, age); c.restore(); } }
@@ -16027,9 +16051,9 @@ function qplSpecDraw(c, o, w, h){
     tioText(c, o.koBy ? 'KO' : 'TOPPED OUT', W * cs / 2, 10 * cs, '#ff4f6a', `800 ${cs * (o.koBy ? 2.4 : 1.3)}px ${CANVAS_FONT}`, 'center');
     if (o.koBy) drawKoLabel(c, { by: String(o.koBy).toUpperCase() }, cs, W * cs / 2, cs * 1.1, Math.min(1, (performance.now() - o.dead) / 150)); }
   else if (o.koFx){ const age = performance.now() - o.koFx.t; if (age > 3200) o.koFx = null; else drawKoLabel(c, o.koFx, cs, W * cs / 2, cs * 1.1, Math.min(1, age / 120, (3200 - age) / 500)); }
-  specExtrasDraw(c, o, cs, qplRectsFor(cs));
+  if (main) specExtrasDraw(c, o, cs, qplRectsFor(cs));
+  else tioText(c, (o.name || '').toUpperCase() + (o.hearts ? ' ♥' : ''), W * cs / 2, (sk ? R0.frame.y + R0.frame.h : 20 * cs) + cs * .75, o.hearts ? '#ff8aa8' : '#fff', `700 ${cs * .5}px ${CANVAS_FONT}`, 'center');
   c.restore();
-  c.restore(); dangerNow = keepD;
 }
 const MODIMG = {};
 function modImg(src){ if (!MODIMG[src]){ const im = new Image(); im.src = src; MODIMG[src] = im; } const im = MODIMG[src]; return im.complete && im.naturalWidth ? im : null; }
@@ -16066,9 +16090,6 @@ function specExtrasDraw(c, o, cs, R){
   if (o.toast){ const age = now - o.toast.t; if (age > 3200) o.toast = null; else { c.save(); c.globalAlpha = Math.min(1, age / 200, (3200 - age) / 500);
     tioText(c, o.toast.text, W * cs / 2, 7.5 * cs, o.toast.hyper ? `hsl(${(now / 6) % 360},90%,70%)` : '#ff8a8a', `800 ${cs * (o.toast.hyper ? .9 : .6)}px ${CANVAS_FONT}`, 'center'); c.restore(); } }
   // DUO／BLEEDING HEARTS 隊友：HOLD 左邊一個小盤面＋名字（畫面放不下就不畫）
-  if (o.mate){ const mx = o.mateDx || 0;                                     // 隊友盤面：跟被看的人同大小，放右邊
-    qplGhostDraw(c, o.mate, mx, 0, cs, o.mate.hearts ? .85 : 1);
-    tioText(c, o.mate.name + (o.mate.hearts ? ' ♥' : ''), mx + W * cs / 2, 20 * cs + cs * 1.1, o.mate.hearts ? '#ff8aa8' : '#f1dcc8', `700 ${cs * .6}px ${CANVAS_FONT}`, 'center'); }
 }
 function qplLayoutSlots(w, h, n){
   // 候選位置：中間面板（560 寬）兩側、右邊排行左側；避開聊天室；每個小盤面（含 HOLD／NEXT）約 19.6 格寬、20 格高
