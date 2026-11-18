@@ -12611,15 +12611,22 @@ function renderPlayers(){  const p = loadProfile(), r = tlRankOf(p);
   $('plScale').innerHTML = [['global', 'WORLD'], ['country', 'COUNTRY'], ['friends', 'FRIENDS']].map(([k, n]) => `<button data-k="${k}" aria-pressed="${k === plScale}">${n}</button>`).join('');
   $('plScale').querySelectorAll('button').forEach(b => b.onclick = () => { plScale = b.dataset.k; renderPlayers(); });
   $('plFull').onclick = () => window.open('https://ch.tetr.io/players/' + (plLb === 'league' ? '' : plLb === 'ar' ? '?lb=ar' : '?lb=xp'), '_blank', 'noopener');
-  const L = $('plList'), cc = chCountry();
-  if (plScale === 'friends'){ const m = tlMyTR(); L.innerHTML = `<div class="lbrow you"><i>№1</i><b>${tlEsc(p.name)}</b><em>${m.tr != null ? m.tr.toLocaleString('en-US') + ' TR' : 'UNRANKED'}</em><small>${(p.xp || 0).toLocaleString('en-US')} XP</small></div>`; return; }
-  if (plScale === 'country' && !cc){ L.innerHTML = '<p class="dim">SET YOUR COUNTRY IN CONFIG › ACCOUNT TO SEE COUNTRY LEADERBOARDS</p>'; return; }
-  const want = plLb + plScale; L.dataset.want = want; L.innerHTML = '<p class="dim">LOADING…</p>';
+  // 官方 Ta.loadUserList 的列（跟紀錄同一種 .record_item）：league＝勝場／場數、TR＋段位圖、glicko±rd；xp＝往下一級的百分比、等級、XP；ar＝成就數、AR
+  const L = $('plList'), cc = chCountry(); L.className = 'tetra_stream ns';
+  const urow = (i, u) => { const lg = u.league || {}, own = `${tlEsc(String(u.username || '?').toUpperCase())}${u.country ? ` ${flagOf(String(u.country).toUpperCase())}` : ''}`;
+    let ts = '', res = '', ex = '';
+    if (plLb === 'league'){ ts = lg.gamesplayed ? `<span>${lg.gameswon ?? 0}</span> / ${lg.gamesplayed} games won (<span>${Math.floor((lg.gameswon || 0) / lg.gamesplayed * 1e4) / 100}</span>%)` : '';
+      res = `${lg.tr != null && lg.tr >= 0 ? Math.round(lg.tr) : '—'}<span>TR</span> ${lg.rank ? `<img src="${rankIconUrl(lg.rank)}" alt="" onerror="this.remove()">` : ''}`;
+      ex = lg.glicko != null && lg.glicko >= 0 ? `glicko: <span>${Math.round(lg.glicko * 100) / 100}</span>±<span>${Math.round((lg.rd || 0) * 100) / 100}</span>` : ''; }
+    else if (plLb === 'ar'){ const n = u.ar_counts ? Object.values(u.ar_counts).reduce((a, b) => a + (+b || 0), 0) : 0; ts = `<span>${n}</span> achievement${n === 1 ? '' : 's'}`; res = `${(u.ar || 0).toLocaleString('en-US')}<span>AR</span>`; }
+    else { const xp = +u.xp || 0, lv = typeof xpLevel === 'function' ? xpLevel(xp) : 0; ts = lv ? `${Math.floor((lv % 1) * 100)}% TOWARDS NEXT LEVEL` : ''; res = lv ? `LV ${Math.floor(lv)}` : `${Math.round(xp).toLocaleString('en-US')}`; ex = `<span>${Math.floor(xp).toLocaleString('en-US')}</span> XP`; }
+    return recRowHTML(i, own, ts, res, ex); };
+  if (plScale === 'friends'){ const m = tlMyTR(); L.dataset.want = 'friends'; L.innerHTML = recRowHTML(0, tlEsc(String(p.name || '').toUpperCase()), '', m.tr != null ? `${Math.round(m.tr)}<span>TR</span>` : 'UNRANKED', `<span>${Math.floor(p.xp || 0).toLocaleString('en-US')}</span> XP`); return; }
+  if (plScale === 'country' && !cc){ L.innerHTML = recNone('SET YOUR COUNTRY IN CONFIG › ACCOUNT TO SEE COUNTRY LEADERBOARDS'); return; }
+  const want = plLb + plScale; L.dataset.want = want; L.innerHTML = recNone('FETCHING PLAYERS…');
   chCached(`users/by/${plLb}?limit=100${plScale === 'country' ? '&country=' + cc : ''}`).then(d => { if (L.dataset.want !== want) return; const E = (d && d.entries) || [];
-    L.innerHTML = E.length ? E.map((u, i) => { const lg = u.league || {};
-      const v = plLb === 'league' ? `${rankBadge(String(lg.rank || 'z').toUpperCase())} ${lg.tr != null ? Math.round(lg.tr).toLocaleString('en-US') + ' TR' : '—'}` : plLb === 'ar' ? `${(u.ar || 0).toLocaleString('en-US')} AR` : `${Math.round(u.xp || 0).toLocaleString('en-US')} XP`;
-      return `<div class="lbrow"><i>№${i + 1}</i><b>${flagOf((u.country || '').toUpperCase())} ${tlEsc(String(u.username || '?').toUpperCase())}</b><em>${v}</em><small>${plLb === 'league' && lg.gamesplayed ? lg.gamesplayed + ' GAMES' : ''}</small></div>`; }).join('') : '<p class="dim">NO PLAYERS</p>'; })
-    .catch(() => { if (L.dataset.want === want) L.innerHTML = '<p class="dim">COULD NOT REACH TETRA CHANNEL</p>'; });
+    L.innerHTML = E.length ? E.map((u, i) => urow(i, u)).join('') : recNone('NO PLAYERS'); })
+    .catch(() => { if (L.dataset.want === want) L.innerHTML = recNone('COULD NOT REACH TETRA CHANNEL'); });
 }
 
 function endClimb(reason){
