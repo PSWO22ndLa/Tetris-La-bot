@@ -271,6 +271,7 @@ document.documentElement.classList.add('booting'); addEventListener('load', func
   .chscreen .record_item, .chscreen .scroller_block.nothing{ box-sizing:content-box; width:70vw; max-width:calc(100% - 2em - 6px); padding:1em; margin:0 0 1em; position:relative; font-family:var(--hunf); text-align:left;
     background-color:rgb(36,62,37); border:3px solid; border-color:rgb(69,121,79) rgb(29,50,32) rgb(22,36,25) rgb(61,98,66); box-shadow:#000 0 0 8px; border-radius:3px; color:#fff; }
   .chscreen .scroller_block.nothing{ font-size:1em; }
+  .chscreen .tetra_stream{ background:none !important; border:0 !important; padding:0 !important; }
   .chscreen .record_result .recmods{ font-style:normal; font-size:.7em; vertical-align:.1em; } .chscreen .record_result .recmods .mflat, .chscreen .record_result .recmods b{ width:1em; height:1em; }
   @media (max-width:640px){ .chscreen .record_item > .record_extra{ font-size:.7em; } .chscreen .record_item > .record_owner, .chscreen .record_item > .record_result{ font-size:1.7em; top:.5em; } }
   .resultslike.isreplay .starter, #soloRes.isreplay .starter, #qpResult.isreplay #qrAgain, #qpResult.isreplay #qrCopy, #qpResult.isreplay #qrX, #tlRes.isreplay .el-again, #tlRes.isreplay #trAgain{ display:none !important; }
@@ -3071,6 +3072,9 @@ document.documentElement.classList.add('booting'); addEventListener('load', func
     .tmenu .tbar b{ position:absolute !important; left:5.25em; right:2em; top:.4em; font:700 3em var(--hunf) !important; line-height:normal !important; margin:0 !important; }
     .tmenu .tbar small{ position:absolute !important; left:10.55em; right:4em; top:3em; font-size:1.5em !important; line-height:normal !important; margin:0 !important; }
     .tmenu.home{ margin-left:-16px !important; margin-top:-14px !important; }
+    .chscreen{ padding-top:0 !important; } .chscreen > .chcol{ padding-top:calc(2.3em - 2px) !important; }   /* 官方 .right_scroller：第一塊從 4em＋2.5em 開始 */
+    #config .cfg-col{ padding-left:max(0px, calc(15vw - 127px)) !important; } #config .acc{ width:calc(70vw + 2em) !important; }   /* 官方：左緣 15vw、整塊 70vw＋2em＋邊 */
+    #solopre .oscr{ padding-top:calc(2.3em - 2px) !important; }
     .oblk.starter{ width:calc(70vw + 2em) !important; max-width:calc(100% - 6px) !important; }   /* 官方 .starter 跟其他 .scroller_block 一樣寬（70vw＋左右各 1em） */
     .omusic{ padding-left:.5em !important; }
     .tmenu.home .tbar{ font-size:var(--ofs) !important; }                 /* 官方首頁每一項也都是 giant（7em），放不下就捲動，不縮小 */
@@ -11702,7 +11706,7 @@ function soloResults(done, pr0){
     <div class="oblk"><h1>END RESULT</h1><p class="obig">${big}</p>
       <div class="orank${best ? ' best' : ''}"><p>PERSONAL RANK</p><h1>${rkMain}</h1><p class="sub">${rkSub}</p></div></div>
     <div class="oblk starter">${sub === '40l' ? `<div class="omusic" id="srMusic">${sName}</div>` : '<div class="omusic" style="visibility:hidden"></div>'}<button class="ostart" id="srRetry">AGAIN</button></div>
-    <div class="oblk rinfo"><div class="orid"><small>REPLAY ID</small>${rid}</div><button class="owr" id="srCopy" title="Copy result">⧉</button><button class="owr" id="srRep">REPLAY</button></div>
+    <div class="oblk rinfo"><div class="orid"><small>REPLAY ID</small>${rid}</div><button class="owr" id="srCopy" title="Copy result">⧉</button><button class="owr" id="srDl" title="Download this replay as a file">${hunIcons() ? 'Ǿ' : '⭳'}</button><button class="owr" id="srRep">REPLAY</button></div>
     <div class="oblk"><h1>STATS</h1><div class="ogrp"><button class="obtn on" data-tab="ov">OVERVIEW</button><button class="obtn" data-tab="fu">FULL</button></div>
       <table class="okp" data-tab="ov">${kp(overview)}</table><table class="okp" data-tab="fu" hidden>${kp(full)}</table></div>
     <div class="oblk"><h1>HANDLING</h1><div class="ofr">
@@ -11713,6 +11717,7 @@ function soloResults(done, pr0){
   $('srBack').onclick = () => { el.className = ''; $('climbStop').onclick(); setScreen('home'); };   // 官方 results.back＝home
   $('srRetry').onclick = () => { el.className = ''; tbgNext(); if (climb && climb.opts && sub === '40l') climb.opts.song = o.song; $('runRestart').onclick(); };
   $('srRep').onclick = () => { rpOpen(); };
+  $('srDl').onclick = () => { if (RP_LAST) rpExport(RP_LAST); else say('NO REPLAY YET'); };   // 官方 downloadreplay_results
   $('srCopy').onclick = () => { const txt = `${M.t} — ${el.querySelector('.obig').textContent} · ${c.pieces} PIECES · ${(c.pieces / secs).toFixed(2)} PPS · ${rid}`;
     try { navigator.clipboard.writeText(txt); $('srCopy').textContent = '✓'; } catch(e){} };
   const mus = $('srMusic');
@@ -12470,6 +12475,24 @@ function lbVal(mode, r){ const st = (r.results && r.results.stats) || {};
   if (mode === '40l') return st.finaltime != null ? LB_MODES['40l'].fmt(st.finaltime / 1000) : '—';
   if (mode === 'blitz') return st.score != null ? (+st.score).toLocaleString('en-US') : '—';
   const a = typeof zAlt === 'function' ? zAlt(r) : 0; return a ? a.toFixed(1) + 'm' : '—'; }
+// 官方 Ta.loadRecords 的一列（排行榜版）：名次、名字＋國旗、時間、成績、附註；欄位直接讀 TETRA CHANNEL API 的紀錄
+const recNone = t => `<div class="scroller_block ns nothing">${t}</div>`;
+function recRowHTML(i, own, ts, res, ex){ return `<div class="scroller_block record_item ns${i === 0 ? ' record_first' : ''}"><div class="record_grade ns">${i + 1}</div><div class="record_owner">${own}</div><div class="record_ts">${ts}</div><div class="record_result">${res}</div><div class="record_extra">${ex}</div></div>`; }
+function recFromApi(mode, r, i){
+  const u = r.user || {}, st = (r.results && r.results.stats) || {}, ag = (r.results && r.results.aggregatestats) || {}, z2 = (n, w = 2) => String(n).padStart(w, '0');
+  const wt = ms => ({ m: Math.floor(ms / 60000), s: z2(Math.floor(ms / 1000) % 60), ms: z2(Math.floor(ms % 1000), 3) }), f2 = v => (+v || 0).toFixed(2);
+  const own = `${tlEsc(String(u.username || '?').toUpperCase())}${u.country ? ` ${flagOf(String(u.country).toUpperCase())}` : ''}`, ts = r.ts ? new Date(r.ts).toLocaleString() : '';
+  let res = '—', ex = '';
+  if (mode === '40l'){ const t = wt(st.finaltime || 0); res = `${t.m}:${t.s}<span class="ms">.${t.ms}</span>`;
+    ex = `<span>${st.piecesplaced ?? '?'}</span> pieces - <span>${(st.finesse && st.finesse.faults) ?? '?'}</span>F - <span>${f2(st.inputs / ((st.finaltime || 1) / 1000))}</span> KPS - <span>${f2(st.inputs / Math.max(1, st.piecesplaced))}</span> KPP - <span>${f2(ag.pps)}</span> PPS`; }
+  else if (mode === 'blitz'){ res = (+st.score || 0).toLocaleString('en-US');
+    ex = `LV<span>${st.level ?? '?'}</span> - <span>${st.piecesplaced ?? '?'}</span> pieces - <span>${(st.finesse && st.finesse.faults) ?? '?'}</span>F - <span>${f2(st.score / Math.max(1, st.piecesplaced))}</span> SPP - <span>${f2(ag.pps)}</span> PPS`; }
+  else { const zn = st.zenith || {}, alt = +zn.altitude || (typeof zAlt === 'function' ? zAlt(r) : 0) || 0, t = wt(st.finaltime || 0), xz = (r.extras && r.extras.zenith) || {}, ms = (xz.mods || []).filter(m => m !== 'expert');
+    res = `${ms.length ? `<i class="recmods">${modFlatHTML(ms)}</i> ` : ''}${Math.floor(alt).toLocaleString('en-US')}<span class="ms">.${Math.floor(alt % 1 * 10)}</span><span class="unit">M</span>`;
+    ex = [`<span>${t.m}:${t.s}</span>.${t.ms}`, xz.finalPos >= 1 ? `#<span>${xz.finalPos}</span>/${xz.finalCount}` : '', `<span>${st.kills ?? 0}</span> KO${st.kills === 1 ? '' : "'s"}`,
+      zn.avgrankpts ? `avg. speed <span>${f2(zn.avgrankpts / ((st.finaltime || 1) / 1000 * 60))}</span>, peak <span>${Math.floor(zn.peakrank || 1)}</span>` : '', `<span>${f2(ag.apm)}</span> APM`, `<span>${f2(ag.pps)}</span> PPS`].filter(Boolean).join(' - '); }
+  return recRowHTML(i, own, ts, res, ex);
+}
 function renderLB(){
   const p = loadProfile(), M = LB_MODES[lbMode];
   $('lbTabs').innerHTML = Object.entries(LB_MODES).map(([k, m]) => `<button data-k="${k}" aria-pressed="${k === lbMode}">${k === 'exqp' ? 'expert quick play' : m.name}</button>`).join('');
@@ -12477,19 +12500,20 @@ function renderLB(){
   $('lbScale').innerHTML = [['global', 'WORLD'], ['country', 'COUNTRY'], ['friends', 'FRIENDS']].map(([k, n]) => `<button data-k="${k}" aria-pressed="${k === lbScale}">${n}</button>`).join('');
   $('lbScale').querySelectorAll('button').forEach(b => b.onclick = () => { lbScale = b.dataset.k; renderLB(); });
   $('lbFull').onclick = () => window.open('https://ch.tetr.io/records/' + ({ '40l': '40l', blitz: 'blitz', qp: 'zenith', exqp: 'zenithex' })[lbMode] + (lbScale === 'country' && chCountry() ? '_country_' + chCountry() : '_global'), '_blank', 'noopener');
-  const L = $('lbList');
+  const L = $('lbList'); L.className = 'tetra_stream ns'; const none = recNone;
   if (lbScale === 'friends'){                                              // 沒有好友系統：只有你自己的紀錄
+    L.dataset.want = 'friends';
     const list = (p.top || {})[lbMode] || [];
-    L.innerHTML = list.length ? list.map((r, i) => `<div class="lbrow"><i>№${i + 1}</i><b>${p.name}</b><em>${M.fmt(r.v)}</em><small>${ago(r.t)}</small></div>`).join('') : '<p class="dim">NO RECORDS</p>';
+    L.innerHTML = list.length ? list.map((r, i) => recRowHTML(i, tlEsc(String(p.name || '').toUpperCase()), new Date(r.t).toLocaleString(), M.fmt(r.v), '')).join('') : none('NO RECORDS');
     return;
   }
   const cc = chCountry();
-  if (lbScale === 'country' && !cc){ L.innerHTML = '<p class="dim">SET YOUR COUNTRY IN CONFIG › ACCOUNT TO SEE COUNTRY LEADERBOARDS</p>'; return; }
+  if (lbScale === 'country' && !cc){ L.innerHTML = none('SET YOUR COUNTRY IN CONFIG › ACCOUNT TO SEE COUNTRY LEADERBOARDS'); return; }
   const lb = ({ '40l': '40l', blitz: 'blitz', qp: 'zenith', exqp: 'zenithex' })[lbMode] + (lbScale === 'country' ? '_country_' + cc : '_global');
-  const want = lbMode + lbScale; L.dataset.want = want; L.innerHTML = '<p class="dim">LOADING…</p>';
+  const want = lbMode + lbScale; L.dataset.want = want; L.innerHTML = none('FETCHING RECORDS…');
   chCached(`records/${lb}?limit=100`).then(d => { if (L.dataset.want !== want) return; const E = (d && d.entries) || [];
-    L.innerHTML = E.length ? E.map((r, i) => { const u = r.user || {}; return `<div class="lbrow"><i>№${i + 1}</i><b>${flagOf((u.country || '').toUpperCase())} ${tlEsc(String(u.username || '?').toUpperCase())}</b><em>${lbVal(lbMode, r)}</em><small>${r.ts ? ago(Date.parse(r.ts)) : ''}</small></div>`; }).join('') : '<p class="dim">NO RECORDS</p>'; })
-    .catch(() => { if (L.dataset.want === want) L.innerHTML = '<p class="dim">COULD NOT REACH TETRA CHANNEL</p>'; });
+    L.innerHTML = E.length ? E.map((r, i) => recFromApi(lbMode, r, i)).join('') : none('NO RECORDS'); })
+    .catch(() => { if (L.dataset.want === want) L.innerHTML = none('COULD NOT REACH TETRA CHANNEL'); });
 }
 let meTab = 'recent';
 document.addEventListener('click', e => { if (e.target && e.target.id === 'meMyPage'){ const t = loadProfile().tio; if (t && t.user) window.open('https://ch.tetr.io/u/' + encodeURIComponent(t.user), '_blank', 'noopener'); else openProfile(); } });   // 官方 MY PAGE：有連結 TETR.IO 帳號就開 TETRA CHANNEL，沒有就開本機個人頁
@@ -12553,7 +12577,8 @@ function rvOpen(R, back){
   for (const id of ['#srBack', '#qrBack', '#trBack']){ const b = q(id); if (b) b.onclick = bye; }
   for (const id of ['#srRep', '#qrWatch', '#trReplay']){ const b = q(id); if (b){ b.disabled = false; b.onclick = () => { rvClose(); rpOpen(R, () => rvOpen(R, back)); }; } }
   el.querySelectorAll('.ogrp .obtn').forEach(b => b.onclick = () => { el.querySelectorAll('.ogrp .obtn').forEach(x => x.classList.toggle('on', x === b)); el.querySelectorAll('table.okp').forEach(tb => tb.hidden = tb.dataset.tab !== b.dataset.tab); });
-  const cp = q('#srCopy'); if (cp) cp.onclick = () => rpExport(R);
+  const dl = q('#srDl'); if (dl) dl.onclick = () => rpExport(R);
+  const cp = q('#srCopy'); if (cp) cp.onclick = () => { try { navigator.clipboard.writeText(`${(R.sum || {}).name || ''} — ${(R.sum || {}).val || ''}`); cp.textContent = '✓'; } catch(e){} };
 }
 // 一局結束後，等結算頁出來把它的畫面存進回放（最多等 30 秒）
 function rpGrabResults(R){
