@@ -3851,7 +3851,7 @@ document.documentElement.classList.add('booting'); addEventListener('load', func
         <div class="qr-box"><i id="qrCspL">PEAK CLIMB SPEED</i><b id="qrCsp"></b><small id="qrCspSub"></small></div>
       </div>
     </div>
-    <div class="qr-replay" id="qrReplay"><span>REPLAY ID: <b id="qrId"></b></span><button id="qrX" aria-label="Hide">✕</button><button id="qrCopy">SEND TO CHAT</button></div>
+    <div class="qr-replay" id="qrReplay"><span>REPLAY ID: <b id="qrId"></b></span><button id="qrX" aria-label="Hide">✕</button><button id="qrCopy">SEND TO CHAT</button><button id="qrWatch">WATCH REPLAY</button></div>
     <button class="qr-again" id="qrAgain">AGAIN</button>
     <div class="qr-cardp">
       <div class="qr-cards" id="qrCards"></div>
@@ -4663,7 +4663,7 @@ let ELIM = { n: 0, t: 0 };
 function elimSfx(){ const now = performance.now(); if (now - ELIM.t > 1e4) ELIM.n = 0; ELIM.n++; ELIM.t = now;
   const m = sfxMap()['ko']; if (m === '-' || opt('oNoSound')) return; sfxPitch(m || 'elim', 1, Math.min(12, ELIM.n - 1)); }
 function sfxEv(id, ...names){
-  if (opt('oNoSound')) return null;
+  if (opt('oNoSound') || RP_OPENING || (climb && climb.rp)) return null;   // 回放沒有聲音
   if (!opt('oHearAtk') && ATK_SFX.has(id)) return null;
   if (!opt('oHearClimb') && CLIMB_SFX.has(id)) return null;
   const m = sfxMap()[id];
@@ -5093,7 +5093,10 @@ function drawB2BBurst(){
   if (!climb || climb.over || b2b < 1 || !(surgeOn() || chainOn())) return;
   const sk = boardSkinOn(), R = sk ? skinRects() : null;
   const edge = sk ? R.frame.x + cell * .2 : -cell * .3 - genL();                  // 標示靠著盤面左緣（星星稍微壓到框）
-  const cy = sk ? R.frame.y + R.frame.h * .36 : (H - VISIBLE) * cell + cell * 6;
+  // 官方 Kc.generic.ns.b2b（generic 板子）：文字 size 22、靠右、頂端 y 220；有蓄力星星時星星中心在 (−14−10a, 229)、直徑 92×22/50×a＝40.5a，
+  //   文字右緣退到 −25−25a；a＝clamp((btb−at+1)/6, 1, 4)（btb＝本站 b2b＋1、at＝4）
+  const gu = cell / 30, ga = Math.min(4, Math.max(1, (b2b - 2) / 6)), gx = -genL();
+  const cy = sk ? R.frame.y + R.frame.h * .36 : (H - VISIBLE) * cell + 229 * gu;
   const now = performance.now(), sv = surgeOf(b2b), T = sv >= 4 || (sv >= 1 && climb.kind === 'qp') ? b2bTier(Math.max(4, sv)) : null;
   const pop = climb.b2bPop ? Math.max(0, 1 - (now - climb.b2bPop) / 180) : 0;
   const lab = cell * .62;
@@ -5101,15 +5104,15 @@ function drawB2BBurst(){
   ctx.font = `700 ${lab}px ${CANVAS_FONT}`;
   if (!T){                                                                // 1–3：金色文字
     ctx.fillStyle = '#dabb59'; ctx.shadowColor = 'rgba(0,0,0,.7)'; ctx.shadowBlur = 4;
-    if (!clearShowsB2B()) ctx.fillText(`B2B x${b2b}`, edge - cell * .3, cy); ctx.restore(); return;
+    if (!clearShowsB2B()) ctx.fillText(`B2B x${b2b}`, sk ? edge - cell * .3 : gx - 10 * gu, cy); ctx.restore(); return;
   }
-  const d = cell * T.k * (1 + .18 * pop), scx = edge - d * .42;
+  const d = (sk ? cell * T.k : 40.48 * ga * gu) * (1 + .18 * pop), scx = sk ? edge - d * .42 : gx - (14 + 10 * ga) * gu, lx = sk ? scx - d * .55 : gx - (25 + 25 * ga) * gu;
   if (hasMod('warlock')){ drawB2BWarlock(sv, d, scx, cy, edge, now); ctx.restore(); return; }
   // 「B2B ×」（QP 時 B2B 數跟星星數不同，數字也寫出來）
   ctx.fillStyle = T.c; ctx.shadowColor = T.c; ctx.shadowBlur = cell * .3;
   const lt = clearShowsB2B() ? '' : climb.kind === 'qp' ? `B2B x${b2b}` : 'B2B x', lw = ctx.measureText(lt).width;
-  if (scx - d * .55 - lw < -GUTL() * cell + 4){ ctx.textAlign = 'center'; ctx.fillText(lt, scx, cy - d * .62); ctx.textAlign = 'right'; }   // 左邊放不下（手機）→ 放到星星上面
-  else ctx.fillText(lt, scx - d * .55, cy);
+  if (lx - lw < -GUTL() * cell + 4){ ctx.textAlign = 'center'; ctx.fillText(lt, scx, cy - d * .62); ctx.textAlign = 'right'; }   // 左邊放不下（手機）→ 放到星星上面
+  else ctx.fillText(lt, lx, cy);
   ctx.shadowBlur = 0;
   // 24 以上：星星後面的電路紋（直角折線，慢慢閃）
   if (T.fx > 0){
@@ -6333,7 +6336,7 @@ function drawClimbHUD(wide){
   let step = Math.max(fs * 1.9, Math.min(fs * 2.5, avail / lines));
   // 官方 Kc.generic.ns.counter（generic 板子、非 QP）：由下往上每 70 一欄；標題 size 20、數值 size 38（後半段 \f3＝0.6 倍），靠右對齊在盤面左邊 −10
   //   官方 HUN 點陣字的字高 ≈ size × 0.86（跟樓層字卡同一個換算）→ 數值字高 1.09 格、標題 0.575 格；超過 4 欄（本站把右邊的 counter5 也放左邊）就等比縮
-  const GC = bare && genBoard() && climb.kind !== 'qp' && !(climb.snow && W < 10);
+  const GC = bare && genBoard() && climb.kind !== 'qp' && climb.kind !== 'league' && !(climb.snow && W < 10);   // TL：對手小盤面的數據是另一套大小，兩邊要一致 → 不套
   const gu = cell / 30, gf = GC ? Math.min(1, 4 / lines) : 1, gk = GC ? ftCap(ctx) / 100 : 1, gV = 1.09 * cell * gf / gk, gT = .575 * cell * gf / gk;
   if (GC){ step = 70 * gu * gf; y = H * cell - 2 * gu; }
   // val 可以是 [大字, 小字]：TETR.IO 的「1248, 2.08/S」「10:00.267」後半段比較小
@@ -8777,7 +8780,7 @@ function drawFrame(){
   }
   if (mode === 'sim' && climb && climb.snow) drawSnowCaps();
   if (mode === 'sim' && climb) drawWindupAlert();
-  if (mode === 'sim' && climb && !climb.over){ drawDanger(); drawSirenEls(); drawProEls(); }
+  if (mode === 'sim' && climb && !climb.over){ drawDanger(); drawSirenEls(); drawProEls(); drawReplayTag(); }
   fxDraw(); shockDraw();
   // 效能：syncUI 會改二十幾個 DOM 文字／class，每幀做會逼瀏覽器每幀重排版。遊戲中改成每 250ms 同步一次（重要事件走 say() 仍會即時同步）
   const nowT = performance.now();
@@ -9688,6 +9691,7 @@ function spawnNext(){
   refillQueue();
 }
 function doHold(){
+  if (climb && climb.rp) return;
   if (hasMod('nohold') || hasMod('ascetic')) return;
   if (climb && climb.custom && !climb.custom.holdq) return;
   if (!active || holdUsed) return;
@@ -9722,7 +9726,7 @@ function move(dx,dy){
 }
 // 官方 ComputeKick：先把方塊照 additional_offsets 的差值挪過去試原位，再依序試踢牆表；kick 記第幾個踢（0 起算，原位＝沒踢）
 function rotate(dir){                       // 1 順時針 / 3 逆時針 / 2 為 180
-  if (!active) return false;
+  if (!active || (climb && climb.rp)) return false;
   if (dir === 2 && climb && climb.custom && !climb.custom.r180) return false;
   cInput();
   const from = active.rot & 3, to = (from + dir) & 3, key = `${from}${to}`, T = active.type;
@@ -10077,6 +10081,7 @@ function boardKick(dx, dy, dmg){
   if (dmg && navigator.vibrate && optN('oVibe') > 0) try { navigator.vibrate(Math.round(25 * optN('oVibe') / 100)); } catch(e){}
 }
 function hardDrop(){
+  if (climb && climb.rp) return;
   setTimeout(() => boardKick(0, 3, false), 0);
   if (!active) return;
   if (climb && climb.custom && !climb.custom.hd) return;
@@ -10097,6 +10102,7 @@ const cInput = () => { if (climb && !climb.over) climb.inputs = (climb.inputs ||
 //   不會多移一格、那個方向原本累積的 DAS 繼續算；CANCEL DAS 開著時，放開會把另一邊的 DAS 歸零
 const SH = { '-1': { held: false, das: 0, arr: 0 }, '1': { held: false, das: 0, arr: 0 } };
 function startDir(d){
+  if (climb && climb.rp) return;
   cInput();
   const h = handling(), S = SH[d];
   S.held = true; S.das = 0; S.arr = h.arr; dasDir = d;
@@ -10129,6 +10135,92 @@ function dcdAfterRotate(){
   for (const k of ['-1', '1']){ SH[k].das = Math.min(SH[k].das, h.das - h.dcd); SH[k].arr = h.arr; }
 }
 
+/* ---- 回放 ----
+   官方的回放是「存按鍵、用同一顆種子重跑引擎」；本站的引擎不是定幀也不是固定亂數，沒辦法這樣重跑 →
+   改成每 1/30 秒存一張快照（盤面、手上的方塊、HOLD／NEXT、數據、動作字），播放時把快照照時間畫回去。
+   只留最近一局（記憶體裡，重新整理就沒了）；房間／RIVALS／競速不錄；TL 只有最後一回合；沒有聲音。
+   畫面上照官方 replaytag：queue.png (2,294,396,77)，貼在盤面右上（往下半格）。 */
+var RP_REC = null, RP_LAST = null, RP_OPENING = false;   // var：sfxEv 在這行執行前就可能被呼叫
+const RP_KEYS = ['elapsed', 'lines', 'pieces', 'score', 'sent', 'recv', 'garbCleared', 'alt', 'csp', 'blvl', 'blLines', 'inputs', 'zenLv', 'zenProg', 'fire', 'cstreak', 'acs', 'kos', 'gravity', 'bonusRem', 'hyper'];
+function rpBegin(kind, opts){
+  if (RP_OPENING) return;
+  RP_REC = (opts && (opts.room || opts.lv || opts.race)) || (typeof LOCAL_P !== 'undefined' && LOCAL_P) || (kind === 'practice' && ['tut', 'drill'].includes(opts && opts.sub)) ? null : { kind, opts: { ...opts }, frames: [], acc: 1e9, done: false };
+}
+function rpSnap(){
+  const R = RP_REC, g = grid(), last = R.frames[R.frames.length - 1], now = performance.now();
+  let same = !!last && last.g.length === g.length; if (same) for (let i = 0; i < g.length; i++) if (last.g[i] !== g[i]){ same = false; break; }
+  const st = {}; for (const k of RP_KEYS) if (climb[k] !== undefined) st[k] = climb[k];
+  const ob = climb.opp && climb.opp.bd instanceof Uint8Array ? climb.opp.bd : null;
+  R.frames.push({ t: climb.elapsed, g: same ? last.g : g.slice(), a: active ? [active.type, active.rot, active.x, active.y] : null, h: holdType, hu: holdUsed, q: queue.slice(0, 7), c: combo, b: b2b, st,
+    m: clearMsg ? { lines: clearMsg.lines, age: now - clearMsg.t, dupe: clearMsg.dupe, keep: clearMsg.keep } : null,
+    pd: (climb.pending || []).map(e => [e.lines, now - e.t]), sh: SHOUT_L.map(e => [e.k, e.txt, now - e.t]),
+    ob: ob ? (last && last.ob && last.ob.length === ob.length && last.ob.every((v, i) => v === ob[i]) ? last.ob : ob.slice()) : null });
+}
+function rpRecTick(dt){
+  const R = RP_REC; if (!R || R.done || !climb || climb.rp || climb.cd) return;
+  if (climb.over){ rpSnap(); R.done = true; if (R.frames.length > 5) RP_LAST = R; return; }
+  R.acc += dt; if (R.acc < 1000 / 30) return; R.acc = 0;
+  if (R.frames.length < 60000) rpSnap();
+}
+function rpApply(f){
+  const g = grid(), now = performance.now(); if (f.g.length === g.length) g.set(f.g);
+  active = f.a ? { type: f.a[0], rot: f.a[1], x: f.a[2], y: f.a[3], hy: f.a[3] } : null;
+  holdType = f.h; holdUsed = f.hu; queue = f.q.slice(); combo = f.c; b2b = f.b; Object.assign(climb, f.st);
+  clearMsg = f.m ? { lines: f.m.lines, t: now - f.m.age, dupe: f.m.dupe, keep: f.m.keep } : null;
+  climb.pending = f.pd.map(([lines, age]) => ({ lines, t: now - age, plan: [] }));
+  SHOUT_L = f.sh.map(([k, txt, age]) => ({ k, txt, t: now - age }));
+  if (f.ob && climb.opp && climb.opp.bd instanceof Uint8Array && climb.opp.bd.length === f.ob.length) climb.opp.bd.set(f.ob);
+}
+function rpTick(dt){
+  const P = climb.rp, F = P.R.frames;
+  if (P.playing){ P.t = Math.min(P.dur, P.t + dt * P.speed); if (P.t >= P.dur) P.playing = false; }
+  if (F[P.i].t > P.t) P.i = 0;                                              // 往回拖
+  while (P.i + 1 < F.length && F[P.i + 1].t <= P.t) P.i++;
+  rpApply(F[P.i]); rpBarSync();
+}
+function rpOpen(){
+  const R = RP_LAST; if (!R){ say('NO REPLAY YET — FINISH A GAME FIRST'); return false; }
+  for (const id of ['tlRes', 'soloRes']){ const e = $(id); if (e){ e.classList.remove('on'); if (id === 'soloRes') e.className = ''; } }
+  RP_OPENING = true;
+  try { if (climb) $('climbStop').onclick(); if (mode !== 'sim') setMode('sim'); startClimb(R.kind, { ...R.opts, keepScore: undefined }); }
+  finally { RP_OPENING = false; }
+  if (!climb) return false;
+  climb.cd = null; climb.goT = 0; climb.cdSong = undefined; climb.floorToast = null; boardFx(null); tlOvClear();
+  climb.rp = { R, t: R.frames[0].t, i: 0, speed: 1, playing: true, dur: R.frames[R.frames.length - 1].t };
+  rpBar(true); rpApply(R.frames[0]); draw(); return true;
+}
+function rpBar(on){
+  let b = $('rpBar');
+  if (!on){ if (b) b.remove(); return; }
+  if (!b){ b = document.createElement('div'); b.id = 'rpBar';
+    b.style.cssText = 'position:fixed;left:50%;bottom:max(10px,env(safe-area-inset-bottom));transform:translateX(-50%);z-index:80;display:flex;gap:8px;align-items:center;padding:8px 10px;background:rgba(10,13,18,.92);border:1px solid #2d3947;color:#eef2f7;font:600 13px ' + (typeof UI_FONT !== 'undefined' ? UI_FONT : 'sans-serif') + ';width:min(640px,94vw);box-sizing:border-box';
+    const btn = 'background:#1b2430;color:#eef2f7;border:1px solid #2d3947;padding:6px 10px;font:inherit;cursor:pointer;border-radius:0';
+    b.innerHTML = `<button id="rpPlay" style="${btn};min-width:44px">❚❚</button><input id="rpSeek" type="range" min="0" max="1000" value="0" style="flex:1;min-width:60px"><span id="rpTime" style="min-width:92px;text-align:right;font-variant-numeric:tabular-nums">0:00 / 0:00</span>`
+      + `<select id="rpSpeed" style="${btn}"><option value=".25">0.25×</option><option value=".5">0.5×</option><option value="1" selected>1×</option><option value="2">2×</option><option value="4">4×</option></select><button id="rpExit" style="${btn}">EXIT</button>`;
+    document.body.appendChild(b);
+    $('rpPlay').onclick = () => { const P = climb && climb.rp; if (!P) return; if (!P.playing && P.t >= P.dur){ P.t = P.R.frames[0].t; P.i = 0; } P.playing = !P.playing; };
+    $('rpSeek').oninput = e => { const P = climb && climb.rp; if (!P) return; const t0 = P.R.frames[0].t; P.t = t0 + (P.dur - t0) * e.target.value / 1000; P.seeking = performance.now(); };
+    $('rpSpeed').onchange = e => { const P = climb && climb.rp; if (P) P.speed = +e.target.value || 1; e.target.blur(); };
+    $('rpExit').onclick = () => { rpBar(false); if (climb && climb.rp) $('climbStop').onclick(); };
+    b._iv = setInterval(() => { if (!(climb && climb.rp)){ clearInterval(b._iv); b.remove(); } }, 400);
+  }
+}
+function rpBarSync(){
+  const P = climb.rp, b = $('rpBar'); if (!b) return;
+  const t0 = P.R.frames[0].t, f = s => `${Math.floor(s / 60000)}:${String(Math.floor(s / 1000) % 60).padStart(2, '0')}`;
+  $('rpPlay').textContent = P.playing ? '❚❚' : '▶';
+  if (!(P.seeking && performance.now() - P.seeking < 250)) $('rpSeek').value = Math.round((P.t - t0) / Math.max(1, P.dur - t0) * 1000);
+  $('rpTime').textContent = `${f(P.t)} / ${f(P.dur)}`;
+}
+function drawReplayTag(){
+  if (!climb || !climb.rp) return;
+  const top = (H - VISIBLE) * cell, k = cell / 92, Q = genTex('gQueue');
+  ctx.save();
+  if (Q) ctx.drawImage(Q, 2, 294, 396, 77, W * cell - 396 * k, top + .5 * cell, 396 * k, 77 * k);
+  else { const w = 396 * k, h = 77 * k, x = W * cell - w, y = top + .5 * cell; ctx.fillStyle = 'rgba(255,255,255,.92)'; ctx.fillRect(x, y, w, h);
+    ctx.fillStyle = '#0b0d12'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.font = `800 ${h * .62}px ${CANVAS_FONT}`; try { ctx.letterSpacing = `${h * .12}px`; } catch(e){} ctx.fillText('REPLAY', x + w / 2 + h * .06, y + h * .54); }
+  ctx.restore();
+}
 function simTick(ts){
   IN_TICK = true; DREW = false;
   try { simTickBody(ts); } finally { IN_TICK = false; }
@@ -10139,6 +10231,8 @@ function simTickBody(ts){
   if (mode !== 'sim'){ simRAF = null; qpFx(0); qpBg(0); return; }
   const dt = Math.min(50, ts - lastTs || 16); lastTs = ts;          // 卡頓後最多補 50ms，方塊不會一次衝很多格
   qpBg(dt); qpFx(dt);
+  if (climb && climb.rp){ rpTick(dt); draw(); simRAF = requestAnimationFrame(simTick); return; }   // 回放：不跑遊戲，只把快照畫回去
+  rpRecTick(dt);
   sinceSpawn += dt;
   if (rec && rec.mode === 'time'){
     const iv = 1000 / Math.max(2, +$('recFps').value || 20);
@@ -10367,6 +10461,7 @@ function qpRunMods(src){
   return m;
 }
 function startClimb(kind = 'qp', opts = {}){
+  rpBar(false); rpBegin(kind, opts);
   { const d = document.getElementById('listReq'); if (d) d.remove(); }
   if (typeof boardFx === 'function') boardFx(kind === 'practice' && ['40l', 'blitz', 'zen'].includes(opts.sub || 'zen') ? (RETRYING ? 'open' : 'pre') : opts.custom && !opts.custom.tower && !opts.room && RETRYING ? 'open' : null);
   if ((kind !== 'qp' || (opts.custom && !opts.custom.tower)) && !climb && !opts.keepScore && typeof tbgNext === 'function') tbgNext();   // 官方 start_40l／blitz／zen／custom、房間開局 → ni() 換一張背景（局中 RETRY 不換）
@@ -11312,7 +11407,7 @@ function soloResults(done, pr0){
   </div></div><div class="sr-ft"><span>${LT} played by <b>${tlEsc(String(loadProfile().name || 'ANON').toUpperCase())}</b> on ${new Date().toLocaleString()}</span></div>`;
   $('srBack').onclick = () => { el.className = ''; $('climbStop').onclick(); setScreen('home'); };   // 官方 results.back＝home
   $('srRetry').onclick = () => { el.className = ''; tbgNext(); if (climb && climb.opts && sub === '40l') climb.opts.song = o.song; $('runRestart').onclick(); };
-  $('srRep').onclick = () => { if (rec) stopRec(); else say('NO REPLAY RECORDED — TURN ON RECORDING (REC) BEFORE PLAYING'); };
+  $('srRep').onclick = () => { rpOpen(); };
   $('srCopy').onclick = () => { const txt = `${M.t} — ${el.querySelector('.obig').textContent} · ${c.pieces} PIECES · ${(c.pieces / secs).toFixed(2)} PPS · ${rid}`;
     try { navigator.clipboard.writeText(txt); $('srCopy').textContent = '✓'; } catch(e){} };
   const mus = $('srMusic');
@@ -13165,7 +13260,7 @@ function tlResults(){
       <div class="el-vs">VS</div>
       <div class="el-pl"><div class="el-name">${opName}</div><div class="el-cnt">${o.score}</div><div class="el-x">${st(U)}</div></div></div>
     <div class="el-rinfo"><div class="el-rid"><small>REPLAY ID</small>R:${Array.from({ length: 12 }, () => '0123456789abcdef'[(Math.random() * 16) | 0]).join('')}</div>
-      <button class="el-wr" id="trReplay" ${rec ? 'title="Save the recording (REC)"' : 'disabled title="Turn on REC before the match to save a replay"'}>REPLAY</button></div>
+      <button class="el-wr" id="trReplay" title="Watch the last round">REPLAY</button></div>
     <div class="el-two"><div class="el-box"><h1>CHAT</h1><div class="el-chat" id="trChat">${chat}</div><input class="el-in" id="trChatIn" maxlength="512" placeholder="message..." autocomplete="off"></div>
       <div class="el-box st"><h1>TETRA LEAGUE STANDING</h1>
         <div class="el-tr"><b id="trNum">${trNow != null ? Math.round(trNow - d) : '?????'}</b><span>TR</span><i id="trD" class="${d > 0 ? 'up' : d < 0 ? 'dn' : ''}">${trNow != null && d ? (d > 0 ? '+' : '−') + Math.abs(d) : ''}</i></div>
@@ -13177,7 +13272,7 @@ function tlResults(){
   if (trNow != null && d){ const n0 = trNow - d, t0 = performance.now(), num = $('trNum');
     const tick = () => { const k = Math.min(1, (performance.now() - t0) / 1400), e = 1 - Math.pow(1 - k, 3); if (num) num.textContent = Math.round(n0 + d * e); if (k < 1) requestAnimationFrame(tick); };
     setTimeout(() => { sfxEv(d > 0 ? 'trup' : 'trdown', d > 0 ? 'ratingraise' : 'ratinglower'); requestAnimationFrame(tick); }, 2000); }   // 官方：結束後 10 秒（＝結算頁開 2 秒後）數 TR＋ratingraise／ratinglower
-  $('trReplay').onclick = () => { if (rec) stopRec(); };
+  $('trReplay').onclick = () => { rpOpen(); };
   if (climb.opts.unranked) el.querySelectorAll('*').forEach(n => { if (n.childNodes.length === 1 && n.firstChild.nodeType === 3 && /TETRA LEAGUE/.test(n.textContent)) n.textContent = n.textContent.replace('TETRA LEAGUE', 'CUSTOM GAME'); });
   $('trBack').onclick = () => { el.classList.remove('on'); $('climbStop').onclick(); };
   $('trChatIn').onkeydown = e => { e.stopPropagation(); if (e.key === 'Enter' && e.target.value.trim()){ const c = $('trChat'); c.insertAdjacentHTML('beforeend', `<p><b class="me">${myName}</b> ${tlEsc(e.target.value.trim())}</p>`); e.target.value = ''; c.scrollTop = c.scrollHeight; } };
@@ -13244,7 +13339,7 @@ function roundEnd(winner){
   // 實機節奏（錄影）：頂死 → 1.2 秒比分滑入（scoreslide_in）→ 1.5 秒亮分數（showscore）→ 2.5 秒滑出（scoreslide_out）→ 倒數
   const lvq = climb.opts.lv, sfxOk = !lvq || LOCAL_P === 1;                   // RIVALS TL：比分由外層在中間大字顯示一份；音效只放一次
   setTimeout(() => { if (sfxOk){ sfxEv('scorein', 'scoreslide_in'); setTimeout(() => sfxEv('showscore', 'showscore'), 1500); setTimeout(() => sfxEv('scoreout', 'scoreslide_out'), 3900); }
-    (lvq ? new Promise(r => setTimeout(r, 4000)) : tlOv(tlScoreHtml(me.score, o.score, myName, opName, ft), 4000)).then(() => { if (climb && climb.kind === 'league') startClimb('league', { ...climb.opts, keepScore: keep }); }); }, 1200);
+    (lvq ? new Promise(r => setTimeout(r, 4000)) : tlOv(tlScoreHtml(me.score, o.score, myName, opName, ft), 4000)).then(() => { if (climb && climb.kind === 'league' && !climb.rp) startClimb('league', { ...climb.opts, keepScore: keep }); }); }, 1200);
 }
 
 /* --- 隨機攻擊：多數是小攻擊，偶爾出 spike 觸發 Windup，機率隨樓層上升 ---
@@ -18311,6 +18406,7 @@ function qrInlineMods(on){
 $('qrCards').onclick = () => qrInlineMods(true);
 $('qrMods').onclick = () => qrInlineMods(!QR.inline);
 $('qrX').onclick = () => $('qrReplay').classList.add('hidden');
+$('qrWatch').onclick = () => { $('qpResult').classList.add('hidden'); document.body.classList.remove('qpres'); rpOpen(); };
 $('qrCopy').onclick = async () => {                                     // 實機 SEND TO CHAT：把成績卡貼到 QP 聊天室（另外也複製文字）
   const c = climb, S = c ? qrShareOf(c) : QR.share; if (S){
     if (Math.floor(S.alt * 10) < 100) qcSys("YOU SHOULDN'T DO YOURSELF THAT SORT OF INJUSTICE");   // wiki：低於 10.0m 不給貼
