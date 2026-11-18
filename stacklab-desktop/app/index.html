@@ -5882,6 +5882,7 @@ function drawGo(){
     drawShoutFx(txt, u - ki * iv, !!cd.labels);
     return;
   }
+  if (climb && climb.tShout){ const a = performance.now() - climb.tShout.t; if (a > 2500 || climb.over) climb.tShout = null; else drawShoutFx(climb.tShout.txt, a, false); }
   if (!climb || !climb.goT) return;
   const age = performance.now() - climb.goT;
   if (age > 2600){ climb.goT = 0; return; }
@@ -5955,7 +5956,6 @@ function drawSnowCaps(){
   ctx.restore();
 }
 // ALL CLEAR：盤面正中央的大字（實機樣式：放大彈出、停留、淡出）
-let pcBig = null;
 // Windup：照使用者要求維持原本的做法（1–11 級、5 級起自製音效、TL 對手也會出現；不改成官方只限 QP／最多 4 段）
 const windSplit = (amt, alt, vol) => {                                   // 回傳每段行數（官方 d()）
   let o = 16; if (alt >= 4000) o += Math.floor((alt - 3500) / 500); if (vol) o *= 2;
@@ -6048,24 +6048,55 @@ function drawWindupAlert(Hd, bx, by, bc, c2){
   }
 }
 
+// 官方 Kc.generic.ns.shout（盤面上的大字，板子座標 1 格＝30；跟倒數的 "countdown" 同一個類別）：
+//   allclear「ALL\nCLEAR」：size 60、盤面正中、5 秒 bezier(.06,.18,.65,1.01)；轉著放大 0 → 1.4 → 1.3 → 1 → .5，白 → #FF6666 → 白 → #FFA200，陰影 #221B0E 放大到 5 倍淡出
+//   clutch：size 30、#FFE87F、盤面頂上 1 格、1 秒 bezier(.2,.65,.88,.64)；字距 0 → 30 → 50、淡出
+//   levelup（BLITZ 升級，字＝新等級數字）：size 120、#5F7583、1.5 秒；從盤面中間下 5 格升到上 5 格、淡入淡出
+//   duorevive「REVIVED!」：size 60、盤面正中、2.5 秒；壓扁彈出，白 → #FFAC2A → #FF6666 → 白 → #FF9F00 → #FF8000
+const SHOUTS = {
+  allclear: { size: 60, y: 0, dur: 5000, ez: [.06, .18, .65, 1.01], col: [255, 255, 255],
+    keys: [[0, { r: -10, sx: 0, sy: 0, a: 1, w: 700, c: [255, 255, 255] }], [.1, { r: 0, sx: 1.4, sy: 1.4, a: 1, w: 700, c: [255, 102, 102] }], [.15, { r: 0, sx: 1.3, sy: 1.3, a: 1, w: 700, c: [255, 255, 255] }],
+      [.8, { r: 0, sx: 1, sy: 1, a: .9, w: 630, c: [255, 162, 0] }], [1, { r: 0, sx: .5, sy: .5, a: 0, w: 100, c: [255, 255, 255] }]],
+    sh: { col: '#221B0E', dur: 5000, keys: [[0, { sx: 1, a: 0 }], [.09, { sx: 1, a: 0 }], [.1, { sx: 1, a: 1 }], [1, { sx: 5, a: 0 }]] } },
+  duorevive: { size: 60, y: 0, dur: 2500, ez: [.06, .18, .65, 1.01], col: [255, 255, 255],
+    keys: [[0, { sx: 2.5, sy: 0, a: 1, w: 700, c: [255, 255, 255] }], [.1, { sx: .8, sy: 1.9, a: 1, w: 700, c: [255, 172, 42] }], [.2, { sx: 1.4, sy: 1.4, a: 1, w: 700, c: [255, 102, 102] }], [.3, { sx: 1.3, sy: 1.3, a: 1, w: 700, c: [255, 255, 255] }],
+      [.8, { sx: 1, sy: 1, a: .9, w: 630, c: [255, 159, 0] }], [1, { sx: .9, sy: .9, a: 0, w: 100, c: [255, 128, 0] }]],
+    sh: { col: '#221B0E', dur: 2500, keys: [[0, { sx: 1, a: 0 }], [.2, { sx: 1, a: 0 }], [.4, { sx: 1, a: 1 }], [1, { sx: 5, a: 0 }]] } },
+  clutch: { size: 30, y: 't-1', dur: 1000, ez: [.2, .65, .88, .64], col: [255, 232, 127],
+    keys: [[0, { a: 1.5, w: 900, ls: 0 }], [.05, { a: 1.5, w: 900, ls: 30 }], [1, { a: 0, w: 100, ls: 50 }]] },
+  levelup: { size: 120, y: 5, dur: 1500, ez: [.2, .65, .88, .64], col: [95, 117, 131],
+    keys: [[0, { y: 5, a: 0, w: 100 }], [.05, { y: 4.5, a: 1, w: 700 }], [1, { y: -5, a: 0, w: 100 }]] },
+};
+let SHOUT_L = [];
+function shout(kind, txt){
+  if (opt('oActText') !== 'all' || opt('oGraphics') === 'minimal') return;   // 官方：graphics minimal、action text OFF／SOME 都不出
+  SHOUT_L = SHOUT_L.filter(e => e.k !== kind); SHOUT_L.push({ k: kind, txt: String(txt), t: performance.now() });
+}
+function shKey(keys, p){
+  let a = keys[0]; for (const b of keys){ if (p <= b[0]){ const f = (p - a[0]) / Math.max(1e-6, b[0] - a[0]), o = {};
+      for (const k in b[1]){ const u = a[1][k], v = b[1][k]; o[k] = Array.isArray(v) ? v.map((x, i) => Math.round(u[i] + (x - u[i]) * f)) : u + (v - u) * f; } return o; } a = b; }
+  return keys[keys.length - 1][1];
+}
 function drawPcBig(){
-  if (!pcBig) return;
-  const age = performance.now() - pcBig.t, life = 2000;
-  if (age > life){ pcBig = null; return; }
-  const a = age < 150 ? age / 150 : age > life - 500 ? (life - age) / 500 : 1;
-  const pop = age < 220 ? 1.35 - .35 * (age / 220) : 1;
-  const cx = W * cell / 2, cy = (H - VISIBLE / 2) * cell;
-  ctx.save(); ctx.globalAlpha = a; ctx.translate(cx, cy); ctx.scale(pop, pop);
-  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-  const f1 = `700 ${cell * 1.55}px ${CANVAS_FONT}`;
-  for (const [t, dy] of [['ALL', -cell * .85], ['CLEAR', cell * .85]]){
-    ctx.font = f1; const w = ctx.measureText(t).width, k = Math.min(1, (W * cell - cell * .6) / Math.max(1, w));
-    ctx.save(); ctx.translate(0, dy); ctx.scale(k, 1);
-    ctx.shadowColor = '#ffd75a'; ctx.shadowBlur = cell * .9; ctx.fillStyle = '#fff6c8'; ctx.fillText(t, 0, 0);
-    ctx.shadowBlur = 0; ctx.lineWidth = Math.max(1, cell * .06); ctx.strokeStyle = '#c9871c'; ctx.strokeText(t, 0, 0);
-    ctx.restore();
+  if (!SHOUT_L.length) return;
+  const now = performance.now(), cx = W * cell / 2, mid = (H - VISIBLE / 2) * cell;
+  SHOUT_L = SHOUT_L.filter(e => now - e.t < SHOUTS[e.k].dur);
+  for (const e of SHOUT_L){
+    const S = SHOUTS[e.k], age = now - e.t, K = shKey(S.keys, ftBez(...S.ez, Math.min(1, age / S.dur)));
+    const fs = S.size / 30 * cell, lines = e.txt.split('\n'), lh = fs * 1.05;
+    const yy = S.y === 't-1' ? (H - VISIBLE - 1) * cell : mid + (K.y ?? S.y) * cell;
+    const put = (col, alpha, sx, sy, rot, wt, ls) => {
+      ctx.save(); ctx.globalAlpha = Math.max(0, Math.min(1, alpha)); ctx.translate(cx, yy); if (rot) ctx.rotate(rot); ctx.scale(sx, sy);
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.font = `${Math.round(Math.max(100, Math.min(900, wt)) / 100) * 100} ${fs}px ${CANVAS_FONT}`; ctx.fillStyle = col;
+      try { ctx.letterSpacing = `${(ls || 0) / 30 * cell}px`; } catch(err){}
+      lines.forEach((t, i) => { const w = ctx.measureText(t).width, z = Math.min(1, (W * cell * (ls ? 2.2 : .96)) / Math.max(1, w));   // 放不下就縮（字距拉開的那種可以超出盤面到兩側欄位）
+        ctx.save(); ctx.translate((ls || 0) / 60 * cell, (i - (lines.length - 1) / 2) * lh); ctx.scale(z, z); ctx.fillText(t, 0, 0); ctx.restore(); });
+      ctx.restore();
+    };
+    if (S.sh && age < S.sh.dur){ const Q = shKey(S.sh.keys, ftBez(...S.ez, Math.min(1, age / S.sh.dur))); if (Q.a > 0) put(S.sh.col, Q.a, Q.sx, Q.sx, 0, 700, 0); }
+    const c = K.c ? K.c.map((v, i) => Math.round(v * S.col[i] / 255)) : S.col;
+    if ((K.sx ?? 1) > 0 && (K.sy ?? 1) > 0) put(`rgb(${c.join(',')})`, K.a, K.sx ?? 1, K.sy ?? 1, K.r || 0, K.w, K.ls || 0);
   }
-  ctx.restore();
 }
 // 樓層字卡：照官方 tetrio.js（不是圖檔，是 board.fx("timeleft") 用 hun 點陣字畫的）
 //   文字 `\fc3FLOOR \fc9${n}\f3\n\n${name}`：\f<c>＝這行垂直置中，數字＝倍率（3＝0.6、9＝2）；4 秒、字距 0 → .25 → 5 → 8、最後淡出
@@ -6107,6 +6138,11 @@ function drawFloorToastAt(c, t, cx, top, cellPx, maxW){
   const S = floorToastState(age); if (S.a <= 0.002) return true;
   const k100 = ftCap(c) / 100, small = .69 * cellPx / k100, big = 2.2 * cellPx / k100;   // 字高 → 字型 px
   const capS = .69 * cellPx, capB = 2.2 * cellPx, sp = S.sp * .06 * capS;   // 字距：實機截圖中段約 0.2 個字高
+  if (t.parts){                                                          // 官方 timeleft 的其他用法（60S LEFT、N PLAYERS LEFT）：一行字，倍率 1＝size 40、.6＝\f3
+    const base = small / .6, L = t.parts.map(([tx, m]) => [tx, base * m, top + 5 * cellPx + capS / .6 / 2]);
+    const w = ftLine(c, L, 0, 0, '', false), z = Math.min(1, maxW / Math.max(1, w));
+    c.save(); c.globalAlpha = S.a; c.globalCompositeOperation = 'screen'; c.translate(cx, top + 5 * cellPx); c.scale(z, z); c.translate(-cx, -(top + 5 * cellPx)); ftLine(c, L, cx, sp, S.col, true); c.restore(); return true;
+  }
   const name = String(t.name).toUpperCase(), num = String(t.n);
   const yc = top + 5 * cellPx, y1 = yc - 1.3 * cellPx, y2 = y1 + 2.6 * cellPx;   // 第一行中心、樓名中心
   const L1 = [['FLOOR ', small, y1 + capS / 2], [num, big, y1 + capB / 2]], L2 = [[name, small, y2 + capS / 2]];
@@ -7987,7 +8023,7 @@ function duoMeDown(reason){
 }
 function duoReviveMe(){
   duoRevLv(); climb.downed = null; climb.duoMeRevives = (climb.duoMeRevives || 0) + 1;
-  grid().fill(0); combo = -1; b2b = -1; climb.glock = 360; say(`${climb.duo.name} REVIVED YOU!`);   // 官方 ReviveSelfFinish：glock = 360 sfxEv('boardrevive', 'boardlock_revive', 'personalbest');
+  grid().fill(0); combo = -1; b2b = -1; climb.glock = 360; say(`${climb.duo.name} REVIVED YOU!`); shout('duorevive', 'REVIVED!');   // 官方 ReviveSelfFinish：glock = 360 sfxEv('boardrevive', 'boardlock_revive', 'personalbest');
   spawnNext(); draw();
 }
 // 鎖頭圖示（倒下的盤面中間）：向量畫，⚠️ 官方圖檔拿不到，形狀照官方「鎖住」的意思自己畫
@@ -8372,23 +8408,26 @@ function drawOppBoard(o = climb.opp, duo = null){
 function drawGarbageMeter(){
   if (genBoard() && (genBar1() || genBar2())){                                    // 官方 generic 條（框＋內容）
     const delay = CLIMB_CFG.garbageDelay(floorOf(climb.alt).n), now = performance.now();
-    genBars(ctx, (climb.pending || []).map(g => ({ lines: g.lines, col: (now - g.t) / delay < .5 ? '#E0D40F' : '#FF1800' })));
+    genBars(ctx, (climb.pending || []).map(g => ({ lines: g.lines, col: climb.kind !== 'league' && (now - g.t) / delay < .5 ? '#E0D40F' : '#FF1800' })));   // TL 沒有黃色（caution）階段
     if (genBar1()) return;
   }
   const pending = climbPending();
   if (!pending) return;
   const wpx = Math.max(3, cell*0.22);
-  const delay = CLIMB_CFG.garbageDelay(floorOf(climb.alt).n) * (isExpert() ? CLIMB_CFG.expertDelayMul : 1);
+  // 官方 bar_segmented：caution＝#E0D40F、danger／inactive＝#FF1800（空心格）、spawn＝#FF1800（實心格）；
+  //   TL（garbagephase 0）沒有黃色階段：飛過來的 20 幀是空心紅，到了就實心紅
+  const tl = climb.kind === 'league';
+  const delay = tl ? 20 * 1000 / 60 : CLIMB_CFG.garbageDelay(floorOf(climb.alt).n) * (isExpert() ? CLIMB_CFG.expertDelayMul : 1);
   const now = performance.now();
   let y = H*cell;
   ctx.save();
   for (const g of climb.pending){
     const age = (now - g.t) / delay;
-    ctx.fillStyle = age < 0.5 ? 'rgba(247,211,62,.45)' : age < 1 ? 'rgba(239,75,75,.45)' : 'rgba(239,75,75,.95)';
+    ctx.fillStyle = age < 0.5 && !tl ? 'rgba(224,212,15,.6)' : age < 1 ? 'rgba(255,24,0,.45)' : 'rgba(255,24,0,.95)';
     const h = Math.min(y, g.lines * cell);
     if (boardSkinOn()){
       const L = skinRects().lbar, k = skinRects().k;
-      const part = atlasPart(age < 1 ? 'garbA' : 'garbB', age < 0.5 ? '#e8c43a' : age < 1 ? '#e8823a' : '#ef3b3b', .7);
+      const part = atlasPart(age < 1 ? 'garbA' : 'garbB', age < 0.5 && !tl ? '#E0D40F' : '#FF1800', .7);
       if (part) drawPart3(ctx, part, L.x + 86*k, y - h, 58*k, h - 1); else ctx.fillRect(L.x + 86*k, y - h, 58*k, h - 1);
     } else ctx.fillRect(-wpx - 2, y - h, wpx, h - 1);
     y -= h;
@@ -8587,7 +8626,7 @@ function drawFrame(){
     if (climb && climb.duo) drawOppBoard(climb.duo, true);
     if (climb) drawB2BBurst();                                  // 最後畫：TL 對手盤面在左邊，不能蓋掉
   }
-  if (mode === 'sim') drawPcBig();
+  if (mode === 'sim'){ drawPcBig(); if (climb && climb.floorToast && climb.floorToast.parts && !(climb.kind === 'qp' && !(climb.custom && !climb.custom.tower))) drawFloorToast(); }
   if (mode === 'sim' && clearMsg){
     const age = performance.now() - clearMsg.t, keep = !!(clearMsg.keep && isAllSpin());   // 官方：6 秒淡出；ALL-SPIN 停在 0.7 一直留著
     if (age > 6000 && !keep) clearMsg = null;
@@ -9479,8 +9518,7 @@ function spawn(type){
     }
     clutchN++;
     const CN = ['', 'CLUTCH', 'DOUBLE CLUTCH', 'TRIPLE CLUTCH', 'QUAD CLUTCH', 'PENTA CLUTCH', 'HEXA CLUTCH', 'HEPTA CLUTCH', 'OCTA CLUTCH', 'ENNEA CLUTCH', 'DECA CLUTCH'];
-    const line = { text: CN[clutchN] || (CLEAR_NAME[clutchN] || clutchN).toUpperCase() + ' CLUTCH', color:'#ffd84a', size:'md', k:'clutch' };
-    if (opt('oActText') === 'all') clearMsg = clearMsg ? { ...clearMsg, lines: clearMsg.lines.concat(line) } : { lines:[line], t: performance.now() };
+    shout('clutch', CN[clutchN] || 'CLUTCH X' + clutchN);                // 官方 fx("clutch")：盤面頂上的字（1＝CLUTCH、2–10＝DOUBLE…DECA CLUTCH、之後 CLUTCH X n）
     sfxEv('clutch', 'clutch');                                        // 官方：clutch 音
   } else if (clutchArm) clutchN = 0;
   clutchArm = false;
@@ -9734,7 +9772,7 @@ function lockPiece(){
     combo++;
     b2b = difficult ? b2b + 1 : -1;
     if (difficult && climb) climb.b2bPop = performance.now();
-    if (isPC){ push('All Clear', '#f7d33e', 'lg'); lines[lines.length - 1].k = 'pc'; pcBig = { t: performance.now() }; }   // 官方 Strings.extra.clear
+    if (isPC) shout('allclear', 'ALL\nCLEAR');                               // 官方 fx("allclear")：Strings.extra.clear，只有盤面中間的大字，左邊動作字沒有這一行
     // 官方：有 B2B 充能（TL／QP）時不出 back-to-back 字（看旁邊的 B2B 計數）；其他模式寫 back-to-back，第 3 次起加 X2、X3…
     if (b2b > 0 && !(climb && surgeOn())) push(b2b >= 2 ? `back-to-back X${b2b}` : 'back-to-back', '#f7d33e', 'sm');
     if (combo > 0) push(`${combo} Combo`, '#eef2f7', 'combo');
@@ -10744,8 +10782,7 @@ function blitzScore(res){
   climb.score += Math.round(pts);
   climb.blLines += res.cleared;                                  // 升級：本級需要的行數清完才升，多的帶到下一級
   while (climb.blLines >= blitzNeed(climb.blvl)){ climb.blLines -= blitzNeed(climb.blvl); climb.blvl++; sfxEv('levelup', 'levelup');
-    if (opt('oActText') === 'all'){ const ln = { text: `LEVEL ${climb.blvl}`, color: '#7fe0ff', size: 'md', k: 'level' };   // 官方 levelup 動作字（SOME／OFF 不出）
-      setTimeout(() => { if (climb && !climb.over) clearMsg = clearMsg ? { ...clearMsg, lines: clearMsg.lines.concat(ln) } : { lines: [ln], t: performance.now() }; }, 0); } }
+    shout('levelup', climb.blvl); }                                   // 官方 fx("levelup").create(等級)：盤面中間往上飄的大數字
 }
 const dropPoints = n => { if (climb && !climb.over && (climb.sub === 'blitz' || climb.sub === 'zen')){ climb.score += n; zenProgAdd(n); } };
 // ZEN 計分（tetrio.wiki.gg/wiki/ZEN）：表跟 BLITZ 一樣，但不乘等級；combo 50×combo；B2B ×1.5；All Clear 3500
@@ -13118,8 +13155,10 @@ function climbTick(dt){
     if (climb.sub === 'zen') zenGarbageTick(dt);
     if (climb.sub === 'blitz' && !raceNoClock()){ const left = Math.ceil(BLITZ.secs - climb.elapsed / 1000);                 // 官方：剩 60／30 秒動作字；10–4 秒 timer1、3–1 秒 timer2
       if (left !== climb.tLeft){ climb.tLeft = left;
-        if ((left === 60 || left === 30) && opt('oActText') === 'all') clearMsg = { lines: [{ text: `${left}S LEFT`, color: '#ffd84a', size: 'md', k: 'left' }], t: performance.now() };
-        if (left > 3 && left <= 10) sfxEv('timer1', 'timer1'); else if (left > 0 && left <= 3) sfxEv('timer2', 'timer2'); } }
+        const txtOn = opt('oActText') === 'all' && opt('oGraphics') !== 'minimal';
+        if ((left === 60 || left === 30) && txtOn) climb.floorToast = { parts: [[String(left), 1], ['S LEFT', .6]], t: performance.now() };   // 官方 fx("timeleft").create("60\f3S LEFT")
+        if (left > 3 && left <= 10) sfxEv('timer1', 'timer1'); else if (left > 0 && left <= 3) sfxEv('timer2', 'timer2');
+        if (left > 0 && left <= 10 && txtOn) climb.tShout = { txt: String(left), t: performance.now() }; } }   // 官方：最後 10 秒每秒 fx("countdown").create(秒數)
     if (climb.sub === 'blitz' && !raceNoClock() && climb.elapsed >= BLITZ.secs * 1000){ climb.elapsed = BLITZ.secs * 1000; finishSolo(true); }
     return;
   }
@@ -19094,7 +19133,7 @@ function royaleKill(v, by){
   if (R.tgt === v) R.tgt = royalePickTgt();
   { const n = royaleAlive().length + 1, pk = R.total, pv = R.prevLeft || pk;                                   // 官方 SetPlacement：100／30／10 PLAYERS LEFT
     const hit = pk >= 150 && pv > 100 && n <= 100 ? 100 : pk >= 60 && pv > 30 && n <= 30 ? 30 : pk >= 30 && pv > 10 && n <= 10 ? 10 : 0;
-    R.prevLeft = n; if (hit && opt('oActText') === 'all' && !climb.over) clearMsg = { lines: [{ text: `${hit} PLAYERS LEFT`, color: '#ffd84a', size: 'md', k: 'left' }], t: performance.now() }; }
+    R.prevLeft = n; if (hit && opt('oActText') === 'all' && opt('oGraphics') !== 'minimal' && !climb.over) climb.floorToast = { parts: [[String(hit) + ' ', 1], ['PLAYERS LEFT', .6]], t: performance.now() }; }   // 官方 fx("timeleft").create("100 \fc3PLAYERS LEFT")
   if (!royaleAlive().length) royaleEnd(true, 'LAST ONE STANDING');
   royaleHud();
 }
