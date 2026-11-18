@@ -261,20 +261,120 @@ document.documentElement.classList.add('booting'); addEventListener('load', func
   }
 
   #stage{ position:relative; }
-  .gamerow.hasrp{ cursor:pointer; } .gamerow.hasrp:hover{ filter:brightness(1.18); }
-  .rptag{ text-decoration:none; color:#e6ffe6; letter-spacing:.06em; cursor:pointer; } .rptag:hover{ color:#fff; text-decoration:underline; }
-  /* 回放工具列（官方 #replay／#replaytools 的結構；樣式沿用遊戲內按鈕） */
-  body.rpmode #stage{ padding-bottom:84px; box-sizing:border-box; }
-  #rpHead{ position:fixed; left:0; right:0; top:max(10px, env(safe-area-inset-top)); z-index:60; pointer-events:none; text-align:center; font:600 clamp(13px, 2.2vw, 20px) var(--t-font); letter-spacing:.08em; color:rgba(255,255,255,.55); }
-  #rpHead span{ color:#fff; }
-  #rpBar{ position:fixed; left:0; right:0; bottom:0; z-index:80; padding:6px max(10px, env(safe-area-inset-left)) max(6px, env(safe-area-inset-bottom)); background:rgba(0,0,0,.72); border-top:2px solid rgba(255,255,255,.12); font:600 14px var(--t-font); color:#fff; }
-  #rpBar .rp-row{ display:flex; align-items:center; gap:6px; margin:2px auto; max-width:1100px; flex-wrap:wrap; }
-  #rpBar button{ min-width:38px; padding:5px 10px; font:600 14px var(--t-font); letter-spacing:.04em; }
-  #rpBar .grow{ flex:1; }
-  #rpBar .rp-tabs{ display:flex; gap:2px; } #rpBar .rp-tabs button{ opacity:.55; } #rpBar .rp-tabs button.active{ opacity:1; filter:brightness(1.35); }
-  #rpTime{ min-width:150px; font:700 20px var(--t-font); font-variant-numeric:tabular-nums; } #rpTime span{ margin-left:8px; font-size:12px; opacity:.6; letter-spacing:.06em; }
-  #rpSeek{ --progress:0%; flex:1; min-width:120px; height:14px; background:rgba(255,255,255,.14); cursor:pointer; touch-action:none; position:relative; }
-  #rpSeek i{ position:absolute; left:0; top:0; bottom:0; width:var(--progress); background:#fff; }
+  /* ===== 官方 TETR.IO.css 原樣搬過來（只把字型換成本站的變數）：回放 #replay／#replaytools／.seekbar，TETRA CHANNEL 的 .record_item ===== */
+  #replay, #replaytools{ font-size:16px; -webkit-user-select:none; user-select:none; }
+  @media (max-width:640px){ #replay, #replaytools{ font-size:11px; } #replay .data{ left:8.4em; font-size:1.2em; top:.7em; white-space:nowrap; overflow:hidden; right:5em; } }
+  body.rpmode #stage{ padding-bottom:110px; box-sizing:border-box; }
+  body.rpmode #gameBar, body.rpmode #recBtn{ visibility:hidden; }
+  body.rvmode .chscreen, body.rvmode main{ visibility:hidden; } body.rvmode #soloRes, body.rvmode #qpResult, body.rvmode #tlRes{ visibility:visible; }
+  #replaytools_graph canvas{ position:absolute; inset:0; width:100%; height:100%; }
+  .chscreen .record_item, .chscreen .scroller_block.nothing{ box-sizing:content-box; width:70vw; max-width:calc(100% - 2em - 6px); padding:1em; margin:0 0 1em; position:relative; font-family:var(--hunf); text-align:left;
+    background-color:rgb(36,62,37); border:3px solid; border-color:rgb(69,121,79) rgb(29,50,32) rgb(22,36,25) rgb(61,98,66); box-shadow:#000 0 0 8px; border-radius:3px; color:#fff; }
+  .chscreen .scroller_block.nothing{ font-size:1em; }
+  .chscreen .record_result .recmods{ font-style:normal; font-size:.7em; vertical-align:.1em; } .chscreen .record_result .recmods .mflat, .chscreen .record_result .recmods b{ width:1em; height:1em; }
+  @media (max-width:640px){ .chscreen .record_item > .record_extra{ font-size:.7em; } .chscreen .record_item > .record_owner, .chscreen .record_item > .record_result{ font-size:1.7em; top:.5em; } }
+  .resultslike.isreplay .starter, #soloRes.isreplay .starter, #qpResult.isreplay #qrAgain, #qpResult.isreplay #qrCopy, #qpResult.isreplay #qrX, #tlRes.isreplay .el-again, #tlRes.isreplay #trAgain{ display:none !important; }
+  .watch_header{ position: fixed; left: 0px; right: 0px; top: 0px; height: 3em; background: rgba(0, 0, 0, 0.667); box-shadow: rgb(0, 0, 0) 0px 0px 8px; color: rgb(255, 255, 255); font-family: var(--hunf); z-index: 9999997; transition: top 0.3s ease-out, opacity 0.3s ease-out; }
+  .watch_header.hidden{ opacity: 0; top: -4em; pointer-events: none; transition: top 0.3s ease-in, opacity 0.3s ease-in; }
+  .watch_header .keystone{ position: absolute; left: -0.25em; top: 0px; color: rgb(0, 0, 0); background-color: rgb(255, 120, 0); font-size: 2.5em; padding-top: 0.15em; padding-left: 0.25em; font-weight: 900; width: 5em; text-align: center; transform: skewX(-10deg); }
+  .watch_header .data{ position: absolute; left: 9em; top: 0.5em; color: rgb(255, 255, 255); font-size: 1.5em; }
+  .watch_header .data > span{ color: rgb(255, 120, 0); font-weight: 900; }
+  .watch_header .exit{ position: absolute; right: 0.25em; top: 0.25em; border: 1px solid rgb(68, 68, 68); background-color: rgba(0, 0, 0, 0.8); text-align: center; padding-top: 0.15em; padding-left: 0.5em; padding-right: 0.5em; color: rgb(255, 255, 255); font-size: 1.5em; border-radius: 3px; cursor: pointer; transition: background-color 0.3s; }
+  .watch_header .exit:hover{ background-color: rgb(34, 34, 34); }
+  #replaytools{ position: fixed; left: 0px; right: 0px; bottom: 0px; background: rgba(0, 0, 0, 0.667); box-shadow: rgb(0, 0, 0) 0px 0px 8px; color: rgb(255, 255, 255); font-family: var(--hunf); z-index: 9000000; transition: background-color 1s ease-out, box-shadow 1s ease-out, bottom 1s ease-out, opacity 1s ease-out; }
+  #replaytools.multi{ padding-top: 28px; }
+  .idlemouse:not(.replaytoolsnocollapse) #replaytools:not(:hover){ bottom: -3em; background: rgba(0, 0, 0, 0.267); box-shadow: rgba(0, 0, 0, 0.533) 0px 0px 8px; opacity: 0.5; transition: background-color 1s ease-in-out, box-shadow 1s ease-in-out, bottom 1s ease-in-out, opacity 1s ease-in-out; }
+  .idlemouse:not(.replaytoolsnocollapse) #replaytools.multi:not(:hover){ bottom: calc(-3em - 28px); }
+  .idlemouse:not(.replaytoolsnocollapse) #replaytools:not(:hover) #replaytools_graph, .idlemouse:not(.replaytoolsnocollapse) #replaytools:not(:hover) #replaytools_timestamp{ opacity: 0; }
+  #replaytools.hidden{ opacity: 0 !important; bottom: -4em !important; pointer-events: none !important; transition: background-color 1s ease-in, box-shadow 1s ease-in, bottom 1s ease-in, opacity 1s ease-in !important; }
+  #replaytools_seekbar{ position: absolute; left: 16px; right: 16px; top: 0px; }
+  #replaytools_main{ text-align: center; margin-top: 10px; }
+  #replaytools_main div{ font-size: 2.5em; color: rgba(255, 255, 255, 0.667); display: inline-block; padding: 0.25em 0.1em 0px; cursor: pointer; background-color: rgba(255, 255, 255, 0); border-radius: 3px; transition: color 0.3s, background-color 0.3s; }
+  #replaytools_main div:hover{ color: rgb(255, 255, 255); background-color: rgba(255, 255, 255, 0.067); }
+  #replaytools_main div:active{ color: rgb(255, 255, 255); background-color: rgba(255, 255, 255, 0.2); transition: color 50ms, background-color 50ms; }
+  #replaytools_secondary{ text-align: center; margin: -2.2em 32px 2.5em; position: relative; }
+  #replaytools_graph{ position: absolute; left: 16px; right: 16px; top: -92px; height: 92px; background-color: rgba(255, 120, 0, 0.133); pointer-events: none; transition: opacity 1s ease-in-out; }
+  #replaytools.multi #replaytools_graph{ top: -44px; background: linear-gradient(rgba(38, 109, 205, 0.267) 0px, rgba(38, 109, 205, 0.133) calc(50% - 6px), rgba(38, 109, 205, 0.533) calc(50% - 2px), rgba(0, 0, 0, 0) calc(50% - 2px), rgba(0, 0, 0, 0) calc(50% + 2px), rgba(205, 38, 38, 0.533) calc(50% + 2px), rgba(205, 38, 38, 0.133) calc(50% + 6px), rgba(205, 38, 38, 0.267) 100%); }
+  #replaytools_markers{ position: absolute; left: 16px; right: 16px; top: 0px; height: 0px; pointer-events: none; }
+  .replaytools_marker_finesse{ background-color: rgba(255, 120, 0, 0.533); width: 8px; height: 4px; position: absolute; left: 0px; top: -6px; transform: translateX(-50%); clip-path: polygon(0% 100%, 50% 0%, 100% 100%); }
+  .replaytools_marker_choke{ background: linear-gradient(to right, rgba(255, 43, 0, 0.133) 0px, rgb(255, 43, 0) 100%); width: 4px; min-width: 4px; height: 4px; position: absolute; left: 0px; top: -6px; transform: translateX(-2px); clip-path: polygon(0% 50%, 2px 0%, calc(100% - 2px) 0%, 100% 50%, calc(100% - 2px) 100%, 2px 100%); }
+  .replaytools_marker_chapter{ color: rgb(255, 120, 0); font-size: 0.8em; font-weight: 900; position: absolute; left: 0px; top: 0px; padding-left: 3px; padding-top: 7px; }
+  .replaytools_marker_chapter::before{ content: ""; position: absolute; top: 0px; left: 0px; width: 2px; height: 17px; background-color: rgb(255, 120, 0); }
+  .replaytools_marker_chapter::after{ content: ""; position: absolute; top: 0px; left: 2px; width: 1px; height: 4px; background-color: rgb(36, 17, 0); }
+  #replaytools_timestamp{ position: absolute; left: 0px; right: 0px; top: -1.2em; font-size: 1.8em; color: rgb(255, 120, 0); font-weight: 900; pointer-events: none; text-align: center; transition: opacity 1s ease-in-out; }
+  #replaytools_timestamp span{ font-size: 0.6em; color: rgba(255, 120, 0, 0.533); font-weight: 500; margin-left: 0.5em; }
+  #replaytools_secondary .replaytools_secondary_button{ font-size: 1.5em; color: rgba(255, 255, 255, 0.533); display: inline-block; padding: 0.25em 0.1em 0px; cursor: pointer; background-color: rgba(255, 255, 255, 0); border-radius: 3px; transition: color 0.3s, background-color 0.3s; }
+  #replaytools_secondary .replaytools_secondary_button:hover{ color: rgb(255, 255, 255); background-color: rgba(255, 255, 255, 0.067); }
+  #replaytools_secondary .replaytools_secondary_button:active{ color: rgb(255, 255, 255); background-color: rgba(255, 255, 255, 0.2); transition: color 50ms, background-color 50ms; }
+  #replaytools_secondary .replaytools_secondary_button.active{ color: rgb(255, 120, 0); }
+  #replaytools_secondary .replaytools_secondary_button.active:hover{ color: rgb(255, 221, 136); }
+  #replaytools_secondary .replaytools_secondary_button.active:active{ color: rgb(255, 255, 255); }
+  #replaytools_secondary .replaytools_secondary_left{ float: left; position: relative; top: -0.2em; }
+  #replaytools_secondary .replaytools_secondary_right{ float: right; font-size: 0.9em; padding-left: 0.2em; padding-right: 0.2em; }
+  #replaytools.disabled .disableable{ pointer-events: none !important; }
+  #replaytools.disabled #replaytools_main .disableable{ opacity: 0.5; }
+  #replaytools:not(.multiround) .multiroundonly{ display: none !important; }
+  #replaytools .disabled{ pointer-events: none !important; opacity: 0.5; }
+  .seekbar{ --progress: 50%; position: relative; height: 4px; background-color: rgba(255, 120, 0, 0.267); cursor: pointer; }
+  .seekbar::after{ content: ""; position: absolute; left: 0px; right: 0px; top: -92px; height: 102px; cursor: pointer; }
+  #replaytools.multi .seekbar::after{ top: -46px; height: 82px; }
+  .seekbar .seekbar_progress{ position: absolute; left: 0px; right: 0px; top: 0px; height: 4px; width: var(--progress); background-color: rgb(255, 120, 0); }
+  .seekbar .seekbar_knob{ position: absolute; left: var(--progress); top: -4px; transform: translateX(-50%); height: 12px; width: 12px; background-color: rgb(255, 120, 0); clip-path: polygon(50% 0px, 100% 50%, 50% 100%, 0px 50%); pointer-events: none; }
+  .seekbar .seekbar_shield{ position: absolute; left: 0px; right: 0px; top: -6px; height: 16px; z-index: 2; }
+  .seekbar:active .seekbar_shield{ top: -100vh; height: 120vh; }
+  .seekbar .seekbar_tip{ position: absolute; left: var(--progress); bottom: 21px; transform: translateX(-50%); background-color: rgba(0, 0, 0, 0.8); border-radius: 3px; color: rgb(255, 255, 255); text-align: center; padding: 0.5em 0.5em 0.25em; pointer-events: none; z-index: 1; box-shadow: rgba(0, 0, 0, 0.4) 0px 2px 4px; min-width: 7.5em; transition: opacity 0.3s, bottom 0.3s; }
+  .seekbar .seekbar_shield:not(:hover) ~ .seekbar_tip{ opacity: 0; bottom: 25px; }
+  .seekbar .seekbar_tip::after{ content: ""; position: absolute; left: 50%; transform: translateX(-50%); top: 100%; width: 12px; height: 6px; background-color: rgba(0, 0, 0, 0.8); clip-path: polygon(0% 0%, 100% 0%, 50% 100%); }
+  .seekbar[data-border-snapped="left"] .seekbar_tip{ transform: translateX(-9px); }
+  .seekbar[data-border-snapped="left"] .seekbar_tip::after{ transform: none; left: 3px; }
+  .seekbar[data-border-snapped="right"] .seekbar_tip{ transform: translateX(calc(-100% + 9px)); }
+  .seekbar[data-border-snapped="right"] .seekbar_tip::after{ transform: none; left: calc(100% - 15px); }
+  .seekbar .seekbar_tip .seekbar_tip_time{ font-size: 1.1em; font-weight: 900; }
+  .seekbar .seekbar_tip .seekbar_tip_stat{ font-size: 0.67em; font-weight: 500; color: rgba(255, 255, 255, 0.533); }
+  .seekbar .seekbar_tip .seekbar_tip_stat span{ font-size: 1.5em; font-weight: 900; color: rgb(255, 120, 0); margin-right: 0.1em; }
+  .seekbar .seekbar_tip .seekbar_tip_stat span.sl{ color: rgb(38, 109, 205); }
+  .seekbar .seekbar_tip .seekbar_tip_stat span.sr{ color: rgb(205, 38, 38); }
+  .seekbar .seekbar_tip .seekbar_tip_issue{ font-size: 0.8em; font-weight: 500; color: rgb(255, 120, 0); margin-top: 0.3em; }
+  .seekbar .seekbar_tip .seekbar_tip_issue_severe{ font-size: 0.8em; font-weight: 500; color: rgb(255, 43, 0); margin-top: 0.3em; }
+  .seekbar .seekbar_tip .seekbar_tip_chapter{ font-size: 0.8em; font-weight: 900; color: rgb(255, 255, 255); margin-bottom: 0.3em; }
+  .chscreen .scroller_block.nothing{ opacity: 0.5; text-align: center; font-weight: 900; filter: grayscale(1); mix-blend-mode: lighten; }
+  .chscreen .tetra_stream.hidden{ display: none; }
+  .chscreen .record_item{ height: 2em; cursor: pointer; transition: filter 0.3s, box-shadow 0.3s; }
+  .chscreen .record_item:hover:not(.playerresult){ filter: brightness(1.2); }
+  .chscreen .tetra_stream:not(.nofirst) .record_item.record_first{ filter: brightness(1.5) drop-shadow(rgba(255, 255, 255, 0.267) 0px 0px 8px); }
+  .chscreen .tetra_stream:not(.nofirst) .record_item.record_first:hover:not(.playerresult){ filter: brightness(1.8) drop-shadow(rgba(255, 255, 255, 0.4) 0px 0px 8px); }
+  .chscreen .record_item > .record_grade{ position: absolute; left: 0px; top: 0px; width: 2.1em; background-color: rgb(33, 39, 57); border-radius: 2px 0px 0px 2px; font-size: 3.5em; height: 1em; padding-top: 0.15em; padding-right: 0.08em; text-align: right; color: rgb(255, 255, 255); text-shadow: rgba(255, 255, 255, 0.267) 0px 0.04em, rgba(255, 255, 255, 0.533) 0px 0px 8px; }
+  .chscreen .record_item > .record_grade::before{ content: "#"; opacity: 0.5; font-size: 0.5em; vertical-align: top; }
+  .chscreen .tetra_stream.noindex .record_item > .record_grade{ display: none; }
+  .chscreen .record_item > .record_owner{ position: absolute; left: 3.5em; top: 0.3em; font-size: 2.3em; color: rgb(179, 196, 244); }
+  .chscreen .tetra_stream.noname .record_item > .record_owner{ display: none; }
+  .chscreen .tetra_stream.noindex .record_item > .record_owner{ left: 0.25em; }
+  .chscreen .record_item > .record_owner img{ margin-left: 0.15em; height: 0.75em; vertical-align: text-top; }
+  .chscreen .record_item > .record_owner .flag{ height: 0.5em; vertical-align: middle; }
+  .chscreen .record_item > .record_ts{ position: absolute; left: 9em; bottom: 0.15em; font-size: 0.9em; color: rgb(108, 117, 144); }
+  .chscreen .tetra_stream.noindex .record_item > .record_ts{ left: 0.6em; }
+  .chscreen .tetra_stream.noname .record_item > .record_ts{ left: 3.5em; top: 0.5em; font-size: 2.3em; }
+  .chscreen .tetra_stream.noname.noindex .record_item > .record_ts{ left: 0.3em; }
+  .chscreen .record_item > .record_result{ position: absolute; right: 0.15em; top: 0.3em; font-size: 2.3em; font-weight: 900; color: rgb(179, 196, 244); text-shadow: rgb(108, 117, 144) 0px 0.04em, rgba(179, 196, 244, 0.4) 0px 0px 8px; }
+  .chscreen .record_item > .record_result > .ms{ font-size: 0.8em; }
+  .chscreen .record_item > .record_result > .unit{ font-size: 0.5em; margin-left: 0.2em; color: rgb(108, 117, 144); }
+  .chscreen .record_item > .record_result > span{ font-size: 0.8em; font-weight: 500; }
+  .chscreen .record_item > .record_result > img{ height: 1.2em; vertical-align: top; position: relative; top: -0.2em; }
+  .chscreen .record_item > .record_result > img.mod{ height: 0.7em; top: 0px; margin-left: 0.1em; }
+  .chscreen .record_item.record_disputed > .record_result{ color: rgba(0, 0, 0, 0.667) !important; text-shadow: rgba(0, 0, 0, 0.267) 0px 0.03em, rgba(0, 0, 0, 0.267) 0px 0px 16px !important; }
+  .chscreen .record_item.record_disputed > .record_result::after{ content: ""; width: 3.5em; height: 0.1em; position: absolute; pointer-events: none; left: 50%; top: 40%; transform: translate(-50%, -50%) rotate(-10deg); background-color: rgb(177, 237, 182); }
+  .chscreen .record_item > .record_extra{ position: absolute; right: 0.5em; bottom: 0.15em; font-size: 0.9em; color: rgb(108, 117, 144); }
+  .chscreen .record_item > .record_extra > span{ color: rgb(179, 196, 244); }
+  .chscreen .record_item > .record_extra > img{ height: 1.2em; vertical-align: -20%; }
+  .chscreen .record_item > .record_extra > span.rdwarning{ animation: 1s ease-in-out 0s infinite alternate none running RDWarning; }
+  .chscreen .record_item > .record_grade{ background-color: rgb(26, 53, 34); }
+  .chscreen .record_item > .record_owner{ color: rgb(179, 244, 184); }
+  .chscreen .record_item > .record_ts{ color: rgb(108, 144, 114); }
+  .chscreen .record_item > .record_ts > span{ color: rgb(179, 244, 184); }
+  .chscreen .record_item > .record_result{ color: rgb(179, 244, 184); text-shadow: rgb(108, 144, 114) 0px 0.04em, rgba(179, 244, 184, 0.4) 0px 0px 8px; }
+  .chscreen .record_item > .record_result > .unit{ color: rgb(108, 144, 114); }
+  .chscreen .record_item > .record_extra{ color: rgb(108, 144, 114); }
+  .chscreen .record_item > .record_extra > span{ color: rgb(179, 244, 184); }
   #qpfx, #qpbg{ position:absolute; inset:0; width:100%; height:100%; pointer-events:none; z-index:0; }
   canvas#cv{ position:relative; z-index:1; }
   body.nopad #simPad [data-sim]{ display:none; }   /* 鍵盤玩家：藏掉觸控鍵，只留 REC 跟資訊 */
@@ -10176,7 +10276,7 @@ function rpSnap(){
 }
 function rpRecTick(dt){
   const R = RP_REC; if (!R || R.done || !climb || climb.rp || climb.cd) return;
-  if (climb.over){ rpSnap(); R.done = true; if (R.frames.length > 5){ RP_LAST = R; rpSaveSoon(R); } return; }
+  if (climb.over){ rpSnap(); R.done = true; if (R.frames.length > 5){ RP_LAST = R; rpSaveSoon(R); rpGrabResults(R); } return; }
   R.acc += dt; if (R.acc < 1000 / 30) return; R.acc = 0;
   if (R.frames.length < 60000) rpSnap();
 }
@@ -10209,7 +10309,7 @@ async function rpEncode(R){
   const pool = [], idx = new Map(), gi = g => { if (!g) return null; let i = idx.get(g); if (i == null){ i = pool.length; idx.set(g, i); pool.push(rpB64e(g)); } return i; };
   const frames = R.frames.map(f => ({ ...f, g: gi(f.g), ob: gi(f.ob), st: rpRound(f.st), pd: f.pd.map(([a, b]) => [a, Math.round(b)]), sh: f.sh.map(([a, b, c]) => [a, b, Math.round(c)]), m: f.m ? { ...f.m, age: Math.round(f.m.age) } : null }));
   let opts = {}; try { opts = JSON.parse(JSON.stringify(R.opts)); } catch(e){}
-  const txt = JSON.stringify({ v: 1, kind: R.kind, opts, at: R.at || Date.now(), sum: rpSummary(R), pool, frames });
+  const txt = JSON.stringify({ v: 1, kind: R.kind, opts, at: R.at || Date.now(), sum: rpSummary(R), who: R.who || '', res: R.res || null, pool, frames });
   if (typeof CompressionStream === 'undefined') return new Blob([txt], { type: 'application/json' });
   return await new Response(new Blob([txt]).stream().pipeThrough(new CompressionStream('gzip'))).blob();
 }
@@ -10218,7 +10318,7 @@ async function rpDecode(blob){
   const txt = head[0] === 0x1f && head[1] === 0x8b ? await new Response(blob.stream().pipeThrough(new DecompressionStream('gzip'))).text() : await blob.text();
   const J = JSON.parse(txt); if (!J || !Array.isArray(J.frames) || !J.frames.length) throw new Error('not a replay');
   const pool = (J.pool || []).map(rpB64d);
-  return { kind: J.kind, opts: J.opts || {}, at: J.at, sum: J.sum, saved: true, done: true, frames: J.frames.map(f => ({ ...f, g: pool[f.g], ob: f.ob == null ? null : pool[f.ob] })) };
+  return { kind: J.kind, opts: J.opts || {}, at: J.at, sum: J.sum, who: J.who || '', res: J.res || null, saved: true, done: true, frames: J.frames.map(f => ({ ...f, g: pool[f.g], ob: f.ob == null ? null : pool[f.ob] })) };
 }
 const rpIdx = () => { try { return JSON.parse(localStorage.getItem('bp:rpidx') || '[]'); } catch(e){ return []; } };
 const rpIdxSave = L => { try { localStorage.setItem('bp:rpidx', JSON.stringify(L.slice(0, RP_MAX))); } catch(e){} };
@@ -10259,19 +10359,26 @@ function rpExport(R){
     a.href = URL.createObjectURL(blob); a.download = `StackLab-${(rpSummary(R).name).replace(/\s+/g, '')}-${d.getFullYear()}${z(d.getMonth() + 1)}${z(d.getDate())}-${z(d.getHours())}${z(d.getMinutes())}.slreplay`;
     document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000); })();
 }
+// 官方：把回放檔拖進視窗就能看（官方是 .ttr，本站是 .slreplay）
+addEventListener('dragover', e => { if (e.dataTransfer && [...e.dataTransfer.items || []].some(i => i.kind === 'file')) e.preventDefault(); });
+addEventListener('drop', async e => { const f = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0]; if (!f || !/\.slreplay$/i.test(f.name)) return; e.preventDefault();
+  try { const R = await rpDecode(f); R.saved = false; R.at = R.at || Date.now(); await rpSave(R); rvOpen(R, null); } catch(err){ say('NOT A STACK LAB REPLAY FILE'); } });
 function rpImport(){
   const i = document.createElement('input'); i.type = 'file'; i.accept = '.slreplay,application/json,application/gzip';
-  i.onchange = async () => { const f = i.files && i.files[0]; if (!f) return; try { const R = await rpDecode(f); R.saved = false; R.at = R.at || Date.now(); await rpSave(R); rpOpen(R); } catch(e){ say('NOT A STACK LAB REPLAY FILE'); } };
+  i.onchange = async () => { const f = i.files && i.files[0]; if (!f) return; try { const R = await rpDecode(f); R.saved = false; R.at = R.at || Date.now(); await rpSave(R); rvOpen(R, null); } catch(e){ say('NOT A STACK LAB REPLAY FILE'); } };
   i.click();
 }
 function rpTick(dt){
   const P = climb.rp, F = P.R.frames;
-  if (P.playing){ P.t = Math.min(P.dur, P.t + dt * P.speed); if (P.t >= P.dur){ if (P.loop){ if (!P.loopT) P.loopT = performance.now(); else if (performance.now() - P.loopT > 500){ P.loopT = 0; P.t = F[0].t; P.i = 0; } } else P.playing = false; } }   // 官方 LOOP：停 0.5 秒再從頭
+  if (P.playing){ P.t = Math.min(P.dur, P.t + dt * P.speed); if (P.t >= P.dur){ const m = P.end || 'end';                                 // 官方：播完 → 離開（預設）／停住／0.5 秒後從頭
+      if (m === 'loop'){ if (!P.loopT) P.loopT = performance.now(); else if (performance.now() - P.loopT > 500){ P.loopT = 0; P.t = F[0].t; P.i = 0; } }
+      else if (m === 'stop') P.playing = false;
+      else if (!P.ended){ P.ended = true; P.playing = false; setTimeout(() => { if (climb && climb.rp === P && P.ended) rpExit(); }, 1500); } } }
   if (F[P.i].t > P.t) P.i = 0;                                              // 往回拖
   while (P.i + 1 < F.length && F[P.i + 1].t <= P.t) P.i++;
   rpApply(F[P.i]); rpBarSync();
 }
-function rpOpen(R0){
+function rpOpen(R0, back){
   const R = R0 || RP_LAST; if (!R){ say('NO REPLAY YET — FINISH A GAME FIRST'); return false; }
   for (const id of ['tlRes', 'soloRes']){ const e = $(id); if (e){ e.classList.remove('on'); if (id === 'soloRes') e.className = ''; } }
   RP_OPENING = true;
@@ -10279,64 +10386,104 @@ function rpOpen(R0){
   finally { RP_OPENING = false; }
   if (!climb) return false;
   climb.cd = null; climb.goT = 0; climb.cdSong = undefined; climb.floorToast = null; boardFx(null); tlOvClear();
-  climb.rp = { R, t: R.frames[0].t, i: 0, speed: 1, playing: true, dur: R.frames[R.frames.length - 1].t };
+  climb.rp = { R, t: R.frames[0].t, i: 0, speed: 1, playing: true, dur: R.frames[R.frames.length - 1].t, back: back || null, end: 'end' };
   rpBar(true); rpApply(R.frames[0]); draw(); return true;
 }
-/* 回放工具列：照官方 #replay／#replaytools 的結構（官方的 CSS 拿不到，外觀用本站遊戲內按鈕的樣式）
-   上方一行「WATCHING <名字> PLAY <模式>」；下方：上一顆／上一幀／播放暫停／下一幀／下一顆、時間「m:ss.mmm FRAME n」、進度條、
-   速度 0.25×／0.5×／1×／2×／5×／10×、播完 STOP／LOOP。按鍵照官方：SPACE／K 播放暫停、←／→ 上下一顆、SHIFT＋←／→ 或 ,／. 上下一幀、CTRL＋←／→ 或 J／L 跳 5 秒 */
-function rpSeek(P, t){ const t0 = P.R.frames[0].t; P.t = Math.max(t0, Math.min(P.dur, t)); }
+/* 回放介面：官方 index.html 的 #replay（.watch_header）和 #replaytools 原樣搬過來，CSS 也是官方的（見樣式表「官方 TETR.IO.css 原樣搬過來」那段）。
+   按鈕上的圖示是官方 HUN 字型裡的字（U+01C0–01FF）；小號大寫是 HUN 的 U+00D0–0103（官方 yc()）。沒載到官方字型時改用一般符號。
+   行為照 tetrio.js：SPACE／K 播放暫停、←／→ 上下一顆、SHIFT＋←／→ 或 ,／. 上下一幀、CTRL＋←／→ 或 J／L 跳 5 秒、↑／↓ 換速度；
+   播完：ǚ 離開（預設）／Ǜ 停住／ǜ 重播；滑鼠不動一陣子工具列會往下收（.idlemouse） */
+const hunIcons = () => { try { return [...document.fonts].some(f => /TP-HUN/.test(f.family) && /01C0/i.test(f.unicodeRange || '') && f.status === 'loaded'); } catch(e){ return false; } };
+const YC_A = '0123456789#%&()*+,-./:<=>?ABCDEFGHIJKLMNOPQRSTUVWXYZ', YC_B = 'ÐÑÒÓÔÕÖ×ØÙÚÛÜÝÞßàáâãäåæçèéêëìíîïðñòóôõö÷øùúûüýþÿĀāĂă';
+const ycTxt = t => hunIcons() ? [...String(t)].map(c => { const i = YC_A.indexOf(c); return i < 0 ? c : YC_B[i]; }).join('') : `<small style="font-size:.7em">${t}</small>`;   // 官方 yc()：小號大寫
+const RP_ICO = { 'Ǘ': '⏮', 'ǝ': '⏪', 'Ǟ': '⏴⏴', 'ǟ': '◀', 'Ǥ': '❚❚', 'ǣ': '▶', 'Ǡ': '▶', 'ǡ': '⏵⏵', 'Ǣ': '⏩', 'ǘ': '⏭', 'ǚ': '⏏', 'Ǜ': '■', 'ǜ': '↻', 'Ǚ': '⤼' };
+const rpIco = g => hunIcons() ? g : `<span style="font-family:sans-serif;font-size:.6em;vertical-align:.2em">${RP_ICO[g] || g}</span>`;
+const RP_SPEEDS = [['25x', .25, '0.25'], ['50x', .5, '0.5'], ['1x', 1, '1'], ['2x', 2, '2'], ['5x', 5, '5'], ['10x', 10, '10']];
+function rpSeek(P, t){ const t0 = P.R.frames[0].t; P.t = Math.max(t0, Math.min(P.dur, t)); P.ended = false; }
 function rpStep(kind, dir){
-  const P = climb && climb.rp; if (!P) return; const F = P.R.frames; P.playing = false;
+  const P = climb && climb.rp; if (!P) return; const F = P.R.frames;
   if (kind === 'large') return rpSeek(P, P.t + dir * 5000);
-  let i = P.i;
+  let i = P.i; const pc = k => (F[k].st || {}).pieces || 0;
   if (kind === 'frame') i = Math.max(0, Math.min(F.length - 1, i + dir));
-  else { const n = (F[i].st || {}).pieces || 0; if (dir > 0){ while (i < F.length - 1 && ((F[i].st || {}).pieces || 0) <= n) i++; } else { while (i > 0 && ((F[i].st || {}).pieces || 0) >= n) i--; while (i > 0 && ((F[i - 1].st || {}).pieces || 0) === ((F[i].st || {}).pieces || 0)) i--; } }
+  else if (dir > 0){ const n = pc(i); while (i < F.length - 1 && pc(i) <= n) i++; }
+  else { const n = pc(i); while (i > 0 && pc(i) >= n) i--; while (i > 0 && pc(i - 1) === pc(i)) i--; }
   rpSeek(P, F[i].t);
 }
+function rpSetSpeed(v){ const P = climb && climb.rp; if (!P) return; P.speed = v; for (const [id, sp] of RP_SPEEDS){ const b = $('replaytools_button_' + id); if (b) b.classList.toggle('active', sp === v); } }
 function rpKey(e){
   const P = climb && climb.rp; if (!P || /^(INPUT|SELECT|TEXTAREA)$/.test((e.target && e.target.tagName) || '')) return;
   const k = e.code; let hit = true;
-  if (k === 'Space' || k === 'KeyK') $('rpPlay').click();
+  if (k === 'Space' || k === 'KeyK') rpPlayPause();
   else if (k === 'ArrowLeft' || k === 'ArrowRight'){ const d = k === 'ArrowLeft' ? -1 : 1; rpStep(e.shiftKey ? 'frame' : e.ctrlKey ? 'large' : 'piece', d); }
   else if (k === 'Comma') rpStep('frame', -1); else if (k === 'Period') rpStep('frame', 1);
   else if (k === 'KeyJ') rpStep('large', -1); else if (k === 'KeyL') rpStep('large', 1);
+  else if (k === 'ArrowUp' || k === 'ArrowDown'){ const i = RP_SPEEDS.findIndex(x => x[1] === P.speed), n = RP_SPEEDS[Math.max(0, Math.min(RP_SPEEDS.length - 1, i + (k === 'ArrowUp' ? 1 : -1)))]; rpSetSpeed(n[1]); }
+  else if (k === 'Escape') rpExit();
   else hit = false;
   if (hit){ e.preventDefault(); e.stopImmediatePropagation(); }
 }
+function rpPlayPause(){ const P = climb && climb.rp; if (!P) return; if (!P.playing && P.t >= P.dur){ P.t = P.R.frames[0].t; P.i = 0; P.ended = false; } P.playing = !P.playing; }
+function rpExit(){ const P = climb && climb.rp, back = P && P.back; rpBar(false); if (P) $('climbStop').onclick(); if (back) back(); }
+// 每秒放幾顆（官方工具列上方的橘色曲線、滑到進度條上的小提示）
+function rpPpsAt(R, t){ const F = R.frames, pc = f => (f.st || {}).pieces || 0; let a = 0, b = F.length - 1;
+  const at = tt => { let lo = 0, hi = F.length - 1; while (lo < hi){ const m = (lo + hi + 1) >> 1; if (F[m].t <= tt) lo = m; else hi = m - 1; } return pc(F[lo]); };
+  return Math.max(0, at(t + 1000) - at(t - 1000)) / 2; }
+function rpGraph(){
+  const P = climb && climb.rp, g = $('replaytools_graph'); if (!P || !g) return;
+  let c = g.firstChild; if (!c){ c = document.createElement('canvas'); g.appendChild(c); }
+  const r = g.getBoundingClientRect(), w = Math.max(10, Math.round(r.width)), h = Math.max(10, Math.round(r.height)); c.width = w; c.height = h;
+  const x = c.getContext('2d'), t0 = P.R.frames[0].t, n = Math.min(w, 400), v = []; let mx = 1;
+  for (let i = 0; i <= n; i++){ const q = rpPpsAt(P.R, t0 + (P.dur - t0) * i / n); v.push(q); if (q > mx) mx = q; }
+  x.clearRect(0, 0, w, h); x.beginPath(); x.moveTo(0, h); v.forEach((q, i) => x.lineTo(i / n * w, h - q / mx * (h - 6))); x.lineTo(w, h); x.closePath();
+  x.fillStyle = 'rgba(255,120,0,.2)'; x.fill(); x.beginPath(); v.forEach((q, i) => i ? x.lineTo(i / n * w, h - q / mx * (h - 6)) : x.moveTo(0, h - q / mx * (h - 6))); x.strokeStyle = 'rgb(255,120,0)'; x.lineWidth = 1.5; x.stroke();
+}
 function rpBar(on){
-  let b = $('rpBar'), h = $('rpHead');
-  if (!on){ if (b) b.remove(); if (h) h.remove(); window.removeEventListener('keydown', rpKey, true); if (document.body.classList.contains('rpmode')){ document.body.classList.remove('rpmode'); try { fit(); } catch(e){} } return; }
+  let b = $('replaytools'), h = $('replay');
+  if (!on){ if (b) b.remove(); if (h) h.remove(); window.removeEventListener('keydown', rpKey, true); document.body.classList.remove('idlemouse');
+    if (document.body.classList.contains('rpmode')){ document.body.classList.remove('rpmode'); try { fit(); } catch(e){} } return; }
   if (b) return;
   document.body.classList.add('rpmode'); try { fit(); } catch(e){}                 // 盤面往上讓出工具列的高度
-  const R = climb.rp.R, who = (typeof profName === 'function' ? profName() : 'YOU'), md = (R.sum || rpSummary(R)).name;
-  h = document.createElement('div'); h.id = 'rpHead'; h.innerHTML = `WATCHING <span>${tlEsc(String(who).toUpperCase())}</span> PLAY <span>${tlEsc(md)}</span>`; document.body.appendChild(h);
-  b = document.createElement('div'); b.id = 'rpBar';
-  const sp = [['.25', '0.25×'], ['.5', '0.5×'], ['1', '1×'], ['2', '2×'], ['5', '5×'], ['10', '10×']];
-  b.innerHTML = `<div class="rp-row"><button id="rpBP" title="Previous piece (←)">⏮</button><button id="rpBF" title="Previous frame (,)">◀</button><button id="rpPlay" title="Play / pause (SPACE)">❚❚</button><button id="rpFF" title="Next frame (.)">▶</button><button id="rpFP" title="Next piece (→)">⏭</button>
-      <div id="rpTime">0:00.000<span>FRAME 0</span></div><div id="rpSeek"><i></i></div></div>
-    <div class="rp-row"><div class="rp-tabs" id="rpSpeed">${sp.map(([v, n]) => `<button data-v="${v}"${v === '1' ? ' class="active"' : ''}>${n}</button>`).join('')}</div>
-      <div class="rp-tabs" id="rpEnd"><button data-v="stop" class="active">STOP</button><button data-v="loop">LOOP</button></div><span class="grow"></span><button id="rpFile" title="Save this replay as a .slreplay file">SAVE FILE</button><button id="rpExit">EXIT</button></div>`;
+  const R = climb.rp.R, who = R.who || (typeof profName === 'function' ? profName() : 'YOU'), md = (R.sum || rpSummary(R)).name, multi = R.kind === 'league';
+  h = document.createElement('div'); h.id = 'replay'; h.className = 'watch_header ns';
+  h.innerHTML = `<div class="keystone">REPLAY</div><div id="data_replay" class="data">watching <span>${tlEsc(String(who).toUpperCase())}</span> play <span>${tlEsc(md)}</span></div><div id="exit_replay" class="exit">EXIT</div>`;
+  document.body.appendChild(h);
+  b = document.createElement('div'); b.id = 'replaytools'; b.className = 'ns';
+  const mb = (id, g, t, cls = 'disableable') => `<div class="${cls}" id="replaytools_button_${id}" title="${t}">${rpIco(g)}</div>`;
+  const sb = (id, g, t, side, act) => `<div id="replaytools_button_${id}" title="${t}" class="replaytools_secondary_button replaytools_secondary_${side} tab${act ? ' active' : ''}">${g}</div>`;
+  b.innerHTML = `<div id="replaytools_seekbar" class="seekbar disableable" style="--progress: 0%;"><div class="seekbar_progress"></div><div class="seekbar_knob"></div><div class="seekbar_shield"></div>
+      <div class="seekbar_tip" id="replaytools_seekbar_tip"><div class="seekbar_tip_time">0:00.000</div><div class="seekbar_tip_stat"><span>0</span> PPS</div></div></div>
+    <div id="replaytools_graph"></div><div id="replaytools_markers"></div><div id="replaytools_timestamp">0:00.000<span>frame 0</span></div>
+    <div id="replaytools_main">${mb('backward_large', 'ǝ', 'Seek back 5 seconds [ctrl-left or j]')}${mb('backward_piece', 'Ǟ', 'Seek to the previous piece [left]')}${mb('backward_frame', 'ǟ', 'Seek to the previous frame [shift-left or comma]')}${mb('playpause', 'Ǥ', 'Play/pause [space or k]', '')}${mb('forward_frame', 'Ǡ', 'Seek to the next frame [shift-right or period]')}${mb('forward_piece', 'ǡ', 'Seek to the next piece [right]')}${mb('forward_large', 'Ǣ', 'Seek forwards 5 seconds [ctrl-right or l]')}</div>
+    <div id="replaytools_secondary">${sb('end', rpIco('ǚ'), 'Exit replay after end', 'left', true)}${sb('stop', rpIco('Ǜ'), 'Pause replay after end', 'left')}${sb('loop', rpIco('ǜ'), 'Loop replay after end', 'left')}
+      ${RP_SPEEDS.slice().reverse().map(([id, v, n]) => sb(id, n + ycTxt('X'), `Play at ${n}x speed [use up/down to in/decrease speed]`, 'right', v === 1)).join('')}</div>`;
   document.body.appendChild(b);
-  const P0 = () => climb && climb.rp;
-  $('rpPlay').onclick = () => { const P = P0(); if (!P) return; if (!P.playing && P.t >= P.dur){ P.t = P.R.frames[0].t; P.i = 0; } P.playing = !P.playing; };
-  $('rpBP').onclick = () => rpStep('piece', -1); $('rpFP').onclick = () => rpStep('piece', 1); $('rpBF').onclick = () => rpStep('frame', -1); $('rpFF').onclick = () => rpStep('frame', 1);
-  const seek = e => { const P = P0(); if (!P) return; const r = $('rpSeek').getBoundingClientRect(), t0 = P.R.frames[0].t; rpSeek(P, t0 + (P.dur - t0) * Math.max(0, Math.min(1, (e.clientX - r.left) / r.width))); };
-  $('rpSeek').onpointerdown = e => { $('rpSeek').setPointerCapture(e.pointerId); seek(e); $('rpSeek').onpointermove = seek; };
-  $('rpSeek').onpointerup = $('rpSeek').onpointercancel = () => { $('rpSeek').onpointermove = null; };
-  $('rpSpeed').querySelectorAll('button').forEach(x => x.onclick = () => { const P = P0(); if (P) P.speed = +x.dataset.v; $('rpSpeed').querySelectorAll('button').forEach(y => y.classList.toggle('active', y === x)); x.blur(); });
-  $('rpEnd').querySelectorAll('button').forEach(x => x.onclick = () => { const P = P0(); if (P) P.loop = x.dataset.v === 'loop'; $('rpEnd').querySelectorAll('button').forEach(y => y.classList.toggle('active', y === x)); x.blur(); });
-  $('rpFile').onclick = () => { const P = P0(); if (P) rpExport(P.R); };
-  $('rpExit').onclick = () => { rpBar(false); if (P0()) $('climbStop').onclick(); };
+  const P0 = () => climb && climb.rp, on1 = (id, fn) => { const e = $('replaytools_button_' + id); if (e) e.onclick = fn; };
+  on1('playpause', rpPlayPause);
+  on1('backward_piece', () => rpStep('piece', -1)); on1('forward_piece', () => rpStep('piece', 1)); on1('backward_frame', () => rpStep('frame', -1)); on1('forward_frame', () => rpStep('frame', 1));
+  on1('backward_large', () => rpStep('large', -1)); on1('forward_large', () => rpStep('large', 1));
+  for (const m of ['end', 'stop', 'loop']) on1(m, () => { const P = P0(); if (P) P.end = m; for (const k of ['end', 'stop', 'loop']) $('replaytools_button_' + k).classList.toggle('active', k === m); });
+  for (const [id, v] of RP_SPEEDS) on1(id, () => rpSetSpeed(v));
+  $('exit_replay').onclick = rpExit;
+  const bar = $('replaytools_seekbar'), frac = e => { const r = bar.getBoundingClientRect(); return Math.max(0, Math.min(1, (e.clientX - r.left) / r.width)); };
+  const seek = e => { const P = P0(); if (!P) return; const t0 = P.R.frames[0].t; rpSeek(P, t0 + (P.dur - t0) * frac(e)); };
+  bar.onpointerdown = e => { try { bar.setPointerCapture(e.pointerId); } catch(err){} seek(e); bar._drag = true; };
+  bar.onpointermove = e => { const P = P0(); if (!P) return; if (bar._drag) seek(e);
+    const f = frac(e), t0 = P.R.frames[0].t, t = t0 + (P.dur - t0) * f, z = (n, w = 2) => String(n).padStart(w, '0'), tip = $('replaytools_seekbar_tip');
+    tip.style.left = (f * 100).toFixed(2) + '%'; tip.querySelector('.seekbar_tip_time').textContent = `${Math.floor(t / 60000)}:${z(Math.floor(t / 1000) % 60)}.${z(Math.floor(t % 1000), 3)}`;
+    tip.querySelector('.seekbar_tip_stat span').textContent = rpPpsAt(P.R, t).toFixed(2); };
+  bar.onpointerup = bar.onpointercancel = () => { bar._drag = false; };
   window.addEventListener('keydown', rpKey, true);
-  b._iv = setInterval(() => { if (!P0()){ clearInterval(b._iv); rpBar(false); } }, 400);
+  let idleT = 0; const wake = () => { document.body.classList.remove('idlemouse'); clearTimeout(idleT); idleT = setTimeout(() => { if (P0()) document.body.classList.add('idlemouse'); }, 3000); };
+  b._wake = wake; window.addEventListener('mousemove', wake); window.addEventListener('pointerdown', wake); wake();
+  b._iv = setInterval(() => { if (!P0()){ clearInterval(b._iv); window.removeEventListener('mousemove', wake); window.removeEventListener('pointerdown', wake); clearTimeout(idleT); rpBar(false); } }, 400);
+  setTimeout(rpGraph, 50);
 }
 function rpBarSync(){
-  const P = climb.rp, b = $('rpBar'); if (!b) return;
+  const P = climb.rp, b = $('replaytools'); if (!b) return;
   const t0 = P.R.frames[0].t, ms = P.t, z = (n, w = 2) => String(n).padStart(w, '0');
-  $('rpPlay').textContent = P.playing ? '❚❚' : '▶';
-  $('rpSeek').style.setProperty('--progress', ((P.t - t0) / Math.max(1, P.dur - t0) * 100).toFixed(2) + '%');
-  $('rpTime').innerHTML = `${Math.floor(ms / 60000)}:${z(Math.floor(ms / 1000) % 60)}.${z(Math.floor(ms % 1000), 3)}<span>FRAME ${Math.round(ms * 60 / 1000)}</span>`;
+  const pp = $('replaytools_button_playpause'), want = P.playing ? 'Ǥ' : 'ǣ'; if (pp.dataset.g !== want){ pp.dataset.g = want; pp.innerHTML = rpIco(want); }
+  $('replaytools_seekbar').style.setProperty('--progress', ((P.t - t0) / Math.max(1, P.dur - t0) * 100).toFixed(2) + '%');
+  $('replaytools_timestamp').innerHTML = `${Math.floor(ms / 60000)}:${z(Math.floor(ms / 1000) % 60)}.${z(Math.floor(ms % 1000), 3)}<span>frame ${Math.round(ms * 60 / 1000)}</span>`;
 }
 function drawReplayTag(){
   if (!climb || !climb.rp) return;
@@ -10956,7 +11103,7 @@ function recordRun(kind, extra){
   }
   if (kind === 'qp'){
     const K = QP_REC[qpCat()];
-    logGame(p, K.log, climb.alt, { mods:[...climb.mods].join(','), floor: floorOf(climb.alt).n,
+    logGame(p, K.log, climb.alt, { mods:[...climb.mods].join(','), floor: floorOf(climb.alt).n, kos: climb.kos || 0, pos: climb.finalPos ? climb.finalPos[0] : 0, cnt: climb.finalPos ? climb.finalPos[1] : 0,
       avgCsp: +((climb.cspSum || 0) / Math.max(climb.elapsed, 1)).toFixed(2), peakCsp: climb.cspPeak || 1, hyper: !!climb.hyperEver });
     const wk = weekKey();                                        // 本週最佳：每週一重設
     if (p.qp.week !== wk){ p.qp.week = wk; p.qp.weekBest = 0; p.qp.exWeekBest = 0; p.qp.chWeekBest = 0; }
@@ -11855,7 +12002,7 @@ const LB_MODES = { '40l':{ name:'40 LINES', low:true, fmt:v => `${Math.floor(v/6
 // 進前 10 名就記；拿到第 1 名發一則新聞
 function logGame(p, mode, v, extra = {}){
   const secs = climb ? climb.elapsed / 1000 : 0;
-  const base = climb ? { secs, apm: +(climb.sent / Math.max(secs, .001) * 60).toFixed(2), pps: +(climb.pieces / Math.max(secs, .001)).toFixed(2), pieces: climb.pieces } : {};
+  const base = climb ? { secs, apm: +(climb.sent / Math.max(secs, .001) * 60).toFixed(2), pps: +(climb.pieces / Math.max(secs, .001)).toFixed(2), pieces: climb.pieces, inputs: climb.inputs || 0, faults: climb.fin ? climb.fin.faults : undefined, rp: RP_REC && RP_REC.frames.length ? 'r' + RP_REC.at : undefined } : {};
   p.recent = [{ mode, v, t: Date.now(), ...base, ...extra }, ...(p.recent || [])].slice(0, 60);
   const M = LB_MODES[mode]; if (!M || !v) return;
   p.top = p.top || {};
@@ -12314,65 +12461,80 @@ function renderLB(){
 }
 let meTab = 'recent';
 document.addEventListener('click', e => { if (e.target && e.target.id === 'meMyPage'){ const t = loadProfile().tio; if (t && t.user) window.open('https://ch.tetr.io/u/' + encodeURIComponent(t.user), '_blank', 'noopener'); else openProfile(); } });   // 官方 MY PAGE：有連結 TETR.IO 帳號就開 TETRA CHANNEL，沒有就開本機個人頁
+// TETRA CHANNEL › ME：照官方 Ta.loadRecords 的列（.scroller_block.record_item：record_owner／record_ts／record_result／record_extra，CSS 是官方原樣）
+//   RECENT、TETRA LEAGUE：不顯示名次（noindex nofirst）；單一模式：左邊是第幾筆、名字的位置改放時間（noname）
+//   點一列 → 官方 Js.loadReplay(replay, { back: 'tetra_me', record })：先開這一局的結算頁（isreplay：沒有 AGAIN），在結算頁按 REPLAY 才進回放
 function renderMe(){
   const p = loadProfile();
-  const TABS = [['recent','RECENT'],['40l','40 LINES'],['blitz','BLITZ'],['qp','QUICK PLAY'],['exqp','EXPERT QUICK PLAY'],['chqp','CHALLENGE QUICK PLAY'],['tl','TETRA LEAGUE'],['replays','REPLAYS']];
+  const TABS = [['recent','RECENT'],['40l','40 LINES'],['blitz','BLITZ'],['qp','QUICK PLAY'],['exqp','expert quick play'],['chqp','challenge quick play'],['tl','TETRA LEAGUE']];
+  if (!TABS.some(t => t[0] === meTab)) meTab = 'recent';
   $('meTabs').innerHTML = TABS.map(([k, n]) => `<button data-k="${k}" aria-pressed="${k === meTab}">${n}</button>`).join('');
   $('meTabs').querySelectorAll('button').forEach(b => b.onclick = () => { meTab = b.dataset.k; renderMe(); });
   const NAMES = { '40l':'40 LINES', blitz:'BLITZ', zen:'ZEN', qp:'QUICK PLAY', exqp:'EXPERT QUICK PLAY', chqp:'CHALLENGE QUICK PLAY', tl:'TETRA LEAGUE' };
-  const z = n => String(n).padStart(2, '0');
-  const stamp = t => { const d = new Date(t); return `${d.getFullYear()}/${d.getMonth()+1}/${d.getDate()} ${z(d.getHours())}:${z(d.getMinutes())}:${z(d.getSeconds())}`; };
-  const dur = s => s == null ? '' : `<span class="n">${Math.floor(s/60)}:${z(Math.floor(s%60))}<small>.${(s % 1).toFixed(3).slice(2)}</small></span>`;
-  const big = (n, unit) => { const [i, f] = n.split('.'); return `<span class="n">${(+i).toLocaleString('en-US')}${f !== undefined ? `<small>.${f}</small>` : ''}${unit ? `<u>${unit}</u>` : ''}</span>`; };
-  if (meTab === 'replays'){ renderMeReplays(stamp); return; }
+  const z = (n, w = 2) => String(n).padStart(w, '0'), wt = ms => ({ m: Math.floor(ms / 60000), s: z(Math.floor(ms / 1000) % 60), ms: z(Math.floor(ms % 1000), 3) });
+  const f2 = v => (+v || 0).toFixed(2), sp = (v, t) => `<span>${v}</span>${t}`;
   const games = (p.recent || []).filter(g => meTab === 'recent' || g.mode === meTab);
-  RP_IDX_ME = rpIdx().slice().sort((a, b) => a.at - b.at);
-  $('meRecent').innerHTML = games.length ? games.map(g => {
-    let val = '', ico = '', stats = [];
-    const sp = (g.apm != null) ? [`<b>${(+g.apm).toFixed(2)}</b> APM`, `<b>${(+g.pps).toFixed(2)}</b> PPS`] : [];
+  const idx = rpIdx(); let pool = idx.slice().sort((a, b) => a.at - b.at);
+  const st = $('meRecent'); st.className = 'tetra_stream ns' + (meTab === 'recent' || meTab === 'tl' ? ' noindex nofirst' : ' noname');
+  st.innerHTML = games.length ? games.map((g, i) => {
+    let res = '', ex = '', own = NAMES[g.mode] || String(g.mode).toUpperCase();
+    const secs = g.secs || 0, pcs = g.pieces ?? 0;
     if (g.mode === 'qp' || g.mode === 'exqp' || g.mode === 'chqp'){
-      const ms = (g.mods || '').split(',').filter(Boolean);
-      const d = DECK_ALL.find(d => ms.includes(d.base) || ms.includes(d.rev));
-      const msx = g.mode === 'exqp' ? ms.filter(m => m !== 'expert') : ms, mf = ms.length ? modFlatHTML(msx) : '';   // 實機：EXPERT 的皇冠不另外列
-      const mp = !mf && ms.length && tioImgOn() && achAtlas() ? modIconPos(ms) : null;
-      const cnm = qpComboName(ms);
-      ico = mf ? `<i class="gico mfs"${cnm ? ` title="${cnm.toUpperCase()}"` : ''}>${mf}</i>` : mp ? `<i class="gico img${ms.some(m => DECK.some(x => x.rev === m)) ? ' rev' : ''}">${atlasIco(mp, 'modic')}</i>`
-        : d ? `<i class="gico${ms.some(m => DECK.some(x => x.rev === m)) ? ' rev' : ''}">${d.icon}</i>` : '<i class="gico">☼</i>';
-      val = big(g.v.toFixed(1), 'M');
-      stats = [cnm ? `<b class="cmbn">${cnm.toUpperCase()}</b>` : '', dur(g.secs), g.floor ? `F<b>${g.floor}</b>` : '', g.avgCsp ? `AVG. SPEED <b>${(+g.avgCsp).toFixed(2)}</b>, PEAK <b>${g.peakCsp}</b>` : '', ...sp];
+      const ms = (g.mods || '').split(',').filter(Boolean), msx = ms.filter(m => m !== 'expert'), t = wt(secs * 1000);
+      res = `${msx.length ? `<i class="recmods">${modFlatHTML(msx)}</i> ` : ''}${Math.floor(g.v).toLocaleString('en-US')}<span class="ms">.${Math.floor(g.v % 1 * 10)}</span><span class="unit">M</span>`;
+      ex = [`<span>${t.m}:${t.s}</span>.${t.ms}`, g.pos ? `#<span>${g.pos}</span>/${g.cnt}` : '', g.kos != null ? `<span>${g.kos}</span> KO${g.kos === 1 ? '' : "'s"}` : '', g.avgCsp ? `avg. speed <span>${f2(g.avgCsp)}</span>, peak <span>${g.peakCsp}</span>` : '', sp(f2(g.apm), ' APM'), sp(f2(g.pps), ' PPS')].filter(Boolean).join(' - ');
     } else if (g.mode === '40l'){
-      val = g.v ? dur(g.v) : `<span class="dnf">DNF</span>`;
-      stats = [`<b>${g.pieces ?? '—'}</b> PIECES`, g.v ? '' : `<b>${g.lines}</b>/40 LINES`, ...sp];
+      const t = wt((g.v || 0) * 1000);
+      res = g.v ? `${t.m}:${t.s}<span class="ms">.${t.ms}</span>` : `<span>${g.lines ?? 0}/40</span>`;
+      ex = [sp(pcs, ' pieces'), sp(g.faults ?? '?', 'F'), g.inputs != null && secs ? sp(f2(g.inputs / secs), ' KPS') : '', g.inputs != null && pcs ? sp(f2(g.inputs / pcs), ' KPP') : '', sp(f2(g.pps), ' PPS')].filter(Boolean).join(' - ');
     } else if (g.mode === 'blitz'){
-      val = big(String(g.v));
-      stats = [`LV <b>${g.lv}</b>`, `<b>${g.pieces ?? '—'}</b> PIECES`, ...sp];
+      res = Math.round(g.v).toLocaleString('en-US');
+      ex = [`LV<span>${g.lv ?? 1}</span>`, sp(pcs, ' pieces'), sp(g.faults ?? '?', 'F'), pcs ? sp(f2(g.v / pcs), ' SPP') : '', sp(f2(g.pps), ' PPS')].filter(Boolean).join(' - ');
     } else if (g.mode === 'tl'){
-      val = `<span class="${g.won ? 'win' : 'loss'}">${g.won ? 'VICTORY' : 'DEFEAT'}</span>`;
-      stats = [`<b>${g.score}</b> VS ${g.opp}`, `<b>${(+g.v).toFixed(2)}</b> VS`, ...sp];
-    } else {
-      val = big(String(g.v), 'PCS');
-      stats = [dur(g.secs), ...sp];
-    }
-    const rp = RP_IDX_ME.find(e => Math.abs(e.at - g.t) < 15 * 60 * 1000 && e.at <= g.t + 2000 && (g.mode === 'tl' ? e.kind === 'league' : ['qp', 'exqp', 'chqp'].includes(g.mode) ? e.kind === 'qp' : e.sub === g.mode));
-    if (rp) RP_IDX_ME = RP_IDX_ME.filter(e => e !== rp);
-    return `<div class="gamerow${rp ? ' hasrp' : ''}"${rp ? ` data-rp="${rp.id}" title="WATCH REPLAY"` : ''}><div class="r1"><b>${NAMES[g.mode]}</b><div class="gv">${ico}${val}</div></div>
-      <div class="r2"><small>${stamp(g.t)}${rp ? ' · <u class="rptag">▶ REPLAY</u>' : ''}</small><div class="gs">${stats.filter(Boolean).join(' · ')}</div></div></div>`;
-  }).join('') : '<p class="dim">NO GAMES YET</p>';
-  $('meRecent').querySelectorAll('.gamerow.hasrp').forEach(r => r.onclick = () => rpOpenId(r.dataset.rp));   // 官方：點紀錄那一列就開回放
+      own = meTab === 'recent' ? `tetra league ${ycTxt('VS')} ${tlEsc(String(g.opp || '').toUpperCase())}` : `${ycTxt('VS')} ${tlEsc(String(g.opp || '').toUpperCase())}`;
+      res = `${ycTxt(g.won ? 'VICTORY' : 'DEFEAT')} ${tlEsc(String(g.score || ''))}`;
+      ex = [sp(f2(g.apm), ' APM'), sp(f2(g.pps), ' PPS'), sp(f2(g.v), ' VS')].join(' - ');
+    } else { res = `${g.v}`; ex = [sp(pcs, ' pieces'), sp(f2(g.pps), ' PPS')].join(' - '); }
+    let rp = g.rp && idx.find(e => e.id === g.rp);
+    if (!rp){ rp = pool.find(e => Math.abs(e.at - g.t) < 15 * 60 * 1000 && e.at <= g.t + 2000 && (g.mode === 'tl' ? e.kind === 'league' : ['qp', 'exqp', 'chqp'].includes(g.mode) ? e.kind === 'qp' : e.sub === g.mode)); }
+    if (rp) pool = pool.filter(e => e !== rp);
+    return `<div class="scroller_block record_item ns${i === 0 ? ' record_first' : ''}" data-rp="${rp ? rp.id : ''}"><div class="record_grade ns">${i + 1}</div><div class="record_owner">${own}</div><div class="record_ts">${new Date(g.t).toLocaleString()}</div><div class="record_result">${res}</div><div class="record_extra">${ex}</div></div>`;
+  }).join('') : '<div class="scroller_block ns nothing">NO RECORDS</div>';
+  st.querySelectorAll('.record_item').forEach(r => r.onclick = () => { sfxEv('menuhit', 'menuhit3', 'menuclick'); if (r.dataset.rp) rvOpenId(r.dataset.rp, 'chme'); else say('NO REPLAY SAVED FOR THIS GAME'); });
 }
-let RP_IDX_ME = [];
-// ME › REPLAYS：存下來的回放，一份一列（跟對局紀錄同一種列）；點列＝看、右下 SAVE FILE／DELETE；最上面一列是匯入檔案
-async function renderMeReplays(stamp){
-  const L = await rpList(); if (meTab !== 'replays') return;
-  $('meRecent').innerHTML = `<div class="gamerow hasrp" id="meRpImp"><div class="r1"><b>IMPORT REPLAY FILE</b><div class="gv"><span class="n"><small>.SLREPLAY</small></span></div></div>
-      <div class="r2"><small>${RP_EXE ? 'REPLAYS ARE SAVED AS FILES ON THIS PC' : 'REPLAYS ARE SAVED IN THIS BROWSER'} · LAST ${RP_MAX}</small><div class="gs">${RP_EXE ? '<u class="rptag" id="meRpDir">OPEN FOLDER</u>' : ''}</div></div></div>`
-    + (L.length ? L.map(e => `<div class="gamerow hasrp" data-rp="${e.id}" title="WATCH REPLAY"><div class="r1"><b>${tlEsc(e.sum && e.sum.name || 'REPLAY')}</b><div class="gv"><span class="n">${tlEsc(e.sum && e.sum.val || '')}</span></div></div>
-      <div class="r2"><small>${stamp(e.at)}</small><div class="gs">${e.sum ? `<b>${e.sum.time}</b> · <b>${e.sum.pieces}</b> PIECES · ` : ''}<u class="rptag" data-a="exp">SAVE FILE</u> · <u class="rptag" data-a="del">DELETE</u></div></div></div>`).join('') : '<p class="dim">NO REPLAYS YET — FINISH A GAME AND IT IS SAVED HERE AUTOMATICALLY</p>');
-  $('meRpImp').onclick = e => { if (e.target.id === 'meRpDir'){ fetch('/__replay/?open=1').catch(() => {}); return; } rpImport(); };
-  $('meRecent').querySelectorAll('.gamerow[data-rp]').forEach(r => r.onclick = async e => { const id = r.dataset.rp, a = e.target.dataset && e.target.dataset.a;
-    if (a === 'exp'){ try { const R = await rpDecode(await rpStoreGet(id)); R.id = id; rpExport(R); } catch(err){ say('REPLAY NOT FOUND'); } }
-    else if (a === 'del'){ await rpStoreDel(id); rpIdxSave(rpIdx().filter(x => x.id !== id)); renderMeReplays(stamp); }
-    else rpOpenId(id); });
+/* 紀錄 → 結算頁 → 回放（官方 Js.loadReplay）：回放檔裡存了那一局結算頁的畫面（R.res），打開時暫時換進結算頁的容器，離開時把原本的內容放回去 */
+let RV = null;
+async function rvOpenId(id, back){ try { const R = await rpDecode(await rpStoreGet(id)); R.id = id; rvOpen(R, back); } catch(e){ say('REPLAY NOT FOUND'); } }
+function rvClose(){
+  const V = RV; if (!V) return; RV = null; document.body.classList.remove('rvmode');
+  V.el.innerHTML = ''; V.el.appendChild(V.keep); V.el.className = V.cls; if (V.id === 'qpResult') document.body.classList.toggle('qpres', V.qpres);
+}
+function rvOpen(R, back){
+  rvClose();
+  const S = R.res, el = S && $(S.id); if (!S || !el){ rpOpen(R, back ? () => setScreen(back) : null); return; }
+  if (climb) $('climbStop').onclick();
+  const keep = document.createDocumentFragment(); while (el.firstChild) keep.appendChild(el.firstChild);
+  RV = { el, keep, cls: el.className, id: S.id, qpres: document.body.classList.contains('qpres') };
+  document.body.classList.add('rvmode');
+  el.innerHTML = S.html; el.className = S.cls + ' isreplay'; el.scrollTop = 0; if (S.id === 'qpResult') document.body.classList.add('qpres');
+  const q = sel => el.querySelector(sel), bye = () => { rvClose(); if (back) setScreen(back); };
+  for (const id of ['#srBack', '#qrBack', '#trBack']){ const b = q(id); if (b) b.onclick = bye; }
+  for (const id of ['#srRep', '#qrWatch', '#trReplay']){ const b = q(id); if (b){ b.disabled = false; b.onclick = () => { rvClose(); rpOpen(R, () => rvOpen(R, back)); }; } }
+  el.querySelectorAll('.ogrp .obtn').forEach(b => b.onclick = () => { el.querySelectorAll('.ogrp .obtn').forEach(x => x.classList.toggle('on', x === b)); el.querySelectorAll('table.okp').forEach(tb => tb.hidden = tb.dataset.tab !== b.dataset.tab); });
+  const cp = q('#srCopy'); if (cp) cp.onclick = () => rpExport(R);
+}
+// 一局結束後，等結算頁出來把它的畫面存進回放（最多等 30 秒）
+function rpGrabResults(R){
+  let n = 0; const iv = setInterval(() => {
+    if (++n > 60 || RP_REC !== R || !R.done || (climb && climb.rp)){ clearInterval(iv); return; }
+    const sr = $('soloRes'), qr = $('qpResult'), tr = $('tlRes');
+    const el = sr && /\bon\b/.test(sr.className) ? sr : qr && !qr.classList.contains('hidden') ? qr : tr && tr.classList.contains('on') ? tr : null;
+    if (!el || RV) return;
+    clearInterval(iv);
+    setTimeout(() => { if (RP_REC !== R || RV || (climb && climb.rp)) return;
+      const c = el.cloneNode(true); c.querySelectorAll('#qpChat, script').forEach(x => x.remove());
+      R.res = { id: el.id, cls: el.className, html: c.innerHTML }; R.who = typeof profName === 'function' ? profName() : ''; R.saved = false; rpSave(R); }, el === tr ? 4500 : 1200);
+  }, 500);
 }
 function renderPlayers(){  const p = loadProfile(), r = tlRankOf(p);
   $('plTable').innerHTML = `<div class="lbrow head"><i>RANK</i><b>TR</b><em>APM · PPS · VS</em><small>TOP</small></div>` + TL_RANKS.map(k =>
@@ -16493,7 +16655,7 @@ async function applyFont(slot, b64){
   if (!b64) return true;
   try {
     const buf = Uint8Array.from(atob(b64), ch => ch.charCodeAt(0)).buffer;
-    const ff = new FontFace(slot.fam, buf, { weight: slot.weight || '100 900', unicodeRange: slot.id === 'hun' || slot.id === 'cheeky' ? 'U+0020-007E, U+00A0-00FF, U+01C0-01FF' : 'U+0020-007E, U+00A0-00FF' });   // HUN 的 Ǳ ǽ ǿ… 是官方的小圖示字   // HUN 的「—」是怪符號，交給後備字型   // 一個檔案涵蓋所有字重，粗體不會被瀏覽器假粗
+    const ff = new FontFace(slot.fam, buf, { weight: slot.weight || '100 900', unicodeRange: slot.id === 'hun' || slot.id === 'cheeky' ? 'U+0020-007E, U+00A0-00FF, U+0100-0103, U+01C0-01FF' : 'U+0020-007E, U+00A0-00FF' });   // HUN 的 Ǳ ǽ ǿ… 是官方的小圖示字   // HUN 的「—」是怪符號，交給後備字型   // 一個檔案涵蓋所有字重，粗體不會被瀏覽器假粗
     await ff.load(); document.fonts.add(ff); loadedFonts[slot.id] = ff; if (slot.id === 'hun') document.body.classList.add('hunok'); return true;
   } catch(e){ return false; }
 }
@@ -18752,7 +18914,7 @@ function fit(){
   const pad = 28;
   syncVisible();
   const lv = document.getElementById('qplLive'), lw = lv && document.body.classList.contains('game') && getComputedStyle(lv).display !== 'none' ? lv.offsetWidth : 0;   // QP 右邊的即時排行會蓋住：置中的盤面兩邊都讓出它的寬度
-  cell = Math.max(4, Math.floor(Math.min((stage.clientHeight-pad-(document.body.classList.contains('rpmode') ? 84 : 0))/(H - VIEW_TOP() + GUTB()), (stage.clientWidth-pad-2*lw)/(W + GUTL() + GUTR())) * (mode === 'sim' ? optN('oZoom') / 100 : 1)));   // 官方 board zoom
+  cell = Math.max(4, Math.floor(Math.min((stage.clientHeight-pad-(document.body.classList.contains('rpmode') ? 110 : 0))/(H - VIEW_TOP() + GUTB()), (stage.clientWidth-pad-2*lw)/(W + GUTL() + GUTR())) * (mode === 'sim' ? optN('oZoom') / 100 : 1)));   // 官方 board zoom
   draw();
 }
 addEventListener('resize', fit);
