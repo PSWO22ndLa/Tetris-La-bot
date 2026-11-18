@@ -891,6 +891,7 @@ document.documentElement.classList.add('booting'); addEventListener('load', func
   body:not(.qpspec) .qpl-specbar{ opacity:0; top:-4em; pointer-events:none; transition:top .3s ease-in, opacity .3s ease-in; }
   .qpl-specbar .keystone{ position:absolute; left:-.25em; top:0; color:#000; background:#ff7800; font-size:2.5em; line-height:1.2; padding-left:.25em; font-weight:900; width:5em; text-align:center; transform:skewX(-10deg); }
   .qpl-specbar .data{ position:absolute; left:9em; right:16em; top:.5em; font-size:1.5em; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  @media (max-width:640px){ .qpl-specbar .data{ left:7.2em; right:13.2em; top:.75em; font-size:1.15em; min-width:0; max-width:calc(100vw - 20.4em); } }   /* 手機：名字放不下就截斷，不要鑽到按鈕後面 */
   .qpl-specbar .data > span{ color:#ff7800; font-weight:900; }
   .qpl-specbar .btn{ position:absolute; top:.25em; border:1px solid #444; background:rgba(0,0,0,.8); text-align:center; padding-top:.15em; color:#fff; font-size:1.5em; border-radius:3px; cursor:pointer; transition:background-color .3s; user-select:none; }
   .qpl-specbar .btn:hover{ background:#222; }
@@ -8903,7 +8904,7 @@ function drawFrame(){
     if (climb) drawGo();
     if (climb && climb.koFx) drawKoFx();
     if (climb && climb.gainFx) drawAltGain();
-    if (climb && (climb.popOff || climb.popDef)) drawAtkPops();
+    if (climb && (climb.popOff || climb.popDef) && !climb.over) drawAtkPops(); else popClear();
     if (climb && climb.undoFx) drawUndoFx();
     { const n = performance.now(); hsUiTick(Math.min(100, n - (HS_UI.lastNow || n))); HS_UI.lastNow = n; }                                                  // 官方 HYPERSPEED 介面（DOM 疊層）
     ctx.restore(); ctx.save(); if (meFall) dangerNow = false;       // 你輸了掉出畫面的那段變形只套在你自己的盤面上
@@ -12830,7 +12831,20 @@ function atkPopup(out, cancelled){
 }
 function bez(x1, y1, x2, y2){ return u => { let lo = 0, hi = 1, m = u; for (let i = 0; i < 20; i++){ m = (lo + hi) / 2; const bx = 3 * x1 * m * (1 - m) ** 2 + 3 * x2 * m * m * (1 - m) + m ** 3; if (bx < u) lo = m; else hi = m; } return 3 * y1 * m * (1 - m) ** 2 + 3 * y2 * m * m * (1 - m) + m ** 3; }; }
 const BEZ_OFF = bez(0, .71, .51, .15), BEZ_DEF = bez(.1, .38, 0, .88);
-function drawAtkPops(){
+// 攻擊／抵銷數字畫在另一張鋪滿整個視窗的畫布上：盤面那張畫布只比盤面寬一點，數字飛到邊緣（手機上尤其）會被畫布的邊切掉
+function popCtx(){
+  let c = document.getElementById('popfx');
+  if (!c){ c = document.createElement('canvas'); c.id = 'popfx'; c.setAttribute('aria-hidden', 'true'); c.style.cssText = 'position:fixed;left:0;top:0;width:100vw;height:100vh;pointer-events:none;z-index:30'; document.body.appendChild(c); }
+  const dpr = Math.min(3, window.devicePixelRatio || 1), w = Math.round(innerWidth * dpr), h = Math.round(innerHeight * dpr);
+  if (c.width !== w || c.height !== h){ c.width = w; c.height = h; }
+  const x = c.getContext('2d'), bc = ctx.canvas, r = bc.getBoundingClientRect(), m = ctx.getTransform(), sx = r.width / bc.width * dpr, sy = r.height / bc.height * dpr;
+  x.setTransform(1, 0, 0, 1, 0, 0); x.clearRect(0, 0, w, h); c._dirty = true;
+  x.setTransform(m.a * sx, m.b * sy, m.c * sx, m.d * sy, r.left * dpr + m.e * sx, r.top * dpr + m.f * sy);   // 盤面畫布當下的座標系 → 螢幕
+  return x;
+}
+function popClear(){ const c = document.getElementById('popfx'); if (c && c._dirty){ c._dirty = false; const x = c.getContext('2d'); x.setTransform(1, 0, 0, 1, 0, 0); x.clearRect(0, 0, c.width, c.height); } }
+function drawAtkPops(){ drawAtkPopsOn(popCtx()); }
+function drawAtkPopsOn(ctx){
   const now = performance.now(), hunF = (w, px) => `${w} ${px}px "TP-HUN", ${CANVAS_FONT}`;
   const cx0 = W / 2, cy0 = H - VISIBLE / 2, top = H - VISIBLE;
   const P = climb.popOff;
@@ -16728,7 +16742,7 @@ async function applyFont(slot, b64){
   if (!b64) return true;
   try {
     const buf = Uint8Array.from(atob(b64), ch => ch.charCodeAt(0)).buffer;
-    const ff = new FontFace(slot.fam, buf, { weight: slot.weight || '100 900', unicodeRange: slot.id === 'hun' || slot.id === 'cheeky' ? 'U+0020-007E, U+00A0-00FF, U+0100-0103, U+01C0-01FF' : 'U+0020-007E, U+00A0-00FF' });   // HUN 的 Ǳ ǽ ǿ… 是官方的小圖示字   // HUN 的「—」是怪符號，交給後備字型   // 一個檔案涵蓋所有字重，粗體不會被瀏覽器假粗
+    const ff = new FontFace(slot.fam, buf, { weight: slot.weight || '100 900', unicodeRange: slot.id === 'hun' || slot.id === 'cheeky' ? 'U+0020-007E, U+00A0-00FF, U+0100-0103, U+01C0-01FF, U+1EF2-1EF3' : 'U+0020-007E, U+00A0-00FF' });   // HUN 的 Ǳ ǽ ǿ… 是官方的小圖示字   // HUN 的「—」是怪符號，交給後備字型   // 一個檔案涵蓋所有字重，粗體不會被瀏覽器假粗
     await ff.load(); document.fonts.add(ff); loadedFonts[slot.id] = ff; if (slot.id === 'hun') document.body.classList.add('hunok'); return true;
   } catch(e){ return false; }
 }
