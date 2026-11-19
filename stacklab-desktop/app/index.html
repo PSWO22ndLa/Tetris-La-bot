@@ -1211,6 +1211,43 @@ document.documentElement.classList.add('booting'); addEventListener('load', func
   body.hunok #stOnline::after{ content:"ǽ"; font-size:.85em; opacity:.7; }
   body.game #socialTray{ display:none; }
   body:not(.game) #popfx{ display:none; }
+  /* ── 登入（官方 #entry_form／#return_form 的 .oob_modal 樣式照抄；帳號只存在這台裝置、沒有密碼）── */
+  #oobShade{ position:fixed; inset:0; z-index:9999990; background:rgba(8,8,10,.88); }
+  #oobShade.hidden{ display:none; }
+  .oob_modal{ position:fixed; left:50%; top:50%; background-color:#eee; color:#222; z-index:10000000; transform:translate(-50%,-50%); max-height:calc(95vh - 2em); padding:1em; border-radius:3px; width:30em; max-width:calc(95vw - 2em);
+    font-family:var(--hunf), "Roboto Condensed", sans-serif; font-size:16px; box-shadow:rgba(255,255,255,.133) 0 0 48px; transition:opacity .3s, transform .3s, filter .3s; box-sizing:content-box; text-align:left; text-transform:none; letter-spacing:0; }
+  .oob_modal.oob_login_wide{ width:calc(728px - 2em); }
+  .oob_modal.noop{ display:none; }
+  .oob_modal.hidden{ opacity:0; transform:translate(-50%,-50%) scale(.8); pointer-events:none; }
+  .oob_modal hr{ border:none; background-color:#aaa; height:1px; margin:.5em -1em .75em; }
+  .oob_modal h1{ margin:0; font-size:1.65em; font-weight:500; color:inherit; }
+  .oob_modal h2{ margin:0; font-size:2.5em; font-weight:900; color:inherit; overflow-wrap:anywhere; }
+  .oob_modal p{ margin:.2em 0; font-size:1.1em; font-weight:500; }
+  .oob_modal p.modal_also{ font-size:1em; color:#666; }
+  .oob_modal p.modal_warning{ font-size:1em; color:#f22; background-color:#faa; border-radius:3px; padding:.5em; margin:0 -.5em; }
+  .oob_modal p.modal_warning.hidden{ display:none; }
+  .oob_modal .oob_button_full{ margin:.2em -.5em -.5em; font-size:2em; padding:.25em .5em .1em; text-align:center; background-color:#ccc; border-radius:0 0 3px 3px; cursor:pointer; transition:background-color .3s; user-select:none; }
+  .oob_modal .oob_button_full:hover{ background-color:#aaa; }
+  .oob_modal .oob_button_holder{ margin:.4em -1em -1em; padding:.5em; text-align:center; background-color:#ccc; border-radius:0 0 3px 3px; user-select:none; }
+  .oob_modal .oob_button{ font-size:1.5em; padding:.25em .5em .1em; text-align:center; background-color:#aaa; border-radius:3px; cursor:pointer; transition:background-color .3s, color .3s; }
+  .oob_modal .oob_button:hover{ background-color:#888; }
+  .oob_modal .oob_button.pri{ background-color:#1e48ff; color:#cbd5ff; }
+  .oob_modal .oob_button.pri:hover{ background-color:#4669ff; }
+  .oob_modal .inline_self{ font-weight:900; }
+  .oob_modal .flex-row{ display:flex; flex-wrap:wrap; }
+  .oob_modal .flex-item{ flex-shrink:0; flex-grow:1; margin-right:.25em; }
+  .oob_modal .flex-item:last-child{ margin-right:0; }
+  .oob_modal .flex-item.flex-3x{ flex-grow:3; }
+  .oob_modal input[type="text"]{ padding:.4em .4em .2em; border:none; background-color:#222; border-radius:3px; color:#eee; font-family:inherit; font-size:1.35em; width:100%; margin-bottom:.2em; margin-left:-.4em; line-height:1.1em; outline:none; box-sizing:content-box; }
+  .oob_modal input.usernamelike{ text-transform:uppercase; }
+  .oob_modal .preform{ position:absolute; left:0; right:0; bottom:calc(100% + 1em); color:#444; text-align:center; display:flex; justify-content:space-between; }
+  .oob_modal .preform_item{ display:inline-block; flex-grow:1; flex-shrink:1; }
+  .oob_modal .preform_item h1{ margin:0; font-weight:900; font-size:2em; color:#888; }
+  .oob_modal .preform_item p{ margin:0; font-weight:500; font-size:1em; }
+  .oob_modal .oob_known{ display:flex; flex-wrap:wrap; gap:.25em; margin:.1em 0 .3em; }
+  .oob_modal .oob_known span{ font-size:1em; font-weight:900; background:#ccc; padding:.25em .5em .1em; border-radius:3px; cursor:pointer; }
+  .oob_modal .oob_known span:hover{ background:#aaa; }
+  @media (max-width:520px){ .oob_modal{ font-size:13px; } .oob_modal .preform{ display:none; } }
   @media (max-width:600px){ #socialTray{ display:none; } }
 
   /* ── 官方 HYPERSPEED（Qa.Zenith 的 speedrun container）：虛擬 1600 寬換算（--hs）。頂端兩條反向捲動的花紋帶、斜的大計時器、底部 9 格 splits */
@@ -3100,6 +3137,36 @@ document.documentElement.classList.add('booting'); addEventListener('load', func
   <div class="grow"></div>
   <small id="saveState"></small>
   <div id="socialTray" title="Social"><img id="stPeople" alt=""><img id="stNotif" alt=""><div class="st-sep"></div><div id="stOnline">0</div></div>
+  <div id="oobShade" class="hidden"></div>
+  <div id="entry_form" class="oob_modal oob_login_wide hidden noop">
+    <div class="preform">
+      <div class="preform_item"><h1 id="preform_players_entry"></h1><p>accounts on this device</p></div>
+      <div class="preform_item"><h1 id="preform_games_entry"></h1><p>games recorded</p></div>
+      <div class="preform_item"><h1 id="preform_hours_entry"></h1><p>hours played</p></div>
+    </div>
+    <h1>welcome to STACK LAB</h1>
+    <p class="modal_also">accounts live on this device only: no password, no server. each username keeps its own records, replays, progress and settings.</p>
+    <hr>
+    <p>enter a username to join, or leave it blank to get a random one</p>
+    <form onsubmit="return false"><input type="text" placeholder="USERNAME" id="entry_username" autocomplete="username" class="usernamelike" maxlength="16" spellcheck="false" autocapitalize="characters"></form>
+    <div class="oob_known" id="entry_known"></div>
+    <p class="modal_warning hidden" id="entry_error"></p>
+    <div id="entry_button" class="oob_button_full ns">JOIN</div>
+  </div>
+  <div id="return_form" class="oob_modal oob_login_wide hidden noop">
+    <div class="preform">
+      <div class="preform_item"><h1 id="preform_players_return"></h1><p>accounts on this device</p></div>
+      <div class="preform_item"><h1 id="preform_games_return"></h1><p>games recorded</p></div>
+      <div class="preform_item"><h1 id="preform_hours_return"></h1><p>hours played</p></div>
+    </div>
+    <h1>welcome back to STACK LAB!</h1>
+    <p>is this you?</p>
+    <h2 id="return_is"></h2>
+    <div class="oob_button_holder flex-row ns">
+      <div id="return_logout" class="flex-item oob_button">LOG OUT</div>
+      <div id="return_button" class="flex-item flex-3x oob_button pri">JOIN</div>
+    </div>
+  </div>
   <button id="profChip" class="profchip" title="Profile">
     <span class="pc-av" id="pcAv"></span>
     <span class="pc-txt"><b id="pcName">PLAYER</b><small><i id="pcLv">LV 1</i><i id="pcRank" class="pc-rank">—</i></small></span>
@@ -3550,7 +3617,7 @@ document.documentElement.classList.add('booting'); addEventListener('load', func
 
       <div class="ap">
         <div class="ap-h"><div><label>USERNAME</label><p>this is the name you will show up to others as. (3–16 characters: a–z, 0–9, - and _)</p></div>
-          <div class="ap-btns"><button id="acctNameSave">SAVE</button></div></div>
+          <div class="ap-btns"><button id="acctNameSave">SAVE</button><button id="acctLogout">LOG OUT</button></div></div>
         <input id="acctName" maxlength="16" spellcheck="false" autocomplete="off" autocapitalize="characters">
       </div>
 
@@ -11047,7 +11114,7 @@ function loadProfile(){
   } catch(e){}
   return p;
 }
-function saveProfile(p){ p.mod = Date.now(); try { store.set(PROF_KEY, JSON.stringify(p)); } catch(e){ say('STORAGE FULL — PROFILE NOT SAVED'); } renderProfileChip(); }
+function saveProfile(p){ p.mod = Date.now(); try { store.set(PROF_KEY, JSON.stringify(p)); } catch(e){ say('STORAGE FULL — PROFILE NOT SAVED'); } acctSync(p); renderProfileChip(); }
 // VS 落在兩個段位之間時線性內插出 TR
 function trForVS(vs){
   const R = TL_RANKS;
@@ -16393,10 +16460,82 @@ $('profBanEdit').onclick = async () => {
   const p = loadProfile(); p.banner = url; saveProfile(p); renderProfile();
 };
 $('profBanClear').onclick = () => { const p = loadProfile(); p.banner = null; saveProfile(p); renderProfile(); };
+/* ---------------- 登入：只打 username、沒有密碼，帳號只存在這台裝置 ----------------
+   做法：目前登入的帳號資料就放在平常的 bp:* 鍵；其他帳號整包存成 sl:acct:<NAME>（一個 JSON）。
+   換帳號＝把現在的 bp:* 打包存起來 → 清掉 → 把對方那包攤開 → 重新載入。皮膚、音量、畫質這類裝置設定不跟帳號走（也避免大圖重複佔空間）。 */
+const ACCT_KEY = 'sl:accounts', ACCT_PRE = 'sl:acct:';
+const ACCT_DEVICE = /^bp:(probe|splash|gfx|fps|fx|volv2|bgmvol|sfxvol|bgm|sfx|musicoff|bgmtweak|floordim|labot|autotio|towerExt|qpprofs|boardskin|skin|custbg|modart|floorart|font|tioimg|sfxmap|packTime)/;
+function acctReg(){ let r; try { r = JSON.parse(localStorage.getItem(ACCT_KEY) || 'null'); } catch(e){} return r && r.list ? r : { cur: null, list: {} }; }
+function acctRegSave(r){ try { localStorage.setItem(ACCT_KEY, JSON.stringify(r)); } catch(e){} }
+function acctKeys(){ const out = []; try { for (let i = 0; i < localStorage.length; i++){ const k = localStorage.key(i); if (k && k.startsWith('bp:') && !ACCT_DEVICE.test(k)) out.push(k); } } catch(e){} return out; }
+function acctPack(name){                                                   // 目前的資料 → sl:acct:<NAME>；存不下就回 false（什麼都不動）
+  const o = {}; for (const k of acctKeys()) o[k] = localStorage.getItem(k);
+  try { localStorage.setItem(ACCT_PRE + name, JSON.stringify(o)); return true; } catch(e){ return false; }
+}
+function acctWipe(){ for (const k of acctKeys()) try { localStorage.removeItem(k); } catch(e){} }
+function acctUnpack(name){
+  let o = null; try { o = JSON.parse(localStorage.getItem(ACCT_PRE + name) || 'null'); } catch(e){}
+  if (!o) return false;
+  try { for (const k in o) if (o[k] != null) localStorage.setItem(k, o[k]); localStorage.removeItem(ACCT_PRE + name); return true; } catch(e){ return false; }
+}
+const acctHas = n => { const r = acctReg(); return !!r.list[n] && r.cur !== n; };
+function acctJoined(){ try { sessionStorage.setItem('sl:joined', '1'); } catch(e){} }
+// 改名、匯入進度之後：登記簿跟著目前的名字走
+function acctSync(p){ try { const r = acctReg(), n = p && p.name; if (!n) return;
+  if (isAnon(n)){ if (r.cur){ delete r.list[r.cur]; r.cur = null; acctRegSave(r); } return; }
+  if (r.cur !== n){ if (r.cur) delete r.list[r.cur]; r.cur = n; r.list[n] = { t: Date.now() }; acctRegSave(r); } } catch(e){} }
+// 登出：把目前帳號打包收起來，回到匿名（登入畫面）
+function acctLogout(){
+  const r = acctReg(), p = loadProfile();
+  if (r.cur && !isAnon(p.name)){ if (!acctPack(r.cur)){ notice('STORAGE FULL — COULD NOT LOG OUT'); return; } r.list[r.cur] = { t: Date.now() }; acctWipe(); }
+  r.cur = null; acctRegSave(r);
+  try { sessionStorage.removeItem('sl:joined'); } catch(e){}
+  location.reload();
+}
+// 用 username 加入。空白＝匿名；已有的帳號＝切過去；新名字＝匿名進度直接變成這個帳號（官方「註冊」同義），否則開新帳號
+function acctJoin(raw){
+  const n = String(raw || '').trim().toUpperCase(), r = acctReg(), p = loadProfile();
+  if (!n){ acctJoined(); return ''; }
+  if (n.length < 3 || n.length > 16 || /[^A-Z0-9_-]/.test(n)) return 'username must be 3–16 characters: A-Z 0-9 - _';
+  if (isAnon(n)) return "you can't use ANON as your name";
+  if (n === p.name){ r.cur = n; r.list[n] = { t: Date.now() }; acctRegSave(r); acctJoined(); return ''; }
+  const known = !!r.list[n] && !!localStorage.getItem(ACCT_PRE + n);
+  if (r.cur && !isAnon(p.name)){ if (!acctPack(r.cur)) return 'storage is full: could not switch accounts'; r.list[r.cur] = { t: Date.now() }; acctWipe(); }
+  else if (known) acctWipe();                                              // 匿名進度不留（官方登入別的帳號時匿名資料也不會帶過去）
+  if (known){ if (!acctUnpack(n)) return 'could not load that account'; }
+  else { const q = (r.cur && !isAnon(p.name)) ? profDefault() : p; q.name = n; try { store.set(PROF_KEY, JSON.stringify(q)); } catch(e){} }
+  r.cur = n; r.list[n] = { t: Date.now() }; acctRegSave(r); acctJoined();
+  location.reload(); return null;                                          // null＝正在重新載入
+}
+function acctGate(){
+  if (LOCAL_P) return;
+  try { if (sessionStorage.getItem('sl:joined') === '1') return; } catch(e){ return; }
+  document.body.append($('oobShade'), $('entry_form'), $('return_form'));   // 掛到 body 最外層：原本的位置在頁首的堆疊環境裡，會被選單蓋住
+  const p = loadProfile(), r = acctReg(), named = !isAnon(p.name);
+  if (named && r.cur !== p.name){ r.cur = p.name; r.list[p.name] = { t: Date.now() }; acctRegSave(r); }   // 更新前就有名字的人：直接當成已登入
+  const show = id => { for (const k of ['entry_form', 'return_form']){ const e = $(k); e.classList.toggle('noop', k !== id); requestAnimationFrame(() => e.classList.toggle('hidden', k !== id)); } $('oobShade').classList.toggle('hidden', !id); };
+  const names = Object.keys(r.list).sort((a, b) => (r.list[b].t || 0) - (r.list[a].t || 0));
+  let games = 0; try { games = JSON.parse(localStorage.getItem('bp:rpidx') || '[]').length; } catch(e){}
+  const hrs = ((p.tot && p.tot.secs) || 0) / 3600;
+  for (const k of ['entry', 'return']){ $('preform_players_' + k).textContent = names.length; $('preform_games_' + k).textContent = games; $('preform_hours_' + k).textContent = hrs < 10 ? hrs.toFixed(1) : Math.round(hrs); }
+  const done = () => { show(null); renderProfileChip(); };
+  const join = () => { const err = acctJoin($('entry_username').value); if (err === null) return; if (err){ $('entry_error').textContent = err; $('entry_error').classList.remove('hidden'); return; } done(); };
+  $('entry_button').onclick = join;
+  $('entry_username').onkeydown = e => { e.stopPropagation(); if (e.key === 'Enter'){ e.preventDefault(); join(); } };
+  $('entry_username').oninput = () => $('entry_error').classList.add('hidden');
+  $('entry_known').innerHTML = names.map(n => `<span>${n.replace(/[<>&]/g, '')}</span>`).join('');
+  $('entry_known').onclick = e => { if (e.target.tagName === 'SPAN'){ $('entry_username').value = e.target.textContent; join(); } };
+  $('return_button').onclick = () => { acctJoined(); done(); };
+  $('return_logout').onclick = acctLogout;
+  const open = () => { if (named){ $('return_is').textContent = p.name; show('return_form'); } else { show('entry_form'); try { $('entry_username').focus({ preventScroll: true }); } catch(e){} } };
+  $('oobShade').classList.remove('hidden');                                // 開場動畫跑完才出現表單，但底下的選單先擋住
+  (function wait(){ if (document.getElementById('splash')) return setTimeout(wait, 150); open(); })();
+}
 // 改名規則同 ZC：3–16 字、只能 A-Z 0-9 - _、不能用 ANON 開頭
 function checkName(n){
   if (n.length < 3 || n.length > 16 || /[^A-Z0-9_-]/.test(n)) return 'NAME MUST BE 3–16 CHARACTERS: A-Z 0-9 - _';
   if (isAnon(n)) return "YOU CAN'T USE ANON AS YOUR NAME";
+  if (acctHas(n)) return 'THAT NAME IS ANOTHER ACCOUNT ON THIS DEVICE — LOG OUT TO SWITCH';
   return '';
 }
 $('profName').onchange = () => {
@@ -16569,6 +16708,7 @@ $('acctNameSave').onclick = () => {
   if (err){ notice(err); return; }
   p.name = n; saveProfile(p); renderAccount(); notice('NAME CHANGED TO ' + n);
 };
+$('acctLogout').onclick = async () => { if (await uiConfirm('Log out of ' + loadProfile().name + '?\nYour data stays on this device — join with the same username to get it back.', { title: 'LOG OUT', ok: 'LOG OUT' })) acctLogout(); };
 $('acctName').onkeydown = e => { if (e.key === 'Enter'){ e.preventDefault(); $('acctNameSave').onclick(); } };
 
 // ── CONFIG › ACCOUNT：COUNTRY（給 TETRA CHANNEL 的 COUNTRY 排行用）＋PRIVACY（官方選項，存本機）
@@ -20081,6 +20221,7 @@ function playSplash(){
   try { if (!skSel()){ if (store.get(SKIN_KEY)){ const L = skLib(); L.push({ id: 'lib:mine', label: 'MY SKIN' }); skLibSave(L); localStorage.setItem(SKSEL_KEY, 'lib:mine'); idbPut('tp-skinlib', 's', 'lib:mine', store.get(SKIN_KEY)).catch(() => {}); } else localStorage.setItem(SKSEL_KEY, 'none'); } } catch(e){}
   renderSkinSel();
   playSplash();
+  try { acctGate(); } catch(e){ console.warn(e); }
   try {
     const raw = store.get(SKIN_KEY);
     if (raw){
