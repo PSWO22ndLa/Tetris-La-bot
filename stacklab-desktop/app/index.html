@@ -10622,37 +10622,12 @@ function drawReplayTag(){
     ctx.fillStyle = '#0b0d12'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.font = `800 ${h * .62}px ${CANVAS_FONT}`; try { ctx.letterSpacing = `${h * .12}px`; } catch(e){} ctx.fillText('REPLAY', x + w / 2 + h * .06, y + h * .54); }
   ctx.restore();
 }
-function simTick(ts){
-  IN_TICK = true; DREW = false;
-  try { simTickBody(ts); } finally { IN_TICK = false; }
-  if (NEED_DRAW && !DREW && mode === 'sim') drawNow();
-  NEED_DRAW = false;
-}
-function simTickBody(ts){
-  if (mode !== 'sim'){ simRAF = null; qpFx(0); qpBg(0); return; }
-  const dt = Math.min(50, ts - lastTs || 16); lastTs = ts;          // 卡頓後最多補 50ms，方塊不會一次衝很多格
-  qpBg(dt); qpFx(dt);
-  if (climb && climb.rp){ rpTick(dt); draw(); simRAF = requestAnimationFrame(simTick); return; }   // 回放：不跑遊戲，只把快照畫回去
-  rpRecTick(dt);
-  sinceSpawn += dt;
-  if (rec && rec.mode === 'time'){
-    const iv = 1000 / Math.max(2, +$('recFps').value || 20);
-    rec.last += dt;
-    if (rec.last >= iv){ rec.last = 0; recCapture(true); }
-  }
-  if (simEdit){ simRAF = requestAnimationFrame(simTick); return; }   // 編輯盤面時整個模擬暫停
-  if (climb && climb.cd){                                              // 開局倒數：只畫面，不跑遊戲
-    const cd = climb.cd, t = (cd.t += dt);                           // 用每幀 dt（上限 100ms）累加：手機剛開局卡頓也不會把倒數整段跳過
-    const iv = cd.iv || CD_STEP, n = cd.n || 5, u = t - (cd.pre || 0), k = Math.min(n - 1, Math.floor(u / iv));
-    if (cd.mis && !cd.mis.done && t >= cd.mis.at){ cd.mis.done = true; say(cd.mis.text); if (cd.mis.ban) tlOv(`<div class="ban">${cd.mis.text}</div>`, 2000); else clearMsg = { lines: [{ text: cd.mis.text, color: '#ffffff', size: 'md' }], t: performance.now() }; sfxEv('mission', cd.mis.snd); }   // 官方 GlobalShout(mission)
-    if (u >= 0 && u < n * iv && k > cd.step){ cd.step = k; const nm = cd.snd ? cd.snd(k) : 'countdown' + Math.max(1, Math.min(5, n - k)); sfxEv('countdown', nm); }
-    if (t >= cd.dur){ active = cd.piece; climb.cd = null; goHoist(); climb.goT = performance.now(); climb.goStride = !!cd.labels; lastTs = ts; sfxEv('countdown', cd.goSnd || 'go'); if (climb.cdSong !== undefined){ bgm(climb.cdSong); climb.cdSong = undefined; } }
-    draw(); simRAF = requestAnimationFrame(simTick); return;
-  }
-  if (climb && climb.warp){ zenWarpTick(dt); if (!climb.warp) lastTs = ts; draw(); simRAF = requestAnimationFrame(simTick); return; }
-  climbTick(dt);
-  if (active && DEMO) demoTick(dt);
-  if (active){
+/* 官方 _ProcessSubframe：每個按鍵事件都帶自己的 subframe，處理按鍵之前先把「上一幀到這個按鍵之間」的時間跑完
+   （ProcessAllShift＋Fall）。所以 DAS／ARR／重力／鎖定延遲是照按鍵真正發生的時間算，不是對齊到畫面更新。
+   本站：PHYS_T＝物理已經跑到的時間點（跟 rAF、event.timeStamp 同一個時基）；按鍵事件先 subFrame() 補到事件時間，下一幀只補剩下的。 */
+let PHYS_T = 0;
+function physStep(dt){
+  if (!active) return;
     const h = handling();
     let base = climb && !climb.over ? (sunGrav() ?? climb.gravity) : Math.max(0, +$('gravity').value || 0);   // THE SUN F4：0.2G → 20G
     if (climb && climb.kind === 'qp' && climb.glock > 0){                // 官方 GetEffectiveGravity：glock（幀）> 180 → 0；≤ 180 → (1 − glock/180)² × g
@@ -10682,6 +10657,48 @@ function simTickBody(ts){
       if (isZen() && ruleOf('gravity') === 'SUBZERO') ld = Infinity;          // 官方 SUBZERO：locktime 999999999、無限移動
       if (lockTimer >= ld || (lockResets >= LOCK_RESETS && !infMove() && ld !== Infinity && !(DEMO && climb && climb.demo))){ SAFELOCK_UNTIL = performance.now() + 7000 / 60; lockPiece(); }
     } else { lockTimer = 0; if (active) active.landed = false; }
+}
+function subFrame(ev){
+  if (mode !== 'sim' || !active || simEdit || !simRAF || (climb && (climb.cd || climb.warp || climb.rp || climb.over)) || (DEMO && climb && climb.demo)) return;
+  const t = ev && ev.timeStamp > 0 ? Math.min(ev.timeStamp, performance.now()) : performance.now(), d = t - PHYS_T;
+  if (!(d > 0) || d > 50) return;                                          // 超過 50ms（卡頓、剛開局）交給下一幀照舊處理
+  PHYS_T = t; physStep(d);
+}
+function simTick(ts){
+  IN_TICK = true; DREW = false;
+  try { simTickBody(ts); } finally { IN_TICK = false; }
+  if (NEED_DRAW && !DREW && mode === 'sim') drawNow();
+  NEED_DRAW = false;
+}
+function simTickBody(ts){
+  if (mode !== 'sim'){ simRAF = null; qpFx(0); qpBg(0); return; }
+  const dt = Math.min(50, ts - lastTs || 16); lastTs = ts;          // 卡頓後最多補 50ms，方塊不會一次衝很多格
+  if (!active || simEdit || (climb && (climb.cd || climb.warp || climb.rp))) PHYS_T = ts;
+  qpBg(dt); qpFx(dt);
+  if (climb && climb.rp){ rpTick(dt); draw(); simRAF = requestAnimationFrame(simTick); return; }   // 回放：不跑遊戲，只把快照畫回去
+  rpRecTick(dt);
+  sinceSpawn += dt;
+  if (rec && rec.mode === 'time'){
+    const iv = 1000 / Math.max(2, +$('recFps').value || 20);
+    rec.last += dt;
+    if (rec.last >= iv){ rec.last = 0; recCapture(true); }
+  }
+  if (simEdit){ simRAF = requestAnimationFrame(simTick); return; }   // 編輯盤面時整個模擬暫停
+  if (climb && climb.cd){                                              // 開局倒數：只畫面，不跑遊戲
+    const cd = climb.cd, t = (cd.t += dt);                           // 用每幀 dt（上限 100ms）累加：手機剛開局卡頓也不會把倒數整段跳過
+    const iv = cd.iv || CD_STEP, n = cd.n || 5, u = t - (cd.pre || 0), k = Math.min(n - 1, Math.floor(u / iv));
+    if (cd.mis && !cd.mis.done && t >= cd.mis.at){ cd.mis.done = true; say(cd.mis.text); if (cd.mis.ban) tlOv(`<div class="ban">${cd.mis.text}</div>`, 2000); else clearMsg = { lines: [{ text: cd.mis.text, color: '#ffffff', size: 'md' }], t: performance.now() }; sfxEv('mission', cd.mis.snd); }   // 官方 GlobalShout(mission)
+    if (u >= 0 && u < n * iv && k > cd.step){ cd.step = k; const nm = cd.snd ? cd.snd(k) : 'countdown' + Math.max(1, Math.min(5, n - k)); sfxEv('countdown', nm); }
+    if (t >= cd.dur){ active = cd.piece; climb.cd = null; goHoist(); climb.goT = performance.now(); climb.goStride = !!cd.labels; lastTs = ts; sfxEv('countdown', cd.goSnd || 'go'); if (climb.cdSong !== undefined){ bgm(climb.cdSong); climb.cdSong = undefined; } }
+    draw(); simRAF = requestAnimationFrame(simTick); return;
+  }
+  if (climb && climb.warp){ zenWarpTick(dt); if (!climb.warp) lastTs = ts; draw(); simRAF = requestAnimationFrame(simTick); return; }
+  climbTick(dt);
+  if (active && DEMO) demoTick(dt);
+  if (active){
+    const dP = ts - PHYS_T > 50 || ts < PHYS_T - 50 ? dt : Math.max(0, ts - PHYS_T);   // 這幀裡已經被按鍵事件（subframe）先跑掉的時間不重算
+    PHYS_T = Math.max(PHYS_T, ts);
+    if (dP > 0) physStep(dP);
     draw();
   } else if (clearMsg || (climb && climb.duo && !climb.over)) draw();   // DUO：自己倒下時隊友盤面、倒數照樣要更新
   simRAF = requestAnimationFrame(simTick);
@@ -14310,6 +14327,7 @@ document.querySelectorAll('[data-sim]').forEach(b => {
   const press = ev => {
     ev.preventDefault();
     try { b.setPointerCapture(ev.pointerId); } catch(e){}                 // 手指在按鍵上滑一點也不會被當成離開而放開
+    subFrame(ev);
     if (DEMO) demoStop('YOU TOOK OVER');
     if (a === 'left'){ held.left = true; startDir(-1); }
     else if (a === 'right'){ held.right = true; startDir(1); }
@@ -14324,7 +14342,8 @@ document.querySelectorAll('[data-sim]').forEach(b => {
     }
     draw();
   };
-  const release = () => {
+  const release = ev => {
+    subFrame(ev);
     if (a === 'left'){ held.left = false; releaseDir(-1); }
     else if (a === 'right'){ held.right = false; releaseDir(1); }
     else if (a === 'soft') held.soft = false;
@@ -19145,6 +19164,7 @@ addEventListener('keydown', e => {
     if (act){
       e.preventDefault();
       if (e.repeat) return;
+      subFrame(e);
       if (DEMO && !['forfeit','retry'].includes(act)) demoStop('YOU TOOK OVER');                       // 系統的自動重複不用，DAS/ARR 自己算
       if (act === 'left'){ held.left = true; startDir(-1); }
       else if (act === 'right'){ held.right = true; startDir(1); }
@@ -19180,6 +19200,7 @@ addEventListener('keydown', e => {
 addEventListener('keyup', e => {
   if (mode !== 'sim') return;
   const a = actOf(e.code);
+  if (a) subFrame(e);
   if (a && inGame()) e.preventDefault();                             // 空白鍵在 keyup 才會「按下」有焦點的按鈕（RETRY／QUIT），遊戲中擋掉
   if (a === 'left'){ held.left = false; releaseDir(-1); }
   else if (a === 'right'){ held.right = false; releaseDir(1); }
