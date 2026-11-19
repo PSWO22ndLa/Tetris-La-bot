@@ -1212,7 +1212,12 @@ document.documentElement.classList.add('booting'); addEventListener('load', func
   body.game #socialTray{ display:none; }
   body:not(.game) #popfx{ display:none; }
   /* ── 登入（官方 #entry_form／#return_form 的 .oob_modal 樣式照抄；帳號只存在這台裝置、沒有密碼）── */
-  #oobShade{ position:fixed; inset:0; z-index:9999990; background:#08080a; }   /* 不透明：登入時背後不該看得到選單 */
+  #oobShade{ display:none; }
+  /* 官方：登入表單出現時 #menus 還是 .hidden（opacity 0、頁首往上收），背後只看得到背景圖；登入後選單才淡入 */
+  body > *{ transition:opacity .3s; }
+  body.oobin > :not(#tiobg):not(.oob_modal):not(#splash):not(script){ opacity:0 !important; pointer-events:none !important; }
+  body.oobin > header{ transform:translateY(-100%); }
+  body > header{ transition:opacity .3s, transform .3s; }
   #oobShade.hidden{ display:none; }
   .oob_modal{ position:fixed; left:50%; top:50%; background-color:#eee; color:#222; z-index:10000000; transform:translate(-50%,-50%); max-height:calc(95vh - 2em); padding:1em; border-radius:3px; width:30em; max-width:calc(95vw - 2em);
     font-family:var(--hunf), "Roboto Condensed", sans-serif; font-size:16px; box-shadow:rgba(255,255,255,.133) 0 0 48px; transition:opacity .3s, transform .3s, filter .3s; box-sizing:content-box; text-align:left; text-transform:none; letter-spacing:0; }
@@ -16513,7 +16518,7 @@ function acctGate(){
   document.body.append($('oobShade'), $('entry_form'), $('return_form'));   // 掛到 body 最外層：原本的位置在頁首的堆疊環境裡，會被選單蓋住
   const p = loadProfile(), r = acctReg(), named = !isAnon(p.name);
   if (named && r.cur !== p.name){ r.cur = p.name; r.list[p.name] = { t: Date.now() }; acctRegSave(r); }   // 更新前就有名字的人：直接當成已登入
-  const show = id => { for (const k of ['entry_form', 'return_form']){ const e = $(k); e.classList.toggle('noop', k !== id); requestAnimationFrame(() => e.classList.toggle('hidden', k !== id)); } $('oobShade').classList.toggle('hidden', !id); };
+  const show = id => { for (const k of ['entry_form', 'return_form']){ const e = $(k); e.classList.toggle('noop', k !== id); requestAnimationFrame(() => e.classList.toggle('hidden', k !== id)); } if (!id) document.body.classList.remove('oobin'); };
   const names = Object.keys(r.list).sort((a, b) => (r.list[b].t || 0) - (r.list[a].t || 0));
   let games = 0; try { games = JSON.parse(localStorage.getItem('bp:rpidx') || '[]').length; } catch(e){}
   const hrs = ((p.tot && p.tot.secs) || 0) / 3600;
@@ -16528,7 +16533,7 @@ function acctGate(){
   $('return_button').onclick = () => { acctJoined(); done(); };
   $('return_logout').onclick = acctLogout;
   const open = () => { if (named){ $('return_is').textContent = p.name; show('return_form'); } else { show('entry_form'); try { $('entry_username').focus({ preventScroll: true }); } catch(e){} } };
-  $('oobShade').classList.remove('hidden');                                // 開場動畫跑完才出現表單，但底下的選單先擋住
+  document.body.classList.add('oobin');                                  // 選單先藏起來（開場動畫跑完才出現表單）
   (function wait(){ if (document.getElementById('splash')) return setTimeout(wait, 150); open(); })();
 }
 // 改名規則同 ZC：3–16 字、只能 A-Z 0-9 - _、不能用 ANON 開頭
