@@ -10812,7 +10812,7 @@ const CLIMB_CFG = {
   // FLIPSIDE（反面）：逆位再推一步，⚠️ 規則是本專案自創，不是 TETR.IO 的
   flipFatigueShift: 120,
   vowRepeat: 0.4,
-  rollMs: 120,                               // ⚠️ 一般模式垃圾一行一行滾進的間隔，實機數字沒公開，目測                            // Vow of Silence：重複上一顆的機率                     // Tyrant 反面：疲勞提早 2 分鐘                 // The Tyrant：每秒掉 0.12×樓層 公尺
+  rollMs: 5 * 1000 / 60,                     // 官方 continuous 進場：每 garbageare 幀進一行，garbageare 預設 5（tetrio.js ProcessGarbageARE）。⚠️ QP 伺服器端有沒有另外設值查不到
   tyrantFatigue: [
     { t:360, messy:0.25, msg:'YOUR POWER SLIPS…' },
     { t:420, gmul:0.25, msg:'WHISPERS OF DISCONTENT SPREAD…' },
