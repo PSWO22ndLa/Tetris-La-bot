@@ -3120,6 +3120,11 @@ document.documentElement.classList.add('booting'); addEventListener('load', func
     .chscreen{ padding-top:0 !important; } .chscreen > .chcol{ padding-top:calc(2.3em - 2px) !important; }   /* 官方 .right_scroller：第一塊從 4em＋2.5em 開始 */
     #config .cfg-col{ padding-left:max(0px, calc(15vw - 127px)) !important; } #config .acc{ width:calc(70vw + 2em) !important; }   /* 官方：左緣 15vw、整塊 70vw＋2em＋邊 */
     #solopre .oscr{ padding-top:calc(2.3em - 2px) !important; }
+    /* CONFIG / BGM TWEAKER：官方 .right_scroller > .scroller_block（h2 1.25em #657497、p.sub 1.35em #7a91c8，歌單在同一個框裡） */
+    #bgmtweak .bgmtw{ max-width:none !important; margin:-5.4375em 0 0 !important; padding:2.5em 0 2.5em 15vw !important; font-size:16px; }
+    #bgmtweak .bgmtw > .scroller_block{ width:70vw; box-sizing:content-box; padding:1em !important; margin:0 0 1em !important; background:rgb(24,28,39) !important; border:3px solid !important; border-color:rgb(40,49,69) rgb(21,25,34) rgb(15,17,23) rgb(35,41,54) !important; box-shadow:#000 0 0 8px; border-radius:3px; text-align:left; }
+    #bgmtweak .bgmtw > .scroller_block > h1{ font:700 1.25em var(--hunf) !important; color:rgb(101,116,151) !important; margin:0 0 .15em !important; }
+    #bgmtweak .bgmtw > .scroller_block > p{ font:400 1.35em var(--hunf) !important; color:rgb(122,145,200) !important; margin:0 0 .5em !important; }
     /* CUSTOM GAME（官方 custom view）：各塊靠左在 15vw、整塊 70vw＋2em＋邊，第一塊在 4em＋2.5em */
     #customsel > .cr-head, #customsel > .cr-startrow, #customsel > .cr-tabs, #customsel > .cr-hint, #customsel > #crBody{ margin-left:15vw !important; margin-right:0 !important; width:calc(70vw + 2em + 6px) !important; max-width:calc(100% - 15vw) !important; }
     #customsel > .cr-head{ margin-top:calc(2.3em - 2px) !important; }
@@ -3469,7 +3474,7 @@ document.documentElement.classList.add('booting'); addEventListener('load', func
 <div id="victory" class="ns hidden"><div id="victory_header" class="ns">WINNER!</div><div id="victory_victor" class="ns"></div><div id="victory_sub" class="ns"></div><div id="victory_also" class="ns"></div><div id="victory_shine"></div><div id="victory_radial"></div></div>
 <section id="bgmtweak" class="hidden">
   <div class="homebar"><button id="bgmtweakBack" class="tback">BACK</button></div>
-  <div class="cfg-col bgmtw"><div class="scroller_block"><h1>MUSIC TWEAKER</h1><p>select how often you want each song to be picked here, or ban songs if you so desire. click a song's title to play it.</p></div><div id="bgmtweakList"></div></div>
+  <div class="cfg-col bgmtw"><div class="scroller_block"><h1>MUSIC TWEAKER</h1><p>select how often you want each song to be picked here, or ban songs if you so desire. click a song's title to play it.</p><div id="bgmtweakList"></div></div></div>
 </section>
 <section id="customsel" class="hidden">
   <div class="homebar"><button id="customBack" class="tback">BACK</button></div>
