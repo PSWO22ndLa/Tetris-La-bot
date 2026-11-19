@@ -3120,6 +3120,20 @@ document.documentElement.classList.add('booting'); addEventListener('load', func
     .chscreen{ padding-top:0 !important; } .chscreen > .chcol{ padding-top:calc(2.3em - 2px) !important; }   /* 官方 .right_scroller：第一塊從 4em＋2.5em 開始 */
     #config .cfg-col{ padding-left:max(0px, calc(15vw - 127px)) !important; } #config .acc{ width:calc(70vw + 2em) !important; }   /* 官方：左緣 15vw、整塊 70vw＋2em＋邊 */
     #solopre .oscr{ padding-top:calc(2.3em - 2px) !important; }
+    /* ABOUT：官方是單欄——.centered_block（70vw，置中的製作名單，同一組的人橫排）下面接一般的 .scroller_item（left 6em、高 5em）；不是左右兩欄 */
+    #about .about-wrap{ display:block !important; padding:2.5em 0 2.5em 15vw !important; margin:-5.4375em 0 0 !important; font-size:16px; }
+    #about .about-left{ position:relative; text-align:center; border:3px solid transparent; width:70vw; padding:1em !important; margin:0 0 1em !important; box-sizing:content-box; font-size:16px !important; }
+    #about #about_line{ font-size:2em !important; margin:.5em 0 !important; padding-bottom:.5em; border-bottom:1px solid rgba(255,255,255,.067); }
+    #about .about_block{ text-transform:none !important; font-size:1.5em !important; padding:0 10vw .5em !important; text-align:justify; margin:0 0 .5em !important; border-bottom:1px solid rgba(255,255,255,.067); }
+    #about .about-left .credit_title{ font-size:.8em !important; color:rgb(255,180,0); margin:2em 0 .5em !important; }
+    #about .about-left .credit_owner{ display:inline-block !important; vertical-align:top; min-width:10vw; margin:0 .2em .5em !important; font-size:1.35em !important; color:#fff; }
+    #about .about-left .credit_title:first-of-type + .credit_owner{ display:block !important; }
+    #about .about-left .credit_owner b{ display:block; font-weight:400; }
+    #about .about-left .credit_owner span{ display:block; font-size:.54em !important; opacity:.5; margin-top:-.2em; }
+    #about .about-right{ font-size:16px !important; padding:0 !important; margin:0 !important; display:block !important; }
+    #about .about-right .tbar{ display:block !important; position:relative; left:6em !important; width:calc(100% - 6em) !important; height:5em !important; box-sizing:content-box; background:rgb(34,34,34) !important; border:0 !important; border-top:3px solid rgb(42,42,42) !important; border-left:3px solid rgb(38,38,38) !important; border-bottom:3px solid rgb(19,19,19) !important; box-shadow:#000 0 0 8px; border-radius:3px; margin:0 0 1em !important; padding:0 !important; text-align:left; font-size:16px !important; }
+    #about .about-right .tbar b{ position:absolute !important; left:.5em; right:2em; top:.4em; margin:0; font:500 2em var(--hunf) !important; color:silver !important; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    #about .about-right .tbar small{ text-transform:none !important; position:absolute !important; left:1em; right:4em; top:3em; margin:0; font:400 1em var(--hunf) !important; color:rgb(160,160,160) !important; }
     /* CONFIG / BGM TWEAKER：官方 .right_scroller > .scroller_block（h2 1.25em #657497、p.sub 1.35em #7a91c8，歌單在同一個框裡） */
     #bgmtweak .bgmtw{ max-width:none !important; margin:-5.4375em 0 0 !important; padding:2.5em 0 2.5em 15vw !important; font-size:16px; }
     #bgmtweak .bgmtw > .scroller_block{ width:70vw; box-sizing:content-box; padding:1em !important; margin:0 0 1em !important; background:rgb(24,28,39) !important; border:3px solid !important; border-color:rgb(40,49,69) rgb(21,25,34) rgb(15,17,23) rgb(35,41,54) !important; box-shadow:#000 0 0 8px; border-radius:3px; text-align:left; }
