@@ -6727,9 +6727,28 @@ function botInit(o){
   o.noise = 0.15 + Math.max(0, idx) * 0.12;                     // 評分雜訊：X+ 幾乎不失誤，越低段越常放歪
   botFill(o);
 }
+// 活動 mod 的方塊：bot 也拿同一種包（PENTR.IO 18 顆五連塊、A FOOL'S ERRAND 60 顆六連塊、MUTATION 每 17 顆混 3 顆新方塊）
+const polyKindOf = m => !m ? null : m.has('foolserrand') ? 'hex' : m.has('pentrio') ? 'pent' : m.has('mutation') ? 'mut' : null;
+const POLY_SX = {};
+function botPoly(o, kind, floorFn){
+  o.polyKind = kind || null; if (!kind) return;
+  buildMut(); PENTA = PENTA || buildPolys(5, 'P'); HEXA = HEXA || buildPolys(6, 'H');
+  if (!POLY_SX._ok){ for (const t of [...PENTA, ...HEXA, ...Object.values(MUT)]){ POLY_SX[t] = Math.floor((W - (SHAPES[t].s || 5)) / 2); BOT_VAL[t] = pk(t); } POLY_SX._ok = 1; }
+  o.mutFloor = floorFn || (() => 10);
+  o.rules = { ...(o.rules || {}), poly: true, sx: POLY_SX };
+  if (o.q && o.q.some(t => PIECE_ORDER.includes(t)) && kind !== 'mut'){ o.q = []; o.bag = []; if (o.hold && PIECE_ORDER.includes(o.hold)) o.hold = null; }
+}
 function botFill(o){
+  const sh = a => { for (let i = a.length - 1; i > 0; i--){ const k = Math.floor(Math.random() * (i + 1)); [a[i], a[k]] = [a[k], a[i]]; } return a; };
   while (o.q.length < 6){
-    if (!o.bag.length){ o.bag = ['I','J','L','O','S','T','Z']; for (let i = 6; i > 0; i--){ const k = Math.floor(Math.random() * (i + 1)); [o.bag[i], o.bag[k]] = [o.bag[k], o.bag[i]]; } }
+    if (!o.bag.length){
+      if (o.polyKind === 'pent' || o.polyKind === 'hex') o.bag = sh((o.polyKind === 'pent' ? PENTA : HEXA).slice());
+      else if (o.polyKind === 'mut'){ const fl = Math.max(1, Math.min(10, o.mutFloor ? o.mutFloor() : 10)), pool = Object.keys(MUT_SRC).filter(k => +k.slice(1) <= fl).map(k => MUT[k]);
+        const q = [...sh(['I','J','L','O','S','T','Z']), ...sh(['I','J','L','O','S','T','Z'])];
+        for (let i = 0; i < 3; i++) q.splice((Math.random() * (q.length + 1)) | 0, 0, pool[(Math.random() * pool.length) | 0]);
+        o.bag = q.reverse(); }
+      else o.bag = sh(['I','J','L','O','S','T','Z']);
+    }
     o.q.push(o.bag.pop());
   }
 }
@@ -6920,12 +6939,14 @@ function LB_NN_LEAF(b, st, hold){
 
 const lbSx = t => LB_R.sx && LB_R.sx[t] != null ? LB_R.sx[t] : t === 'O' ? 4 : 3;
 const LB_ASCK = {};
-function lbAscK(dir){                                                 // 五／六連塊、突變塊：ASC-DX（±3 範圍近的先試，同 ascKicks）
+function lbAscK(dir){                                                 // 五／六連塊、突變塊：ASC-DX，跟玩家的 ascKicks 同一張表（±2 照官方 ASC、180 不踢、±3 那圈接在後面）
   if (LB_ASCK[dir]) return LB_ASCK[dir];
-  const L = [], sx = dir === 3 ? 1 : -1;
-  for (let dy = -3; dy <= 3; dy++) for (let dx = -3; dx <= 3; dx++) L.push([dx, dy]);
-  L.sort((a, b) => (Math.abs(a[0]) + Math.abs(a[1])) - (Math.abs(b[0]) + Math.abs(b[1])) || (b[1] - a[1]) || (b[0] * sx - a[0] * sx));
-  return (LB_ASCK[dir] = L);
+  if (dir === 2) return (LB_ASCK[dir] = [[0, 0]]);
+  const CW = [[-1,0],[0,1],[-1,1],[0,2],[-1,2],[-2,0],[-2,1],[-2,2],[1,0],[1,1],[0,-1],[-1,-1],[-2,-1],[1,2],[2,0],[0,-2],[-1,-2],[-2,-2],[2,1],[2,2],[1,-1]];
+  const sx = dir === 3 ? -1 : 1, ring = [];
+  for (let dy = -3; dy <= 3; dy++) for (let dx = -3; dx <= 3; dx++) if (Math.max(Math.abs(dx), Math.abs(dy)) === 3) ring.push([dx, dy]);
+  ring.sort((a, b) => (Math.abs(a[0]) + Math.abs(a[1])) - (Math.abs(b[0]) + Math.abs(b[1])) || (b[1] - a[1]) || (a[0] * sx - b[0] * sx));
+  return (LB_ASCK[dir] = [[0, 0], ...CW.map(([x, y]) => [x * sx, y]), ...ring]);
 }
 function lbTables(only){
   if (!LBT) LBT = {};
@@ -7976,8 +7997,10 @@ onmessage = e => { const d = e.data; if (d.init){ ({ W, BOT_H, SHAPES, KICK_JLST
 }
 // 要一個決策：有 Worker 就非同步，沒有就當場算
 const lbDepthFor = pps => 6;   /* 快的時候也看 6 步，靠 timeLimit 截斷（實測 depth 4＋45ms 在有垃圾時 B2B 常斷） */ const lbTimeFracFor = pps => pps > 12 ? 0.3 : 0.5;   /* 12 PPS 以上：一幀約 16ms，想太久會拖到下一幀以後，實際 PPS 上不去 */                       // 快的時候最多看 4 步，另外有時間上限（timeLimit）：來不及就用算到的那一層   // 8–10 PPS 一顆只有 100–125ms：看 2 步（桌機實測 ~15ms、手機約 3 倍）
+function lbPolyShapes(o){ const out = {}; for (const t of [o.hold, ...o.q]) if (t && !PIECE_ORDER.includes(t) && SHAPES[t]) out[t] = SHAPES[t].map(st => st.map(c => c.slice())); return out; }
 function lbRequest(o, cb){
   botFill(o);
+  if (o.polyKind){ o.noBook = true; }
   o.noBook = (o.pieces || 0) > 0 && !o.book && o.bd.some(v => v);   // 開局庫：開局（或 All Clear 後盤面全空）開始，照背好的開局一路蓋完（上一顆是開局庫的就繼續）；之前只放第一顆就停
   o.goal = climb && !climb.over && climb.downed && o === climb.duo ? duoGoal(climb.downed.tasks) : null;   // 你倒下時：照目前的復活任務打
   o.ospin = !!(climb && !climb.over && climb.hearts && o === climb.duo);                                 // Bleeding Hearts：O 也能 Spin
@@ -7990,7 +8013,7 @@ function lbRequest(o, cb){
   const w = W === 10 ? lbWorker() : null;
   if (!w){ const keep = LBW.depth; LBW.depth = Math.min(depth, 4); const r = lbDecide(o); LBW.depth = keep; cb(r); return; }
   const id = ++LBWK_id; LBWK_cb.set(id, r => cb(r === undefined ? lbDecide(o) : r));
-  w.postMessage({ id, W, depth, budget, timeLimit: pps > 3.2 ? 1000 / pps * lbTimeFracFor(pps) : 0, noBook: o.noBook, goal: o.goal, ospin: o.ospin, ready: o.ready, holes: o.holes, pend: o.pend || 0, lastType: o.lastType || null, bd: o.bd.buffer.slice(0), hold: o.hold || null, q: o.q.slice(), b2b: o.b2b ?? -1, combo: o.combo ?? -1, setups: !!o.setups, setupKey: o.setupKey || null, midBook: !!o.midBook, book: o.book || null });
+  w.postMessage({ id, W, depth: o.polyKind ? Math.min(depth, 3) : depth, budget, timeLimit: pps > 3.2 ? 1000 / pps * lbTimeFracFor(pps) : 0, noBook: o.noBook, goal: o.goal, ospin: o.ospin, ready: o.ready, holes: o.holes, pend: o.pend || 0, lastType: o.lastType || null, bd: o.bd.buffer.slice(0), hold: o.hold || null, q: o.q.slice(), b2b: o.b2b ?? -1, combo: o.combo ?? -1, setups: !!o.setups, setupKey: o.setupKey || null, midBook: !!o.midBook, book: o.book || null, ...(o.polyKind ? { rules: o.rules, shapes: lbPolyShapes(o) } : {}) });
 }
 /* ---- DUO（隊友 La bot，自己的 AI，不是官方 MochBot）：照 tetrio.wiki.gg QUICK PLAY 頁
    - 兩人同一支隊伍：共用 Climb Speed 跟高度，各自只貢獻一半
@@ -8188,7 +8211,8 @@ function duoInit(){
   climb.hearts = hasMod('hearts');
   const k = TL_RANKS.find(x => x.r === 'A') || TL_RANKS[7];
   climb.duo = { name: duoMate, rank: k, pps: 1.4, apm: 0, pending: [], alive: true, revives: 0, tasks: null, deadT: 0, hold: null, b2b: -1, combo: -1, fixedPps: duoPps, rising: [] };
-  climb.duo.contGarb = !(hasMod('expert') || hasMod('tyrant'));   // 官方：EXPERT（含逆位）garbageentry=instant，其他 continuous（一行一行長上來）
+  climb.duo.contGarb = !(hasMod('expert') || hasMod('tyrant'));
+  botPoly(climb.duo, polyKindOf(climb.mods), () => floorOf(climb.alt).n);   // 官方：EXPERT（含逆位）garbageentry=instant，其他 continuous（一行一行長上來）
   botInit(climb.duo);
 }
 // 每幀：隊友放方塊、打攻擊（算一半）、收塔的垃圾；倒下時等你完成任務
@@ -8230,6 +8254,10 @@ function lbPath(bd, m, dirsOnly){
 }
 // 把路徑排成時間軸：每個操作一格，連續往下走是軟降（比較快），最後一段直直落到底就是硬降（一瞬間）
 function lbAnim(o, d){
+  if (!o.polyKind) return lbAnim0(o, d);
+  const R0 = LB_R; LB_R = { ...R0, ...(o.rules || {}) }; try { return lbAnim0(o, d); } finally { LB_R = R0; }
+}
+function lbAnim0(o, d){
   const type = d.held ? (o.hold || o.q[1]) : o.q[0];
   let fr = lbPath(o.bd, d.m, o.goal && o.goal.id === 'e_ccw12' ? [3] : null);
   const spam = (o.goal && LB_ROTSPAM[o.goal.id]) || 0;               // 轉圈任務：在出生點先順時針轉幾圈
@@ -15875,6 +15903,7 @@ function qplMateName(p){                                                    // �
 function qplMateNew(o){
   const m = { pending: [], rising: [], contGarb: true, pps: Math.max(1.2, (o.pps || 2) * (.8 + Math.random() * .35)), clock: 0, nextPc: 500, name: '', b2b: -1, combo: -1 };
   botInit(m); m.noise = .2; m.garbRow = o.garbRow; m.rules = { ...(o.rules || {}) };
+  if (o.polyKind){ botPoly(m, o.polyKind, o.mutFloor); botFill(m); }
   m.noise = .6; for (let i = 0, n = 10 + ((Math.random() * 12) | 0); i < n; i++) if (botStep(m)){ botInit(m); break; }   // 中途加入：盤面上已經有東西
   m.noise = .2; m.last = []; return m;
 }
@@ -15918,7 +15947,8 @@ function qplSpecNew(p){
     if (o.rules.noHold) o.hold = null;
     o.garbRow = specGarbRow;                                               // 垃圾行照你自己的規則生（換洞機率、2 格洞、6–7 洞、雙洞…）
     o.contGarb = !(M.has('expert') || M.has('tyrant')); o.rising = [];      // 官方：EXPERT（含逆位）garbageentry=instant，其他 continuous
-    o.hole = (Math.random() * W) | 0; }
+    o.hole = (Math.random() * W) | 0;
+    botPoly(o, polyKindOf(M), () => floorOf(o.p.alt).n); botFill(o); }
   // 中途加入觀戰：盤面上已經有東西（照樓層：越高垃圾越多），不是空盤
   if (el > 5){ const fl = floorOf(p.alt).n, n = 18 + ((Math.random() * 14) | 0); o.noise = .6;
     for (let i = 0; i < n; i++){ if (i % 6 === 2 && i < n - 8 && Math.random() < .12 + fl * .03) o.pending.push({ lines: 1 + ((Math.random() * Math.min(3, 1 + fl * .25)) | 0), t: performance.now() - 2000 }); if (botStep(o)){ botInit(o); break; } }   // 中途加入：少量垃圾、最後 8 顆不再塞（給他挖），不然一進來就快滿了
