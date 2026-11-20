@@ -17449,7 +17449,7 @@ const TUT_COL = {"10030020020f27f21f23f33f3bf27f37f":"SSSSILLLIILSSLLLIISSJLIIOO
 const TUT_ROUNDS = Object.fromEntries(Object.entries(TUT_RAW).map(([k, v]) => [k, v.map(([part, rep, of, b, q, st]) => ({ part, rep, of, bh: b, board: (b.match(/.../g) || []).map(h => [...Array(10)].map((_, x) => parseInt(h, 16) >> x & 1 ? 'X' : '.').join('')), q,
   steps: st.map(x => /^%\d/.test(x) ? { free: +x[1], ref: x.length > 2 ? (x.slice(3).match(/[IJLOSTZ][0-9a-z]{8}/g) || []).map(b => ({ p: b[0], c: b.slice(1).match(/../g).map(c => [parseInt(c[0], 36), parseInt(c[1], 36)]) })) : null } : /^!?@/.test(x) ? { build: (x.replace(/^!?@/, '').match(/[IJLOSTZ][0-9a-z]{8}/g) || []).map(b => ({ p: b[0], c: b.slice(1).match(/../g).map(c => [parseInt(c[0], 36), parseInt(c[1], 36)]) })), pc: x[0] === '!' } : /^!?[IJLOSTZ]\d/.test(x) ? { p: x.replace('!', '')[0], pc: x[0] === '!', place: x.replace(/^!?[A-Z]/, '').match(/\d\d/g).map(c => [+c[0], +c[1]]) } : (([g, a]) => ({ goal: g, at: a ? a.slice(1).match(/\d\d/g).map(c => [+c[0], +c[1]]) : null }))(x.split('@'))) }))]));
 const TUT_CATS = [
-  ['STANDARD SPINS', 'THE BASICS'], ['ADVANCED SPINS', 'TRIPLES, WALLS AND OVERHANGS'], ['COMBINED STRUCTURES', 'CHAIN TWO SPINS'], ['OPENERS', 'BUILD FROM AN EMPTY BOARD'], ['PERFECT CLEAR', 'EMPTY THE WHOLE BOARD'], ['CHEESE', 'DIG THROUGH GARBAGE'], ['FINESSE', 'FEWEST KEY PRESSES'], ['BEGINNER', 'THE BASIC CONTROLS'], ['T-SPIN SETUPS', 'DONATIONS AND CONTINUOUS T-SPINS'], ['REVIVE SETUPS', 'DUO REVIVE TASKS'] ];
+  ['STANDARD SPINS', 'THE BASICS'], ['ADVANCED SPINS', 'TRIPLES, WALLS AND OVERHANGS'], ['COMBINED STRUCTURES', 'CHAIN TWO SPINS'], ['OPENERS', 'BUILD FROM AN EMPTY BOARD'], ['PERFECT CLEAR', 'EMPTY THE WHOLE BOARD'], ['CHEESE', 'DIG THROUGH GARBAGE'], ['FINESSE', 'FEWEST KEY PRESSES'], ['BEGINNER', 'THE BASIC CONTROLS'], ['T-SPIN SETUPS', 'DONATIONS AND CONTINUOUS T-SPINS'], ['QUICK PLAY TECHNIQUES', 'REVIVE TASKS AND EVENT PIECE SPINS'] ];
 const TUT_DIFF = { pc2:1 };
 // 不實用（實戰幾乎不會那樣疊）的課程：先收起來不列出（資料還在，要放回來把 id 拿掉就好）
 const TUT_HIDE = new Set(["minisnake", "t180_13", "t180_21", "t180_31", "t180_32", "t180_33"]);   // 複合／開局各變化都是困難 ×1
@@ -17641,17 +17641,34 @@ const TUT_GRP = {
   s_il:   ['IL DONATIONS', 'IL', 'MAKE THE OVERHANG, THEN CHAIN THE SPINS'],
   s_sl:   ['SL / SJ DONATIONS', 'SJ', 'SHACHIKU TRAIN, SJ, JS / SL, OVERFUTURE, FLAT'],
   s_ooo:  ['OUT OF ORDER', 'OOO', 'TUCK AND SPIN PIECES INTO PLACE'],
-  rv_t:   ['T-SPIN TASKS', 'T', 'MINIS, TST, IMPERIAL CROSS, EDGE TSD'],
-  rv_sz:  ['S/Z-SPIN TASKS', 'SZ', 'S/Z-SPIN, TRIPLE, GARBAGE, TWO DOUBLES'],
-  rv_lj:  ['L/J-SPIN TASKS', 'LJ', 'L/J-SPIN, TRIPLE, GARBAGE, TWO DOUBLES'],
-  rv_i:   ['I-SPIN TASKS', 'I', 'I-SPIN, I-SPIN DOUBLE'] };
+  q_rev:  ['REVIVE', 'REV', 'SPINS ASKED FOR BY DUO REVIVE TASKS'],
+  q_pent: ['PENTR.IO', 'P5', 'A SPIN FOR EVERY PENTOMINO · ASC-DX KICKS'],
+  q_mut:  ['MUTATION', 'MUT', 'A SPIN FOR EVERY MUTATED PIECE, FLOOR BY FLOOR'],
+  q_fool: ["A FOOL'S ERRAND", 'H6', 'A SPIN FOR EVERY HEXOMINO'] };
 const TUT_GRP_OF = L => L.id.startsWith('t180') ? '180'
   : L.cat === 2 ? (/snake|zst2/.test(L.id) ? 'c_snake' : 'c_chain')
   : L.cat === 3 ? (/^ms/.test(L.id) ? 'o_ms' : /^(sdpc|motchi|sd14|sdtower)/.test(L.id) ? 'o_sdpc' : /^op_(pco|mko)$/.test(L.id) ? 'o_pc' : /^op_4w/.test(L.id) ? 'o_4w' : 'o_tspin')
   : L.cat === 4 ? (L.id === 'pc2' ? 'p_basic' : /^pc2nd/.test(L.id) ? 'p_2nd' : /dpc/.test(L.id) ? 'p_dpc' : 'p_ikc')
-  : L.cat === 9 ? L.grp
+  : L.cat === 9 ? (/^rv_/.test(L.grp) ? 'q_rev' : L.grp)
   : L.cat === 8 ? (/^ct/.test(L.id) ? 's_cont' : /^ooo/.test(L.id) ? 's_ooo' : /^don_il/.test(L.id) ? 's_il' : /^don_(dt|mkey|rmkey|elev|zts|jlcc)/.test(L.id) ? 's_dt' : 's_sl')
   : L.pp;
+/* QUICK PLAY TECHNIQUES 裡的活動方塊 spin（PENTR.IO 五連塊／MUTATION 新方塊／A FOOL'S ERRAND 六連塊）
+   每顆方塊一題，題目是用本站引擎的踢牆規則（ASC-DX ±3）搜出來的：目標位置卡死（上下左右都動不了）、所在的列補滿、而且只能靠旋轉踢進去。
+   資料：[方塊, 盤面（每列 3 位 16 進位，bit x＝第 x 欄有格子，由上到下）, 目標格（x、由底算起的 y）, 消幾行] */
+const QPT_RAW = {"pent":[["P0","0c4050042307","3040506070",1],["P1","3ef3ef3ef3cf","4041424350",4],["P2","3ef3ef3ef3e7","3040414243",4],["P3","3df387","6050403051",2],["P4","3ef387","6050403041",2],["P5","3ef38f3ef","4241516140",3],["P6","3cf3c7","5040305141",2],["P7","3e73cf3ef","3242415140",3],["P8","3d73c7","5040305131",2],["P9","3213891003cf3df39f","4252515060",3],["P10","39f3c7","5040306151",2],["P11","3f73f73c7","3231304050",3],["P12","3e73c7","3141304050",2],["P13","3e738f","3141405060",2],["P14","3cf3e73ef","5242414031",3],["P15","2a108039f3df3cf","6252515040",3],["P17","3cf3e73f7","5242413130",3]],"mut":[["MZ2","2c21603e739f","31415060",2],["MZ3","3c3387","2131415130405060",2],["MZ4","3e738f","6050404131",2],["MZ5","1142043e73ef3cf","3242414050",3],["MZ6","3e73af","60404131",2],["MZ7","3800100003bf38f38f3ef","6362615251424140",4],["MZ8","0f408000133f37f3bf33f","637372616070",4],["MZ9","3e534f","113141405070",2],["ML1","0033f1","102030",1],["ML2","3ef3ef3ef3cf","5043424140",4],["ML3","3bf397","61305060",2],["ML4","3df3df3c7","5251304050",3],["ML5","0073e33eb","4020413121",2],["ML6","3d7387","315130405060",2],["ML7","3df3df3cf39f","605352515041",4],["ML8","3f03ef3ef3df3ef3cf","525044434140",5],["ML9","3473f5","301071514131",2],["ML10","30337b3f7","307121726252423222",3],["MO1","3df3ef","5140",2],["MO2","2900903e73ff3e7","42403230",3],["MO4","3e73c7","3141304050",2],["MO5","0413800493f83f83fd","10211101221202",3],["MO8","0203c73b738f","6160525042403231",3],["MO9","0421050063a73e5","614140313010",2],["MS1","3ef3cf","404150",2],["MS2","3c904a39f3e7","51613040",2],["MS3","3873c3","3141516120304050",2],["MS4","39f3c7","5040306151",2],["MS5","0d10833cf3ef3e7","4252413040",3],["MS6","3e73cf3df","5150424132",3],["MS7","00c2c53853f73c73c73df","5251504241333231",4],["MS8","0870600bf13f","919081706160",2],["MS9","34f3e5","415171103040",2],["MI1","046028040383","2030405060",1],["MI2","3ef3ff3ef3ef3ef","40414244",5],["MI3","00f387387","3141516130405060",2],["MI4","01f3ef3df3ef3ef","52434140",4],["MI5","3ef3ef3ef3ef3df","5044434241",5],["MI6","3873ff387","3242526230405060",3],["MI7","3af3d7","41613050",2],["MI8","3b73873b7","3262314151613060",3],["MI10","343385","21314151711030405060",2],["MJ1","3ef3ef3f7","304142",3],["MJ2","3ef3ef3ef3e7","3040414243",4],["MJ3","3cf3e73ef","5242414031",3],["MJ4","3f73f73cf","32314050",3],["MJ5","0103ef3f73cf","42314050",3],["MJ6","3af387","416130405060",2],["MJ7","3b7387","316130405060",2],["MJ8","01f3ef3ef3f73ef3e7","303240414344",5],["MJ9","3c535f","705051413111",2],["MJ10","30337b3bf","607121726252423222",3],["MT1","3df3ef3df","415052",3],["MT2","3df387","5130405060",2],["MT3","3ef3ef3c7","4241304050",3],["MT4","3e73cf3e7","514241403230",3],["MT5","0033c13f7","305141312111",2],["MT6","39f3873ef","40615141316252",3],["MT7","3e43f13fb","2031211142321202",3],["MT8","3d73833d7","615251504132313021",3],["MT9","3df34b3df","214150515271",3]],"fool":[["H0","003381","102030405060",1],["H1","3fb3fb3fb3fb3f3","202122232430",5],["H2","3ef3ef3ef3ef3e7","304041424344",5],["H3","3f73f73f73e73f7","303132333441",5],["H4","3df3df3df3cf3df","545352515041",5],["H5","00f3f73f73e73f73f7","303132333442",5],["H6","3df3df3df38f","405051525360",4],["H7","39f387","605040306151",2],["H8","3fd3fd3fc3f9","011011121320",4],["H9","3af387","605040306141",2],["H10","3e73ef3cf3ef","514342414033",4],["H11","3b7387","605040306131",2],["H12","3e73ef3ef3cf","504342414033",4],["H13","3f73e73ef3ef3ef","434241403433",5],["H14","3f73f73f73c7","303132334050",4],["H15","3e7387","314130405060",2],["H16","3ef3ef3ef3e73f7","303141424344",5],["H17","3ef3ef3ef3e3","203040414243",4],["H18","3ef3ef3cf3e7","304041424351",4],["H19","3cf3ef3e73ef","534342414031",4],["H20","3d7387","605040305131",2],["H21","39f3df3df3cf","635352515040",4],["H22","3ef3c73ef3ef","524342414032",4],["H23","3cf387","605040305141",2],["H24","1140003ef3e73cf3ef","514342414032",4],["H25","3ef3ef38f3ef","404142435161",4],["H26","3df3df3c73df","535251504131",4],["H27","10000837f27f33f37f","827372717061",4],["H28","3e73c73f7","324231415130",3],["H29","3ef3ef3c73f7","303141424351",4],["H30","3e73e33ef","404131214232",3],["H31","0210063d73c73df","505141315232",3],["H32","08800000035f31f3df","727161525150",3],["H33","3fd3fd3f83fb","011112132021",4],["H35","0073e33e3","213141203040",2],["H36","3cf3c73f7","525142413130",3],["H37","38f3c7","415161304050",2],["H38","0073e33e73ef","404131423222",3],["H39","3e73cf3e7","324241513040",3],["H40","39f3c73ef","405141316252",3],["H41","3ef3e738f","605040413142",3],["H42","3973c7","315161304050",2],["H43","3e038f3bf39f","605061625242",3],["H44","3a738f","605040614131",2],["H45","01f3c73f73e7","524240323130",3],["H46","3e73ef3cf3df","515043424133",4],["H47","3ef3e33fb3fb","434232222120",4],["H48","38f3e3","415161203040",2],["H49","3f73f73e73cf","313233404150",4],["H50","3ef3cf3e3","403020514142",3],["H51","39f3df3c7","504030516252",3],["H52","3c738f","314151405060",2],["H53","3cf3e73e7","524241403130",3],["H54","3e338f","213141405060",2],["H55","3e33cf3df","505141423222",3],["H56","3ef3c739f","605051413142",3],["H57","0ff2ff27f37f","938382817170",4],["H58","3e73cf39f","324241515060",3],["H59","3cf3e73f3","425231412030",3]]};
+(() => {
+  buildMut(); PENTA = PENTA || buildPolys(5, 'P'); HEXA = HEXA || buildPolys(6, 'H');
+  const round = ([t, b, at, k], i, n) => ({ part: 1, rep: i + 1, of: n, bh: '', board: (b.match(/.../g) || []).map(h => [...Array(10)].map((_, x) => parseInt(h, 16) >> x & 1 ? 'X' : '.').join('')), q: [t],
+    steps: [{ goal: `MINI ${t}-Spin ${k}`, at: at.match(/\d\d/g).map(c => [+c[0], +c[1]]) }] });
+  const add = (id, grp, name, sub, desc, list) => { if (!list.length) return; TUT.push({ id, cat: 9, grp, diff: 2, name, sub, desc }); TUT_ROUNDS[id] = list.map((r, i) => round(r, i, list.length)); };
+  const KICK = 'These pieces use ASC-DX kicks: when a rotation is blocked, the piece can jump up to 3 cells in any direction to the nearest free spot. Put the piece next to or above the slot so that turning it in place is blocked, then rotate: it snaps into the outline. It must end up unable to move in any direction to count as a spin. Press HINT to watch it.';
+  for (let i = 0; i < QPT_RAW.pent.length; i += 3) add('qp_p' + (i / 3 + 1), 'q_pent', `Pentominoes ${i + 1}-${Math.min(i + 3, QPT_RAW.pent.length)}`, 'Spin each pentomino into its slot', 'PENTR.IO replaces the 7-bag with pentominoes. ' + KICK, QPT_RAW.pent.slice(i, i + 3));
+  for (let f = 1; f <= 10; f++){ const ls = QPT_RAW.mut.filter(r => +r[0].replace(/\D/g, '') === f);
+    add('qp_m' + f, 'q_mut', `Mutation · Floor ${f}`, ls.map(r => r[0][1] + '-' + f).join(' '), `MUTATION mixes 3 mutated pieces into every 17. This set unlocks on floor ${f}. ` + KICK, ls); }
+  for (let i = 0; i < QPT_RAW.fool.length; i += 6) add('qp_h' + (i / 6 + 1), 'q_fool', `Hexominoes ${i + 1}-${Math.min(i + 6, QPT_RAW.fool.length)}`, 'Spin each hexomino into its slot', "A FOOL'S ERRAND upgrades the pentominoes to hexominoes. " + KICK, QPT_RAW.fool.slice(i, i + 6));
+})();
+// 活動方塊的顯示名稱：MZ5 → Z-5、P3 → Pentomino、H12 → Hexomino
+const polyNice = t => { const m = /^M([A-Z])(\d+)$/.exec(t); return m ? m[1] + '-' + m[2] : /^P\d+$/.test(t) ? 'Pentomino' : /^H\d+$/.test(t) ? 'Hexomino' : t; };
 TUT.forEach(L => { L.pp = TUT_GRP_OF(L); });
 const TUT_GROUPED = [0, 1, 2, 3, 4, 8, 9];
 TUT.push({ id:'pco_tbl', cat:4, diff:3, name:'PC Table Practice', gen:'pcotbl', hide:true, desc:'Follow the diagram for the Perfect Clear.' });
@@ -17672,9 +17689,9 @@ const TUT_CAT_STYLE = [
   ['FIN', '--bg:#1f3240;--ti:#bfe6f4;--su:#86b2c4;--l1:#2f9ccf;--l2:#45c9b8', 'PLACE PIECES WITH THE FEWEST KEY PRESSES'],
   ['BGN', '--bg:#24361f;--ti:#d0f6bc;--su:#9cc98a;--l1:#5aa83e;--l2:#4ad06a', 'MOVE, ROTATE, HOLD, CLEAR LINES, QUADS'],
   ['SET', '--bg:#3a2236;--ti:#f6cdee;--su:#c99abd;--l1:#c43fa8;--l2:#7f5ae2', 'DONATIONS AND CONTINUOUS T-SPIN SETUPS'],
-  ['REV', '--bg:#3a1e28;--ti:#ffd0dc;--su:#d59aab;--l1:#ff5f7a;--l2:#f2a64f', 'SPINS ASKED FOR BY DUO REVIVE TASKS'] ];
+  ['QP', '--bg:#3a1e28;--ti:#ffd0dc;--su:#d59aab;--l1:#ff5f7a;--l2:#f2a64f', "REVIVE · PENTR.IO · MUTATION · A FOOL'S ERRAND"] ];
 const TUT_SPIN_STYLE = ['SPN', '--bg:#2f2240;--ti:#ecd2fb;--su:#b79ccc;--l1:#a54bd6;--l2:#2fb88f', 'STANDARD, ADVANCED, COMBINED SPINS AND SETUPS'];
-const TUT_TOP = [7, 3, 'spin', 4];                                            // 教學首頁：BEGINNER → OPENERS → SPIN → PC（CHEESE／FINESSE 搬到 SOLO）
+const TUT_TOP = [7, 3, 'spin', 4, 9];                                            // 教學首頁：BEGINNER → OPENERS → SPIN → PC（CHEESE／FINESSE 搬到 SOLO）
 let tutFromSolo = false;                                                       // 從 SOLO 進來的 CHEESE／FINESSE：BACK 回 SOLO
 const TUT_PIECE_STYLE = { T:'--bg:#2f2240;--ti:#ecd2fb;--su:#b79ccc;--l1:#a54bd6;--l2:#d07ce8', S:'--bg:#24361f;--ti:#d0f6bc;--su:#9cc98a;--l1:#5aa83e;--l2:#8fd65a', Z:'--bg:#3c2323;--ti:#f7c4b6;--su:#d39c8e;--l1:#e2443a;--l2:#e2806e',
   L:'--bg:#3a2a1e;--ti:#f4d7a0;--su:#c8a874;--l1:#e6842a;--l2:#f0b04c', J:'--bg:#22284a;--ti:#c9cdf6;--su:#9599c8;--l1:#3a4fd6;--l2:#6a7ce8', I:'--bg:#1f3240;--ti:#bfe6f4;--su:#86b2c4;--l1:#2fb0d8;--l2:#45d0e0' };
@@ -18022,8 +18039,8 @@ function renderTutList(){
   const catBar = ci => { const ls = TUT.filter(L => !L.hide && L.cat === ci), n = ls.filter(L => done[L.id]).length;
     return tbarHTML(TUT_CAT_STYLE[ci][0], TUT_CAT_STYLE[ci][1], TUT_CATS[ci][0], `${TUT_CAT_STYLE[ci][2]} · ${n} / ${ls.length}${n === ls.length ? ' <i>✓</i>' : ''}`, `data-c="${ci}"`); };
   if (tutCat == null || tutCat === 'spin'){
-    el.innerHTML = (tutCat == null ? TUT_TOP : [0, 1, 2, 8, 9]).map(ci => { if (ci !== 'spin') return catBar(ci);
-      const ls = TUT.filter(L => !L.hide && L.cat <= 2 || L.cat >= 8), n = ls.filter(L => done[L.id]).length;
+    el.innerHTML = (tutCat == null ? TUT_TOP : [0, 1, 2, 8]).map(ci => { if (ci !== 'spin') return catBar(ci);
+      const ls = TUT.filter(L => !L.hide && (L.cat <= 2 || L.cat === 8)), n = ls.filter(L => done[L.id]).length;
       return tbarHTML(TUT_SPIN_STYLE[0], TUT_SPIN_STYLE[1], 'SPIN', `${TUT_SPIN_STYLE[2]} · ${n} / ${ls.length}`, 'data-c="spin"'); }).join('');
     el.querySelectorAll('.tbar').forEach(b => b.onclick = () => { tutCat = b.dataset.c === 'spin' ? 'spin' : +b.dataset.c; tutPiece = null; renderTutList(); });
   } else if (tutCat === 'pctbl'){ renderPcoTable(el);
@@ -18041,7 +18058,7 @@ function renderTutList(){
     el.querySelectorAll('.tbar').forEach(b => b.onclick = () => startClimb('practice', { sub:'tut', lesson:+b.dataset.i }));
   }
   const h1 = document.querySelector('header h1');
-  h1.textContent = tutCat == null ? 'TUTORIAL' : tutCat === 'spin' ? 'SPIN' : tutCat === 'pctbl' ? 'PC TABLE' : tutPiece ? (TUT_GRP[tutPiece] ? TUT_GRP[tutPiece][0] : tutPiece + '-PIECE') : ['STANDARD', 'ADVANCED', 'COMBINED', 'OPENERS', 'PERFECT CLEAR', 'CHEESE', 'FINESSE', 'BEGINNER', 'SETUPS', 'REVIVE SETUPS'][tutCat];
+  h1.textContent = tutCat == null ? 'TUTORIAL' : tutCat === 'spin' ? 'SPIN' : tutCat === 'pctbl' ? 'PC TABLE' : tutPiece ? (TUT_GRP[tutPiece] ? TUT_GRP[tutPiece][0] : tutPiece + '-PIECE') : ['STANDARD', 'ADVANCED', 'COMBINED', 'OPENERS', 'PERFECT CLEAR', 'CHEESE', 'FINESSE', 'BEGINNER', 'SETUPS', 'QP TECHNIQUES'][tutCat];
   h1.classList.toggle('long', h1.textContent.length > 12);
   $('foot').textContent = tutCat == null ? 'LEARN THE BASICS, SPINS, SETUPS AND OPENERS' : tutCat === 'pctbl' ? 'PERFECT CLEAR LOOKUP' : tutCat === 'spin' ? TUT_SPIN_STYLE[2] : TUT_CAT_STYLE[tutCat][2];
 }
@@ -18095,7 +18112,7 @@ function tutLoadBoard(){
 }
 const tutStep = () => climb && climb.tut ? climb.tut.R.steps[climb.tut.i] : null;
 const tutTag = res => (res.spin ? (res.spin.mini ? 'MINI ' : '') + res.spin.name + ' ' : '') + res.cleared;
-const tutWords = g => { if (/^\d$/.test(g)) return ['No line clear', 'Single', 'Double', 'Triple', 'Quad'][+g] || g + ' lines'; const m = /^(MINI )?(.+?) (\d)$/.exec(g); if (!m) return g; const n = ['', 'Single', 'Double', 'Triple', 'Quad'][+m[3]] || m[3] + ' lines'; return (m[1] ? 'Mini ' : '') + m[2] + ' ' + n; };
+const tutWords = g => { if (/^\d$/.test(g)) return ['No line clear', 'Single', 'Double', 'Triple', 'Quad'][+g] || g + ' lines'; const m = /^(MINI )?(.+?) (\d)$/.exec(g); if (!m) return g; const n = ['', 'Single', 'Double', 'Triple', 'Quad'][+m[3]] || m[3] + ' lines'; return (m[1] ? 'Mini ' : '') + m[2].replace(/^(\w+)-Spin$/, (a, t) => polyNice(t) + (polyNice(t) === t ? '-Spin' : ' Spin')) + ' ' + n; };
 function tutBuildInit(){
   const T = climb.tut, S = tutStep(); if (!S || !S.build) return;
   const g = grid(), F = new Set();
