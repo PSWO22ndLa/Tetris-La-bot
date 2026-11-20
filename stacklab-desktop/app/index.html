@@ -18233,7 +18233,7 @@ function tutTargetCells(){
     return T.bs.left.map(t => ({ p: t.p, cells: t.c.map(([x, yb]) => [x, H - 1 - tutDisp(T.bs, yb)]), solid: true })); }
   if (S.place) return { p: S.p, cells: S.place.map(([x, yb]) => [x, H - 1 - yb]), solid: true };
   if (!T.hint) return null;
-  if (S.at) return { p: 'T', cells: S.at.map(([x, yb]) => [x, H - 1 - yb]), solid: false };
+  if (S.at) return { p: active && isPoly(active.type) ? active.type : 'T', cells: S.at.map(([x, yb]) => [x, H - 1 - yb]), solid: false };   // 活動方塊的題目：示範用現在這顆（原本寫死 T，所以動畫出不來）
   const type = S.p || (active && active.type) || queue[0] || 'T';
   if (!T.find || T.find.type !== type) T.find = { type, cells: tutFind(S.goal, type) };
   return { p: type, cells: T.find.cells, solid: false };
