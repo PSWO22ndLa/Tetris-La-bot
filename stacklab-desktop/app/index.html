@@ -6735,7 +6735,7 @@ function botPoly(o, kind, floorFn){
   buildMut(); PENTA = PENTA || buildPolys(5, 'P'); HEXA = HEXA || buildPolys(6, 'H');
   if (!POLY_SX._ok){ for (const t of [...PENTA, ...HEXA, ...Object.values(MUT)]){ POLY_SX[t] = Math.floor((W - (SHAPES[t].s || 5)) / 2); BOT_VAL[t] = pk(t); } POLY_SX._ok = 1; }
   o.mutFloor = floorFn || (() => 10);
-  o.rules = { ...(o.rules || {}), poly: true, sx: POLY_SX };
+  o.rules = { ...(o.rules || {}), poly: true, polyK: kind, sx: POLY_SX };
   if (o.q && o.q.some(t => PIECE_ORDER.includes(t)) && kind !== 'mut'){ o.q = []; o.bag = []; if (o.hold && PIECE_ORDER.includes(o.hold)) o.hold = null; }
 }
 function botFill(o){
@@ -7120,7 +7120,32 @@ function lbTstPotB(b){
   return best;
 }
 const LB_H = new Int32Array(32), LB_TOP = new Int32Array(32);
+// 五／六連塊用的盤面評分：Dellacherie（俄羅斯方塊經典手調 AI）的與方塊無關特徵——列轉換、欄轉換、洞、井的累積深度，再加高度危險。
+// 四連塊那套（井、TSD 洞…）在大方塊會留下永遠收不掉的井跟洞
+function lbEvalPolyB(b){
+  const full = (1 << W) - 1, wall = (1 << (W + 1)) | 1, tm = (1 << (W + 1)) - 1, w = LBW;
+  let rowT = 0, colT = 0, holes = 0, wells = 0, seen = 0, top = BOT_H, prev = 0, rowsH = 0;
+  for (let y = 0; y < BOT_H; y++){
+    const r = b[y];
+    if (r && top === BOT_H) top = y;
+    if (top < BOT_H){ const v = (r << 1) | wall; rowT += lbPop((v ^ (v >> 1)) & tm); }
+    colT += lbPop((r ^ prev) & full); prev = r;
+    const hl = seen & ~r & full; if (hl){ holes += lbPop(hl); rowsH++; }
+    seen |= r;
+  }
+  colT += lbPop(~prev & full);                                         // 最底下跟地板之間
+  for (let x = 0; x < W; x++){                                          // 井：左右都有格子（牆也算）的空格，連續 k 格算 1+2+…+k
+    let run = 0;
+    for (let y = 0; y < BOT_H; y++){
+      const filled = b[y] >> x & 1, L = x === 0 || (b[y] >> (x - 1) & 1), R = x === W - 1 || (b[y] >> (x + 1) & 1);
+      if (!filled && L && R){ run++; wells += run; } else run = 0;
+    }
+  }
+  const hgt = BOT_H - top, danger = Math.max(0, hgt + (LB_R.hpad || 0) + (LB_R.pend || 0) - (w.pSafe || 11));
+  return -(w.pRowT || 3.2) * rowT - (w.pColT || 9.35) * colT - (w.pHoles || 7.9) * holes - (w.pRowsH || 0) * rowsH - (w.pWells || 3.4) * wells - (w.pDanger || 4) * danger * danger;
+}
 function lbEvalB(b){
+  if (LB_R.poly && LBW.pRowT) return lbEvalPolyB(b);
   const full = (1 << W) - 1, h = LB_H, topY = LB_TOP, wall = (1 << (W + 1)) | 1, tm = (1 << (W + 1)) - 1;
   h.fill(0); let seen = 0, holes = 0, cover = 0, rowT = 0;
   for (let y = 0; y < BOT_H; y++){
@@ -7135,12 +7160,13 @@ function lbEvalB(b){
   let bump = 0, maxH = 0, sum = 0; for (let x = 0; x < W; x++){ maxH = Math.max(maxH, h[x]); sum += h[x]; if (x) bump += Math.abs(h[x] - h[x - 1]); }
   let wx = 0; for (let x = 0; x < W; x++) if (h[x] < h[wx]) wx = x;
   const l = wx ? h[wx - 1] : 99, r = wx < W - 1 ? h[wx + 1] : 99, well = Math.min(4, Math.min(l, r) - h[wx]);
-  bump -= Math.min(l === 99 ? r : l, r === 99 ? l : r) - h[wx];      // 井本身不算凹凸
+  if (!LB_R.poly) bump -= Math.min(l === 99 ? r : l, r === 99 ? l : r) - h[wx];      // 井本身不算凹凸（四連塊有 I 可以收；五／六連塊直條很少見，留井只會越挖越深——六連塊 bot 留了 20 格深的井到死）
   const danger = Math.max(0, maxH + (LB_R.hpad || 0) + (LB_R.pend || 0) - 10), w = LBW;   // pend：排隊中的垃圾，進場就會把盤面推高
   // 井在倒數第二欄、最外側那欄卻比井高（一根柱子）：之後消行會把柱子切成一段一段的懸空格，只能單消慢慢挖、必斷 B2B（使用者截圖）
   const px = wx === 1 ? 0 : wx === W - 2 ? W - 1 : -1, pillar = px >= 0 ? Math.max(0, Math.min(6, h[px] - h[wx])) : 0;
   // 第二口（以上）深井：主井以外的欄若比兩側都低 ≥3 格，只能靠 I 填、常常兩條溝一起長高把自己疊死（使用者回報）→ 依深度平方扣分；權重 8 是所有項目裡最重的（使用者：最不該疊出這種東西）
-  let well2 = 0; for (let x = 0; x < W; x++){ if (x === wx) continue; const d = Math.min(x ? h[x - 1] : 99, x < W - 1 ? h[x + 1] : 99) - h[x]; if (d >= 3) well2 += (d - 2) * (d - 2); }
+  let well2 = 0; for (let x = 0; x < W; x++){ if (x === wx && !LB_R.poly) continue;   // 五／六連塊：主井也算（沒有 I 可以收）
+    const d = Math.min(x ? h[x - 1] : 99, x < W - 1 ? h[x + 1] : 99) - h[x]; if (d >= 3) well2 += (d - 2) * (d - 2); }
   return -w.holes * holes - w.cover * cover - w.bump * bump - w.rowT * rowT - w.sum * sum - w.danger * danger * danger - (w.pillar || 0) * pillar - (w.well2 || 0) * well2
     + (danger < 4 ? w.well * well : 0) + (danger < 3 ? w.tsd * lbTsdB(b, h) : 0) + (danger < 4 && w.tst ? w.tst * lbTstB(b) : 0) + (danger < 3 && w.tstPot ? w.tstPot * lbTstPotB(b) : 0);
 }
@@ -7753,6 +7779,9 @@ const LBW = { holes:3.5, cover:1.3, bump:0.2322, rowT:0.3318, sum:0.0032, danger
 // 活動方塊（五連塊／六連塊／MUTATION）：B2B、T-Spin 洞、TST、開局這套全部是照四連塊調的——五連塊會一直留 T-Spin 洞、不肯普通消行而疊死（使用者回報）。
 // 換成保命權重：不扣普通消行、不獎勵 TSD／TST／井、洞跟高度扣重；spin（卡死轉進去）照樣靠攻擊分加分
 const LBW_P = { holes:7, cover:1.6, bump:0.32, rowT:0.45, sum:0.02, danger:2.6, well:0, tsd:0, tst:0, tstPot:0, atk:0.6, burn:0, b2b:0, b2bLv:0, tspin:0, pc:12, chain:0, b2bSafe:0, pillar:0, newHole:9, well2:2.5 };
+// 五／六連塊：Dellacherie 評分（lbEvalPolyB）。bench（每 16 顆 2 行垃圾）：六連塊 120 顆內平均 50 → 100、五連塊 150 顆內頂死 4/6 → 0/6。
+// MUTATION 大部分還是四連塊，Dellacherie 反而比較常死，維持 LBW_P
+const LBW_PD = { ...LBW_P, pRowT:3.2, pColT:9.35, pHoles:7.9, pWells:3.4, pEro:3.4, pLand:4.5, pSafe:9, pDanger:8, newHole:0, atk:0.3 };
 const LBW_G = { holes:2.1513, cover:1.0718, bump:0.1877, rowT:0.1989, sum:0.0031, danger:0.3214, well:0.3118, tsd:6.9221, tst:20, atk:3.904, burn:3.0753, b2b:1.689, tspin:1.2767, pc:4.2074, chain:3, b2bLv:0.3658 };
 
 // Bleeding Hearts 的 O-Spin：O 先停在半空，等垃圾升上來把「框」推到 O 的位置 → O 被四面卡住 → 原地轉一下＝O-Spin
@@ -7783,7 +7812,8 @@ function lbOHover(o){
 // 決定這一顆要怎麼放：先看開局庫，再 beam search（含 HOLD）
 function lbDecide(o){
   if (o.rules && o.rules.poly && !o._pw){                            // 活動方塊：換保命權重、不用 NN（NN 也是四連塊練的）
-    const keep = {}; for (const k in LBW_P){ keep[k] = LBW[k]; LBW[k] = LBW_P[k]; } const nn = LB_NN; LB_NN = null;
+    const WS = o.rules.polyK === 'mut' ? LBW_P : LBW_PD;
+    const keep = {}; for (const k in WS){ keep[k] = LBW[k]; LBW[k] = WS[k]; } const nn = LB_NN; LB_NN = null;
     o._pw = true; try { return lbDecide(o); } finally { Object.assign(LBW, keep); LB_NN = nn; o._pw = false; }
   }
   if (o.goal && !o._gw){                                             // 任務模式：暫時換成任務用權重
@@ -7838,6 +7868,10 @@ function lbDecide(o){
           let b2bK = 1;                                               // 疊太高時 B2B 讓位給地形（保命優先）：b2bSafe 高度以上線性降到 0
           if (LBW.b2bSafe){ let t = 0; while (t < BOT_H && !s.bd[t]) t++; b2bK = Math.max(0, Math.min(1, 1 - (BOT_H - t + (LB_R.hpad || 0) + Math.max(0, (LB_R.pend || 0) - atk) - LBW.b2bSafe) / 6)); }   // pend 先扣掉這一手的攻擊（會先抵銷排隊垃圾）：不然 F10 一直有大垃圾在排，B2B 權重永遠被壓成 0
           let rew = LB_NN && LB_NN.pure && !G ? LBW.atk * atk + (r.pc ? LBW.pc : 0) : LBW.atk * atk - (plain && !r.pc ? LBW.burn * r.n * b2bK : 0) - (brokeB2B ? (LBW.b2b + (LBW.b2bLv || 0) * s.st.b2b) * b2bK : 0) + (r.pc ? LBW.pc : 0) + (spA === 2 && r.n ? LBW.tspin : 0);
+          if (LB_R.poly && LBW.pRowT){                                 // Dellacherie 的兩個「這一手」特徵：落點高度（扣）、消行時方塊自己被消掉幾格×行數（加）
+            let ys = 0, ero = 0; for (const k of m.cells){ const y = (k / W) | 0; ys += y; if (r.ys >> y & 1) ero++; }
+            rew += (LBW.pEro || 3.4) * r.n * ero - (LBW.pLand || 4.5) * (BOT_H - ys / m.cells.length);
+          }
           if (m.spin === 2 && !r.n && !LB_R.allspin) rew -= 1;         // 白轉（ALL-SPIN 的 Spin-Zero 可以拿來隔開重複動作，不扣）
           if (!r.n && LBW.newHole){                                   // 新蓋出洞（之後只能單消慢慢挖、斷 B2B）：重罰；但 T-Spin 的屋簷（蓋完有 TSD／TST 洞）不算
             const h0 = lbHolesB(s.bd), h1 = lbHolesB(r.b);
@@ -7977,8 +8011,8 @@ function lbWorker(){
   if (LBWK !== null) return LBWK || null;
   try {
     lbBuildBook();
-    const fns = [lbAscK, lbTables, lbPop, lbToBits, lbFitsB, lbSpinB, lbKicks, lbMovesB, lbPlaceB, comboAttack, lbAttack, lbHolesB, lbTsdB, lbTstB, lbTstPotB, lbEvalB, lbFeatB, lbNNv, lbNNv2, LB_NN_LEAF, lbSetupAnchor, lbSetupPlan, lbMidBookMove, rootTop0, lbPcMove, lbBookMove, lbGoalRew, lbGoalPot, lbTmplScore, lbTmplAnchor, lbComboPot, lbGoalEval, lbOHover, lbDecide].map(f => f.toString()).join('\n');
-    const src = `let W, BOT_H, SHAPES, KICK_JLSTZ, KICK_I_PLUS, KICK_180, BOT_VAL, CLIMB_CFG, LBW, LB_BOOK, LB_NN = null, LB_QX = true, LBT = null, PER = 8, LB_R = {}; const LB_ASCK = {}; const lbSx = ${lbSx.toString()}; let LB_DIRS = [1, 3, 2], LB_OSPIN = false; const LB_GW = ${LB_GW}, LB_GPOT = ${JSON.stringify(LB_GPOT)}, LB_TMPL = ${JSON.stringify(LB_TMPL)}, LB_SETUPS = ${JSON.stringify(lbBuildSetups() || [])}, LB_MIDBOOK = ${JSON.stringify(lbBuildMidBook() || [])}, LB_GTMPL = ${JSON.stringify(LB_GTMPL)}, LBW_G = ${JSON.stringify(LBW_G)}, LBW_P = ${JSON.stringify(LBW_P)}; function botFill(){}
+    const fns = [lbAscK, lbEvalPolyB, lbTables, lbPop, lbToBits, lbFitsB, lbSpinB, lbKicks, lbMovesB, lbPlaceB, comboAttack, lbAttack, lbHolesB, lbTsdB, lbTstB, lbTstPotB, lbEvalB, lbFeatB, lbNNv, lbNNv2, LB_NN_LEAF, lbSetupAnchor, lbSetupPlan, lbMidBookMove, rootTop0, lbPcMove, lbBookMove, lbGoalRew, lbGoalPot, lbTmplScore, lbTmplAnchor, lbComboPot, lbGoalEval, lbOHover, lbDecide].map(f => f.toString()).join('\n');
+    const src = `let W, BOT_H, SHAPES, KICK_JLSTZ, KICK_I_PLUS, KICK_180, BOT_VAL, CLIMB_CFG, LBW, LB_BOOK, LB_NN = null, LB_QX = true, LBT = null, PER = 8, LB_R = {}; const LB_ASCK = {}; const lbSx = ${lbSx.toString()}; let LB_DIRS = [1, 3, 2], LB_OSPIN = false; const LB_GW = ${LB_GW}, LB_GPOT = ${JSON.stringify(LB_GPOT)}, LB_TMPL = ${JSON.stringify(LB_TMPL)}, LB_SETUPS = ${JSON.stringify(lbBuildSetups() || [])}, LB_MIDBOOK = ${JSON.stringify(lbBuildMidBook() || [])}, LB_GTMPL = ${JSON.stringify(LB_GTMPL)}, LBW_G = ${JSON.stringify(LBW_G)}, LBW_P = ${JSON.stringify(LBW_P)}, LBW_PD = ${JSON.stringify(LBW_PD)}; function botFill(){}
 const LB_SEEN = new Uint32Array(8192), LB_Q = new Int32Array(8192); let LB_GEN = 0; const LB_H = new Int32Array(32), LB_TOP = new Int32Array(32), LB_HH = new Int32Array(32), LB_TSTC = new Map(), LB_FH = new Int32Array(32), LB_FT = new Int32Array(32), LB_NN_PO = 'IJLOSTZ';
 const lbOccB = ${lbOccB.toString()};
 ${fns}
