@@ -7750,6 +7750,9 @@ function lbGoalEval(G, b, gN){
 }
 const LBW = { holes:3.5, cover:1.3, bump:0.2322, rowT:0.3318, sum:0.0032, danger:1.2, well:0.2642, tsd:8.6557, tst:20, atk:3.8596, burn:5.076, b2b:20, tspin:0.9273, pc:11.9621, chain:5, b2bLv:4, beam:12, depth:6, b2bSafe:14, pillar:3, newHole:6, well2:8, tstPot:0 };   // pillar：倒數第二欄當井、最外欄是柱子 → 扣分（bench：柱子盤面 5%→0.4%，B2B 斷 0.44→0.11／100 顆）   // b2bSafe 4→14：實戰盤面 hpad=4＋排隊垃圾，舊值疊 6 行就完全不管 B2B（使用者：一直 PC／單消不走 B2B）   // 權重：自我對局 (1+2)-ES 自動調參（深度 6、beam 20；乾淨盤面＋少量垃圾、含 QP 的 Surge／Single 規則）；驗證集每顆攻擊 乾淨 0.82／少垃圾 0.81
 // 復活任務模式用的權重（上一輪調參的結果：比較不執著 B2B，任務完成率比較高）
+// 活動方塊（五連塊／六連塊／MUTATION）：B2B、T-Spin 洞、TST、開局這套全部是照四連塊調的——五連塊會一直留 T-Spin 洞、不肯普通消行而疊死（使用者回報）。
+// 換成保命權重：不扣普通消行、不獎勵 TSD／TST／井、洞跟高度扣重；spin（卡死轉進去）照樣靠攻擊分加分
+const LBW_P = { holes:7, cover:1.6, bump:0.32, rowT:0.45, sum:0.02, danger:2.6, well:0, tsd:0, tst:0, tstPot:0, atk:0.6, burn:0, b2b:0, b2bLv:0, tspin:0, pc:12, chain:0, b2bSafe:0, pillar:0, newHole:9, well2:2.5 };
 const LBW_G = { holes:2.1513, cover:1.0718, bump:0.1877, rowT:0.1989, sum:0.0031, danger:0.3214, well:0.3118, tsd:6.9221, tst:20, atk:3.904, burn:3.0753, b2b:1.689, tspin:1.2767, pc:4.2074, chain:3, b2bLv:0.3658 };
 
 // Bleeding Hearts 的 O-Spin：O 先停在半空，等垃圾升上來把「框」推到 O 的位置 → O 被四面卡住 → 原地轉一下＝O-Spin
@@ -7779,6 +7782,10 @@ function lbOHover(o){
 }
 // 決定這一顆要怎麼放：先看開局庫，再 beam search（含 HOLD）
 function lbDecide(o){
+  if (o.rules && o.rules.poly && !o._pw){                            // 活動方塊：換保命權重、不用 NN（NN 也是四連塊練的）
+    const keep = {}; for (const k in LBW_P){ keep[k] = LBW[k]; LBW[k] = LBW_P[k]; } const nn = LB_NN; LB_NN = null;
+    o._pw = true; try { return lbDecide(o); } finally { Object.assign(LBW, keep); LB_NN = nn; o._pw = false; }
+  }
   if (o.goal && !o._gw){                                             // 任務模式：暫時換成任務用權重
     const keep = {}; for (const k in LBW_G){ keep[k] = LBW[k]; LBW[k] = LBW_G[k]; }
     o._gw = true; try { return lbDecide(o); } finally { Object.assign(LBW, keep); o._gw = false; }
@@ -7834,7 +7841,7 @@ function lbDecide(o){
           if (m.spin === 2 && !r.n && !LB_R.allspin) rew -= 1;         // 白轉（ALL-SPIN 的 Spin-Zero 可以拿來隔開重複動作，不扣）
           if (!r.n && LBW.newHole){                                   // 新蓋出洞（之後只能單消慢慢挖、斷 B2B）：重罰；但 T-Spin 的屋簷（蓋完有 TSD／TST 洞）不算
             const h0 = lbHolesB(s.bd), h1 = lbHolesB(r.b);
-            if (h1 > h0 && !lbTsdB(r.b, LB_HH) && !lbTstB(r.b)) rew -= LBW.newHole * (h1 - h0) * Math.max(.4, b2bK);
+            if (h1 > h0 && (LB_R.poly || (!lbTsdB(r.b, LB_HH) && !lbTstB(r.b)))) rew -= LBW.newHole * (h1 - h0) * Math.max(.4, b2bK);
           }
           if (r.n && (LB_R.warlock || LB_R.allspin)){                   // 重複同一種消行會長 Wound（WARLOCK 一次 20 行＝等於死）
             const act = LB_R.warlock ? (spA ? 'spin' + r.n : 'void') : (spA ? m.type + '-Spin' + (m.spin === 1 && m.type === 'T' ? 'm' : '') : 'clear') + r.n;   // 格式跟遊戲的 climb.lastAction 一樣
@@ -7971,7 +7978,7 @@ function lbWorker(){
   try {
     lbBuildBook();
     const fns = [lbAscK, lbTables, lbPop, lbToBits, lbFitsB, lbSpinB, lbKicks, lbMovesB, lbPlaceB, comboAttack, lbAttack, lbHolesB, lbTsdB, lbTstB, lbTstPotB, lbEvalB, lbFeatB, lbNNv, lbNNv2, LB_NN_LEAF, lbSetupAnchor, lbSetupPlan, lbMidBookMove, rootTop0, lbPcMove, lbBookMove, lbGoalRew, lbGoalPot, lbTmplScore, lbTmplAnchor, lbComboPot, lbGoalEval, lbOHover, lbDecide].map(f => f.toString()).join('\n');
-    const src = `let W, BOT_H, SHAPES, KICK_JLSTZ, KICK_I_PLUS, KICK_180, BOT_VAL, CLIMB_CFG, LBW, LB_BOOK, LB_NN = null, LB_QX = true, LBT = null, PER = 8, LB_R = {}; const LB_ASCK = {}; const lbSx = ${lbSx.toString()}; let LB_DIRS = [1, 3, 2], LB_OSPIN = false; const LB_GW = ${LB_GW}, LB_GPOT = ${JSON.stringify(LB_GPOT)}, LB_TMPL = ${JSON.stringify(LB_TMPL)}, LB_SETUPS = ${JSON.stringify(lbBuildSetups() || [])}, LB_MIDBOOK = ${JSON.stringify(lbBuildMidBook() || [])}, LB_GTMPL = ${JSON.stringify(LB_GTMPL)}, LBW_G = ${JSON.stringify(LBW_G)}; function botFill(){}
+    const src = `let W, BOT_H, SHAPES, KICK_JLSTZ, KICK_I_PLUS, KICK_180, BOT_VAL, CLIMB_CFG, LBW, LB_BOOK, LB_NN = null, LB_QX = true, LBT = null, PER = 8, LB_R = {}; const LB_ASCK = {}; const lbSx = ${lbSx.toString()}; let LB_DIRS = [1, 3, 2], LB_OSPIN = false; const LB_GW = ${LB_GW}, LB_GPOT = ${JSON.stringify(LB_GPOT)}, LB_TMPL = ${JSON.stringify(LB_TMPL)}, LB_SETUPS = ${JSON.stringify(lbBuildSetups() || [])}, LB_MIDBOOK = ${JSON.stringify(lbBuildMidBook() || [])}, LB_GTMPL = ${JSON.stringify(LB_GTMPL)}, LBW_G = ${JSON.stringify(LBW_G)}, LBW_P = ${JSON.stringify(LBW_P)}; function botFill(){}
 const LB_SEEN = new Uint32Array(8192), LB_Q = new Int32Array(8192); let LB_GEN = 0; const LB_H = new Int32Array(32), LB_TOP = new Int32Array(32), LB_HH = new Int32Array(32), LB_TSTC = new Map(), LB_FH = new Int32Array(32), LB_FT = new Int32Array(32), LB_NN_PO = 'IJLOSTZ';
 const lbOccB = ${lbOccB.toString()};
 ${fns}
@@ -7981,6 +7988,7 @@ onmessage = e => { const d = e.data; if (d.init){ ({ W, BOT_H, SHAPES, KICK_JLST
   if (d.shapes) for (const k in d.shapes){ if (!SHAPES[k]){ SHAPES[k] = d.shapes[k]; } }
   // 思考時間有多少就搜多寬：量上一次「每單位 beam 花幾 ms」，換算這次能開多寬（手機慢就自動變窄）
   if (d.budget) LBW.beam = Math.max(8, Math.min(40, Math.round(d.budget / PER)));
+  if (d.rules && d.rules.poly) LBW.beam = Math.max(LBW.beam, 24);   // 活動方塊：beam 12→24 存活率差很多（bench：150 顆內頂死 5/6 → 0/6）
   const t0 = performance.now();
   const r = lbDecide({ deadline: d.timeLimit ? t0 + d.timeLimit : 0, bd: new Uint8Array(d.bd), hold: d.hold, q: d.q, bag: [], b2b: d.b2b, combo: d.combo, noBook: d.noBook, goal: d.goal, lastType: d.lastType, ospin: d.ospin, ready: d.ready, holes: d.holes, pend: d.pend, rules: d.rules || null, setups: d.setups, setupKey: d.setupKey, midBook: d.midBook, book: d.book });
   if (r && !r.book && !r.pc) PER = PER * 0.7 + 0.3 * Math.max(1, (performance.now() - t0) / LBW.beam);
