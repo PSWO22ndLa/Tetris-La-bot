@@ -1886,7 +1886,7 @@ document.documentElement.classList.add('booting'); addEventListener('load', func
   .qpr-card .dflip img{ position:absolute; inset:0; width:100%; height:100%; backface-visibility:hidden; -webkit-backface-visibility:hidden; }
   .qpr-card .df-dth{ transform:rotateY(180deg) rotate(180deg); }                 /* 圖檔是先轉過 180° 的（牌組用），這裡轉回正 */
   .qpl-reveal.death.anim .dflip{ animation:dthFlip 1.9s cubic-bezier(.5,0,.2,1) both; }
-  .qpl-reveal.death .qpr-name, .qpl-reveal.death .qpr-fl{ z-index:3; position:relative; }
+  .qpl-reveal.death .qpr-name, .qpl-reveal.death .qpr-fl{ z-index:3; }   /* 名字／標語本來就是絕對定位，這裡只墊高，不能改 position */
   .qpl-reveal.death .qpr-name{ color:#f4d6da; letter-spacing:.06em; text-shadow:0 0 6px #ff1030, 0 0 18px #c00018, 0 0 34px rgba(160,0,20,.8); }
   .qpl-reveal.death .qpr-fl{ color:#c99aa2; }
   .qpl-reveal.death.anim .qpr-name, .qpl-reveal.death.anim .qpr-fl{ animation:dthText 2.2s ease both; }
@@ -15017,7 +15017,7 @@ function showReveal(i, animate){
     : `<div class="alt">${c.code}</div>`;
   const sunR = c.base === 'sun' && st === 1, dth = !!(c.revArt && st === 2);
   if (dth) $('qprCard').innerHTML = `<div class="dflip"><img class="df-sun" alt="" src="${evImg('card_' + c.base)}"><img class="df-dth" alt="" src="${evImg('card_' + c.rev)}"></div>`;   // DEATH：先是 THE SUN，翻過來變死神
-  $('qprName').textContent = sunR ? modById('sun').name : st >= 3 ? tierName(c, st) : (COMBO_NAMES[c.rev] || modById(c.rev).name);
+  $('qprName').textContent = dth ? 'DEATH' : sunR ? modById('sun').name : st >= 3 ? tierName(c, st) : (COMBO_NAMES[c.rev] || modById(c.rev).name);
   if (st === 4 && MODAB[c.rev]) $('qprName').insertAdjacentHTML('afterbegin', `<img class="qpr-ab" alt="" src="${MODAB[c.rev]}" onerror="this.remove()">`);
   $('qprFl').textContent = sunR ? (modById('sun').fl || '') : st >= 3 ? tierFl(c, st) : (modById(c.rev).fl || '');
   box.classList.toggle('flip', st >= 3); box.classList.toggle('abyss', st === 4); box.classList.toggle('sun', sunR); box.classList.toggle('death', dth); box.classList.remove('ext');
