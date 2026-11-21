@@ -1883,13 +1883,39 @@ document.documentElement.classList.add('booting'); addEventListener('load', func
   .qpl-reveal.death .qpr-card{ z-index:2; transform:translate(-50%,-50%); filter:drop-shadow(0 0 22px rgba(200,10,30,.85)) drop-shadow(0 0 4px #000); perspective:600px; }
   .qpl-reveal.death.anim .qpr-card{ animation:qprThrowSun .8s cubic-bezier(.25,.7,.3,1) both, qprShadow .8s linear; }
   .qpr-card .dflip{ position:relative; width:100%; height:100%; transform-style:preserve-3d; transform:rotateY(180deg); }
-  .qpr-card .dflip img{ position:absolute; inset:0; width:100%; height:100%; backface-visibility:hidden; -webkit-backface-visibility:hidden; }
+  .qpr-card .dflip > img, .qpr-card .df-front{ position:absolute; inset:0; width:100%; height:100%; backface-visibility:hidden; -webkit-backface-visibility:hidden; }
+  .qpr-card .df-front img{ width:100%; height:100%; display:block; }
+  .qpr-card .df-crack{ position:absolute; inset:0; width:100%; height:100%; pointer-events:none; overflow:visible; }
+  .qpr-card .df-crack path{ fill:none; stroke:#fff6d0; stroke-width:2.2; stroke-linejoin:bevel; filter:drop-shadow(0 0 3px #ffb020) drop-shadow(0 0 6px #ff3010); stroke-dasharray:200; stroke-dashoffset:200; opacity:0; }
+  .qpl-reveal.death.anim .df-crack path{ animation:dthCrack .5s ease-in .62s forwards; }
+  .qpl-reveal.death.anim .df-crack path:nth-child(2n){ animation-delay:.72s; } .qpl-reveal.death.anim .df-crack path:nth-child(3n){ animation-delay:.82s; }
+  .qpl-reveal.death.anim .df-front img{ animation:dthDrain 1.2s ease .2s both; }
+  @keyframes dthCrack{ 0%{ opacity:1; stroke-dashoffset:200; } 100%{ opacity:1; stroke-dashoffset:0; } }
+  @keyframes dthDrain{ 0%{ filter:none; } 30%{ filter:brightness(1.6) saturate(1.4) drop-shadow(0 0 18px #ffc040); } 70%{ filter:brightness(1.2) saturate(.6); } 100%{ filter:grayscale(1) brightness(.35) contrast(1.4); } }
+  /* 翻面瞬間：兩道血紅斜斬劃過畫面 */
+  .qpl-reveal .dslash{ display:none; }
+  .qpl-reveal.death .dslash{ display:block; position:absolute; z-index:4; left:-20%; top:50%; width:140%; height:10px; pointer-events:none; opacity:0;
+    background:linear-gradient(90deg, transparent, #ff2a40 30%, #fff 50%, #ff2a40 70%, transparent); box-shadow:0 0 20px #ff1030, 0 0 50px #c00018; transform:rotate(-24deg) scaleX(0); }
+  .qpl-reveal.death .dslash.d2{ transform:rotate(18deg) scaleX(0); }
+  .qpl-reveal.death.anim .dslash{ animation:dthSlash .42s cubic-bezier(.2,.8,.3,1) 1.04s both; }
+  .qpl-reveal.death.anim .dslash.d2{ animation:dthSlash2 .42s cubic-bezier(.2,.8,.3,1) 1.16s both; }
+  @keyframes dthSlash{ 0%{ opacity:1; transform:rotate(-24deg) scaleX(0); transform-origin:0 50%; } 45%{ opacity:1; transform:rotate(-24deg) scaleX(1); } 100%{ opacity:0; transform:rotate(-24deg) scaleX(1) scaleY(.1); } }
+  @keyframes dthSlash2{ 0%{ opacity:1; transform:rotate(18deg) scaleX(0); transform-origin:100% 50%; } 45%{ opacity:1; transform:rotate(18deg) scaleX(1); } 100%{ opacity:0; transform:rotate(18deg) scaleX(1) scaleY(.1); } }
+  /* 翻完之後畫面閃爍幾下（類比訊號壞掉的那種） */
+  .qpl-reveal.death.anim{ animation:dthGlitch 2.6s steps(1) both; }
+  @keyframes dthGlitch{ 0%,40%{ filter:none; } 42%{ filter:contrast(1.8) saturate(2) hue-rotate(-12deg); } 44%{ filter:none; } 47%{ filter:invert(.15) contrast(2); } 49%,100%{ filter:none; } }
   .qpr-card .df-dth{ transform:rotateY(180deg) rotate(180deg); }                 /* 圖檔是先轉過 180° 的（牌組用），這裡轉回正 */
   .qpl-reveal.death.anim .dflip{ animation:dthFlip 1.9s cubic-bezier(.5,0,.2,1) both; }
   .qpl-reveal.death .qpr-name, .qpl-reveal.death .qpr-fl{ z-index:3; }   /* 名字／標語本來就是絕對定位，這裡只墊高，不能改 position */
-  .qpl-reveal.death .qpr-name{ color:#f4d6da; letter-spacing:.06em; text-shadow:0 0 6px #ff1030, 0 0 18px #c00018, 0 0 34px rgba(160,0,20,.8); }
+  .qpl-reveal.death .qpr-name{ font-family:'Cinzel','Trajan Pro','Times New Roman',Georgia,serif; font-weight:900; font-size:clamp(38px, 12vw, 68px); letter-spacing:.32em; padding-left:.32em;
+    color:#fbe9ec; -webkit-text-stroke:1.5px #4a000c; paint-order:stroke fill;
+    text-shadow:0 0 3px #fff, 0 0 10px #ff2040, 0 0 24px #ff0028, 0 0 60px #a00018, 0 5px 0 #2a0006, 0 8px 16px #000; }
+  .qpl-reveal.death .qpr-name span{ display:inline-block; }
+  .qpl-reveal.death.anim .qpr-name span{ animation:dthLetter .55s cubic-bezier(.2,1.5,.35,1) calc(1.3s + var(--k) * .11s) both, dthFlick 4s steps(1) calc(2.2s + var(--k) * .37s) infinite; }
+  @keyframes dthLetter{ 0%{ opacity:0; transform:translateY(-60px) scale(3.2) rotate(calc(var(--k) * 7deg - 14deg)); filter:blur(10px); } 60%{ opacity:1; filter:blur(0); } 100%{ opacity:1; transform:none; } }
+  @keyframes dthFlick{ 0%,93%,100%{ opacity:1; } 94%{ opacity:.25; } 96%{ opacity:.9; } 97%{ opacity:.4; } }
   .qpl-reveal.death .qpr-fl{ color:#c99aa2; }
-  .qpl-reveal.death.anim .qpr-name, .qpl-reveal.death.anim .qpr-fl{ animation:dthText 2.2s ease both; }
+  .qpl-reveal.death.anim .qpr-fl{ animation:dthText 2.6s ease both; }
   .qpl-reveal.death.anim .qpr-bg{ animation:qprFade .4s ease 1.3s both; }
   @keyframes dthSunBg{ 0%{ opacity:0; } 15%,42%{ opacity:1; } 60%{ opacity:0; } 100%{ opacity:0; } }
   @keyframes dthAsh{ from{ transform:translateY(0); } to{ transform:translateY(40%); } }
@@ -1904,11 +1930,11 @@ document.documentElement.classList.add('booting'); addEventListener('load', func
     background:radial-gradient(circle at var(--fx,50%) var(--fy,45%), rgba(255,255,255,.95), rgba(230,20,40,.85) 18%, rgba(70,0,10,.9) 55%, rgba(0,0,0,.95)); }
   #dthFlash.go{ animation:dthFlash 1.5s ease-out both; }
   #dthFlash i{ position:absolute; left:var(--fx,50%); top:var(--fy,45%); width:20px; height:20px; margin:-10px; border-radius:50%; border:4px solid #ff2a40; box-shadow:0 0 30px #ff1030, inset 0 0 20px #ff1030; opacity:0; }
-  #dthFlash.go i{ animation:dthRing 1s ease-out .05s both; }
+  #dthFlash.go i{ animation:dthRing 1.1s ease-out .05s both; } #dthFlash.go i:nth-child(2){ animation-delay:.22s; border-color:#fff; } #dthFlash.go i:nth-child(3){ animation-delay:.42s; border-width:8px; }
   @keyframes dthFlash{ 0%{ opacity:0; } 6%{ opacity:1; } 30%{ opacity:.55; } 100%{ opacity:0; } }
   @keyframes dthRing{ 0%{ opacity:1; transform:scale(.2); } 100%{ opacity:0; transform:scale(70); } }
-  body.dthshake #app, body.dthshake main, body.dthshake .screen{ animation:dthShake .45s linear; }
-  @keyframes dthShake{ 0%,100%{ transform:none; } 15%{ transform:translate(-7px,4px); } 30%{ transform:translate(8px,-5px); } 45%{ transform:translate(-6px,-4px); } 60%{ transform:translate(5px,5px); } 80%{ transform:translate(-3px,2px); } }
+  body.dthshake #app, body.dthshake main, body.dthshake .screen{ animation:dthShake .75s linear; }
+  @keyframes dthShake{ 0%,100%{ transform:none; } 8%{ transform:translate(-14px,8px) rotate(-.6deg); } 18%{ transform:translate(15px,-9px) rotate(.7deg); } 28%{ transform:translate(-12px,-7px); } 40%{ transform:translate(10px,9px) rotate(-.4deg); } 55%{ transform:translate(-7px,4px); } 70%{ transform:translate(5px,-3px); } 85%{ transform:translate(-2px,2px); } }
   /* 選著死神時，QUICK PLAY 選單整個蒙上暗紅、灰燼一直飄 */
   #dthBg{ position:fixed; inset:0; z-index:40; pointer-events:none; opacity:0; transition:opacity 1.2s; mix-blend-mode:multiply;
     background:radial-gradient(120% 95% at 50% 42%, rgba(150,40,55,.9) 0%, rgba(110,10,28,.85) 45%, rgba(40,0,8,.95) 80%, #000); animation:dthPulse 4s ease-in-out infinite; }
@@ -3210,7 +3236,7 @@ document.documentElement.classList.add('booting'); addEventListener('load', func
   <div class="grow"></div>
   <small id="saveState"></small>
   <div id="socialTray" title="Social"><img id="stPeople" alt=""><img id="stNotif" alt=""><div class="st-sep"></div><div id="stOnline">0</div></div>
-  <div id="dthBg"></div><div id="dthFlash"><i></i></div>
+  <div id="dthBg"></div><div id="dthFlash"><i></i><i></i><i></i></div>
   <div id="oobShade" class="hidden"></div>
   <div id="entry_form" class="oob_modal oob_login_wide hidden noop">
     <div class="preform">
@@ -11981,7 +12007,8 @@ function deathRevealFx(){
     document.body.classList.remove('dthshake'); void document.body.offsetWidth; document.body.classList.add('dthshake');
     sfxEv('topout', 'topout'); revToneThenImpact('card_tone_sun_reverse');
   }, 1080));
-  T.push(setTimeout(() => document.body.classList.remove('dthshake'), 1600));
+  T.push(setTimeout(() => document.body.classList.remove('dthshake'), 1900));
+  T.push(setTimeout(() => sfxEv('boardlock', 'boardlock'), 620));
   document.body.classList.add('dthsel');
 }
 function sunReached(){
@@ -15016,8 +15043,10 @@ function showReveal(i, animate){
   $('qprCard').innerHTML = src ? `<img src="${src}" alt="" onerror="if(!this.dataset.t&&'${own ? '' : cardArtThumb(c.base)}'){this.dataset.t=1;this.src='${own ? '' : cardArtThumb(c.base)}'}else if(this.parentNode){this.outerHTML='<div class=alt>${c.code}</div>'}">`
     : `<div class="alt">${c.code}</div>`;
   const sunR = c.base === 'sun' && st === 1, dth = !!(c.revArt && st === 2);
-  if (dth) $('qprCard').innerHTML = `<div class="dflip"><img class="df-sun" alt="" src="${evImg('card_' + c.base)}"><img class="df-dth" alt="" src="${evImg('card_' + c.rev)}"></div>`;   // DEATH：先是 THE SUN，翻過來變死神
-  $('qprName').textContent = dth ? 'DEATH' : sunR ? modById('sun').name : st >= 3 ? tierName(c, st) : (COMBO_NAMES[c.rev] || modById(c.rev).name);
+  if (dth) $('qprCard').innerHTML = `<div class="dflip"><div class="df-front"><img class="df-sun" alt="" src="${evImg('card_' + c.base)}"><svg class="df-crack" viewBox="0 0 183 279" preserveAspectRatio="none"><path d="M92 96 L80 70 L86 52 L74 30 L78 8"/><path d="M92 96 L112 82 L120 60 L140 52 L150 28"/><path d="M92 96 L70 112 L52 108 L34 126 L14 122"/><path d="M92 96 L104 124 L98 150 L112 178 L106 210 L118 246 L112 272"/><path d="M92 96 L128 112 L150 132 L176 136"/><path d="M98 150 L74 168 L60 196 L36 206"/><path d="M112 178 L138 190 L152 214"/><path d="M80 70 L60 64 L44 46"/></svg></div><img class="df-dth" alt="" src="${evImg('card_' + c.rev)}"></div>`;
+  if (!box.querySelector('.dslash')) box.insertAdjacentHTML('beforeend', '<i class="dslash"></i><i class="dslash d2"></i>');   // DEATH：先是 THE SUN，翻過來變死神
+  $('qprName').textContent = sunR ? modById('sun').name : st >= 3 ? tierName(c, st) : (COMBO_NAMES[c.rev] || modById(c.rev).name);
+  if (dth) $('qprName').innerHTML = [...'DEATH'].map((ch, k) => `<span style="--k:${k}">${ch}</span>`).join('');   // 一個字母一個字母砸下來
   if (st === 4 && MODAB[c.rev]) $('qprName').insertAdjacentHTML('afterbegin', `<img class="qpr-ab" alt="" src="${MODAB[c.rev]}" onerror="this.remove()">`);
   $('qprFl').textContent = sunR ? (modById('sun').fl || '') : st >= 3 ? tierFl(c, st) : (modById(c.rev).fl || '');
   box.classList.toggle('flip', st >= 3); box.classList.toggle('abyss', st === 4); box.classList.toggle('sun', sunR); box.classList.toggle('death', dth); box.classList.remove('ext');
