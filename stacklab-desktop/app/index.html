@@ -8088,12 +8088,14 @@ function lbDecide(o){
             const h0 = lbHolesB(s.bd), h1 = lbHolesB(r.b);
             if (h1 > h0 && (LB_R.poly || (!lbTsdB(r.b, LB_HH) && !lbTstB(r.b)))) rew -= LBW.newHole * (h1 - h0) * Math.max(.4, b2bK);
           }
-          if (r.n && (LB_R.warlock || LB_R.allspin)){                   // 重複同一種消行會長 Wound（WARLOCK 一次 20 行＝等於死）
-            const act = LB_R.warlock ? (spA ? 'spin' + r.n : 'void') : (spA ? m.type + '-Spin' + (m.spin === 1 && m.type === 'T' ? 'm' : '') : 'clear') + r.n;   // 格式跟遊戲的 climb.lastAction 一樣
+          // 動作名稱要跟遊戲的 climb.lastAction 一模一樣：QP 是 All-Mini+，非 T 的 spin 在沒有 ALL-SPIN 時算 Mini（J-Spinm1）；O 不算 spin
+          const spD = LB_R.allspin || LB_R.warlock ? spA : (m.type === 'O' ? 0 : m.spin), mN = m.type === 'T' ? m.spin === 1 : !(LB_R.allspin || LB_R.warlock);
+          if (r.n && (LB_R.warlock || LB_R.allspin || LB_R.dupe)){       // 重複同一種消行會長 Wound（WARLOCK 一次 20 行＝等於死）
+            const act = LB_R.warlock ? (spA ? 'spin' + r.n : 'void') : (spD ? m.type + '-Spin' + (mN ? 'm' : '') : 'clear') + r.n;   // 格式跟遊戲的 climb.lastAction 一樣
             const pact = LB_R.pact && spA && st.ls === m.type;          // BLOOD PACT：spin 不能連用同一種方塊
             if (act === st.la || pact) rew -= LB_R.warlock ? 300 : 8;      // Wound＝一行打不掉的垃圾（再重 bot 會為了避開重複而疊死）
             st.la = act; if (spA) st.ls = m.type;
-          } else if (!r.n && spA && (LB_R.warlock || LB_R.allspin)){ st.la = (LB_R.warlock ? 'spin' : m.type + '-Spin' + (m.spin === 1 && m.type === 'T' ? 'm' : '')) + '0'; st.ls = m.type; }
+          } else if (!r.n && spD && (LB_R.warlock || LB_R.allspin || LB_R.dupe)){ st.la = (LB_R.warlock ? 'spin' : m.type + '-Spin' + (mN ? 'm' : '')) + '0'; st.ls = m.type; }
           let gN = s.gN;
           if (G){
             const garb = r.n && s.gN ? lbPop(r.ys >>> (BOT_H - s.gN)) : 0;   // 消掉的行有幾行在垃圾區（垃圾都在最底下）
@@ -8170,10 +8172,11 @@ function lbApply(o, d){
   o._pb2b = st.b2b;                                                 // 斷 B2B 前的值：標示 SURGE 用
   const spA = LB_R.allspin && d.m.type !== 'T' && d.m.spin ? 2 : d.m.spin;   // ALL-SPIN：非 T 的 spin 算正式（之前這裡用 mini 算，搜尋卻當正式 → 白做）
   let atk = lbAttack(r.n, spA, st, r.pc, garb);
-  if (LB_R.allspin && o.rules){                                      // ALL-SPIN：重複同一種消行長 Wound（跟玩家同一套 lastAction 格式）
-    const act = LB_R.warlock ? (spA ? 'spin' + r.n : 'void') : (spA ? d.m.type + '-Spin' + (d.m.spin === 1 && d.m.type === 'T' ? 'm' : '') : 'clear') + r.n;
+  if ((LB_R.allspin || LB_R.dupe) && o.rules){                       // ALL-SPIN：重複同一種消行長 Wound（跟玩家同一套 lastAction 格式）
+    const spD = LB_R.allspin ? spA : (d.m.type === 'O' ? 0 : d.m.spin), mN = d.m.type === 'T' ? d.m.spin === 1 : !LB_R.allspin;   // 跟搜尋裡同一套命名
+    const act = LB_R.warlock ? (spA ? 'spin' + r.n : 'void') : (spD ? d.m.type + '-Spin' + (mN ? 'm' : '') : 'clear') + r.n;
     if (r.n){ if (act === o.rules.la) o.woundQ = (o.woundQ || 0) + (LB_R.warlock ? 20 : 1); o.rules.la = act; }
-    else if (spA) o.rules.la = act;                                  // Spin-Zero 也算一種動作
+    else if (spD) o.rules.la = act;                                  // Spin-Zero 也算一種動作
     if (spA) o.rules.ls = d.m.type;
   }
   o.b2b = st.b2b; o.combo = st.combo; o.bd = r.b; o.book = d.book || null; o.lastType = d.m.type;
@@ -12076,6 +12079,8 @@ function sunTick(){
   if (!climb || climb.over || !chalOn()) return;
   const F = sunCur();
   deathTick();
+  // DEMO（La bot 代打）：試煉打 60 秒還沒過就跳過，免得測試卡在 F5（代打本來就不計戰績）
+  if (climb.demo && DEMO && climb.dTrial && climb.dTrialT0 && climb.elapsed - climb.dTrialT0 > 60000){ say('LA BOT GAVE UP · TRIAL SKIPPED (DEMO ONLY)'); qcBot('this trial is too hard for me, skipping it (demo only)'); deathTrialDone(); }
   if (F && F.eclipse && climb.elapsed - (climb.sunEclT || 0) >= 20000){ climb.sunEclT = climb.elapsed; sunEclipseRoll(false); }
 }
 /* ---- DEATH 的機制 ---- */
@@ -12092,6 +12097,7 @@ function deathGate(alt){
   return lim;
 }
 function deathTrialStart(i){
+  if (!TEST.trials){ climb.dTrial = null; climb.dIdx = i + 1; say(`TEST · TRIAL ${i + 1} SKIPPED`); return; }
   const noHold = hasMod('nohold') || hasMod('ascetic');
   const pool = DUO_PROMPTS.filter(p => p.t === D_TIER[i] && !p.off && !p.heartsOnly && !(noHold && p.noHold) && !/O-Spin/i.test(p.text));
   const d = pool[(Math.random() * pool.length) | 0];
@@ -12100,7 +12106,7 @@ function deathTrialStart(i){
   say(`TRIAL ${i + 1}/5 (${D_TIER[i]}): ${d.text}`);
 }
 function deathTrialDone(){
-  const i = climb.dIdx || 0; climb.dTrial = null; climb.dIdx = i + 1;
+  const i = climb.dIdx || 0; climb.dTrial = null; climb.dIdx = i + 1; climb.dTrialT0 = 0;
   waterfall(i + 1 >= D_CP.length ? 'THE DEAD LET YOU PASS' : `TRIAL ${i + 1} PASSED`, { bgcolor:'#2a0610', timeout:2500 });
   addAlt(0.02, false);                                                 // 解開之後馬上往上推一點（最後一關推進 F6）
 }
@@ -13171,8 +13177,28 @@ function renderPlayers(){  const p = loadProfile(), r = tlRankOf(p);
     .catch(() => { if (L.dataset.want === want) L.innerHTML = recNone('COULD NOT REACH TETRA CHANNEL'); });
 }
 
+// 測試用（QP 聊天 /test）：GOD＝頂出不結束；開了就跟 DEMO 一樣不計戰績
+const TEST = (() => { try { const j = JSON.parse(sessionStorage.getItem('bp:test') || '{}'); return { god: !!j.god, floor: +j.floor || 0, trials: j.trials !== false }; } catch(e){ return { god:false, floor:0, trials:true }; } })();
+const testSave = () => { try { sessionStorage.setItem('bp:test', JSON.stringify(TEST)); } catch(e){} };
+const testOn = () => TEST.god || TEST.floor > 1 || !TEST.trials;
+// 每局開始後：照大廳設好的測試選項直接跳樓層（遊戲中看不到聊天，所以在大廳先設）
+function testTick(){
+  if (!climb || climb.over || climb.kind !== 'qp' || climb.cd || climb.testApplied) return;
+  climb.testApplied = true;
+  if (!testOn()) return;
+  testMark();
+  if (TEST.floor > 1 && floorOf(climb.alt).n < TEST.floor){ if (hasModRaw('death') && TEST.floor > 5) climb.dIdx = D_CP.length; addAlt(FLOORS[TEST.floor - 1].m - climb.alt + 0.5); }
+}
+function testMark(){ if (climb && !climb.demo){ climb.demo = true; say('TEST MODE · RECORDS ARE OFF FOR THIS RUN'); } }
 function endClimb(reason){
   if (!climb || climb.over) return;
+  if (TEST.god && climb.kind === 'qp' && !climb.rp && reason !== 'both players topped out'){
+    testMark(); climb.testDeaths = (climb.testDeaths || 0) + 1;
+    grid().fill(0); combo = -1; b2b = -1; climb.glock = 120;
+    if (climb.permanent) climbInsert(climb.permanent, 'perm');           // 永久行還在（測 DEATH／THE SUN 要看得到）
+    say(`TEST · GOD MODE SAVED YOU (${reason}) · ${climb.testDeaths}×`); sfxEv('boardrevive', 'boardlock_revive');
+    setTimeout(() => { if (climb && !climb.over && !active){ spawnNext(); draw(); } }, 0); draw(); return;
+  }
   bgDeath();
   if (climb.smashT && performance.now() - climb.smashT < 120) sfxEv('smash', 'garbagesmash');   // 官方：垃圾頂上來把方塊擠死 → garbagesmash
   if (climb.kind === 'league' && climb.opp && climb.opp.remote){     // RIVALS TL：先停住，等外層判定（兩邊幾乎同時死時才不會兩邊都算輸）
@@ -14300,6 +14326,7 @@ function rollAttack(f, alt){
 }
 
 function climbTick(dt){
+  testTick();
   if (!climb || climb.over) return;
   sirenTick(dt);
   windupTick(dt);
@@ -16000,7 +16027,30 @@ function qcSend(raw){
     if (duoMate && Math.random() < 0.6) setTimeout(() => qcBot(QC_REPLY[(Math.random() * QC_REPLY.length) | 0]), 500 + Math.random() * 900);
     return; }
   const [cmd, ...rest] = t.slice(1).split(/\s+/), arg = rest.join(' ').toLowerCase();
-  if (cmd === 'help'){ qcSys('/add labot — add La bot as your Duo partner'); qcSys('/kick labot — remove your partner'); qcSys('/party — show your party'); qcSys('>pps 2.5 / >pps auto — set La bot speed'); qcSys('>demo [qp|40l|blitz|zen] [pps] — La bot plays your board (any key takes over)'); return; }
+  if (cmd === 'help'){ qcSys('/add labot — add La bot as your Duo partner'); qcSys('/kick labot — remove your partner'); qcSys('/party — show your party'); qcSys('>pps 2.5 / >pps auto — set La bot speed'); qcSys('>demo [qp|40l|blitz|zen] [pps] — La bot plays your board (any key takes over)'); qcSys('/test — testing tools (god mode, jump floor, skip trial)'); return; }
+  if (cmd === 'test'){                                                 // 測試工具：測 THE SUN／DEATH 這種 bot 爬不上去的 mod
+    const [sub, v] = rest.map(x => x.toLowerCase());
+    if (sub === 'god'){ TEST.god = v ? v === 'on' : !TEST.god; testSave(); if (TEST.god && climb && !climb.over) testMark(); qcSys(`TEST: GOD MODE ${TEST.god ? 'ON — topping out clears your board instead of ending the run' : 'OFF'}`); return; }
+    if (sub === 'trials'){ TEST.trials = v ? v !== 'off' : !TEST.trials; testSave(); qcSys(`TEST: DEATH TRIALS ${TEST.trials ? 'ON' : 'OFF — F5 gates open by themselves'}`); return; }
+    if (sub === 'start'){ const n = Math.max(0, Math.min(FLOORS.length, parseInt(v, 10) || 0)); TEST.floor = n > 1 ? n : 0; testSave(); qcSys(TEST.floor ? `TEST: every Quick Play run starts on F${TEST.floor}` : 'TEST: runs start on F1 again'); return; }
+    if (sub === 'off'){ TEST.god = false; TEST.floor = 0; TEST.trials = true; testSave(); qcSys('TEST: all test options off'); return; }
+    if (sub === 'status'){ qcSys(`TEST: god ${TEST.god ? 'on' : 'off'} · start F${TEST.floor || 1} · trials ${TEST.trials ? 'on' : 'off'}`); return; }
+    if (!climb || climb.over || climb.kind !== 'qp'){ if (['floor', 'skip', 'clear'].includes(sub)){ qcSys('TEST: start a Quick Play run first (or use /test start N in the lobby).'); return; } }
+    else if (sub === 'floor'){ const n = Math.max(1, Math.min(FLOORS.length, parseInt(v, 10) || 0)); if (!(parseInt(v, 10) > 0)){ qcSys('Usage: /test floor 8'); return; }
+      const cur = floorOf(climb.alt).n; if (n <= cur){ qcSys(`TEST: already on F${cur} (can only go up).`); return; }
+      testMark(); if (hasModRaw('death') && n > 5) climb.dIdx = D_CP.length;   // 跳過 F5 的試煉
+      climb.dTrial = null; addAlt(FLOORS[n - 1].m - climb.alt + 0.5); qcSys(`TEST: jumped to F${floorOf(climb.alt).n}`); return; }
+    else if (sub === 'skip'){ if (climb.dTrial){ testMark(); deathTrialDone(); qcSys('TEST: trial skipped'); } else if (climb.downed){ testMark(); duoReviveMe(); qcSys('TEST: revived'); } else qcSys('TEST: nothing to skip'); return; }
+    else if (sub === 'clear'){ testMark(); grid().fill(0); if (climb.permanent) climbInsert(climb.permanent, 'perm'); draw(); qcSys('TEST: board cleared'); return; }
+    if (['floor', 'skip', 'clear'].includes(sub)) return;
+    qcSys('— set these in the lobby, they apply to every Quick Play run this session —');
+    qcSys('/test god [on|off] — topping out clears the board instead of ending');
+    qcSys('/test start N — start every run on floor N (/test start 1 = normal)');
+    qcSys('/test trials [on|off] — DEATH F5 trials pass by themselves');
+    qcSys('/test status · /test off — show / turn everything off');
+    qcSys('during a run: /test floor N · /test skip · /test clear');
+    qcSys('Runs with any test option on do not count for records.'); return;
+  }
   if (cmd === 'party'){ qcSys(duoMate ? `PARTY: ${name} + ${duoMate}` : `PARTY: ${name} (solo)`); return; }
   if (cmd === 'add' || cmd === 'invite'){
     if (!['labot', 'la bot', 'la'].includes(arg)){ qcSys(arg ? `Can't find "${arg}". Offline, only La bot can join.` : 'Usage: /add labot'); return; }
@@ -16108,13 +16158,16 @@ function demoRequest(o, cb){
   if (!w){ const keep = LBW.depth; LBW.depth = 4; const r = lbDecide(o); LBW.depth = keep; cb(r); return; }
   const id = ++LBWK_id; LBWK_cb.set(id, r => cb(r === undefined ? lbDecide(o) : r));
   const shapes = {}; for (const t of [o.hold, ...o.q]) if (t && !PIECE_ORDER.includes(t) && SHAPES[t]) shapes[t] = SHAPES[t].map(st => st.map(c => c.slice()));
-  const PP = DEMO.ppsNow || DEMO.pps; w.postMessage({ id, W, depth: lbDepthFor(PP), budget: 1000 / PP * 0.4, timeLimit: PP > 3.2 ? 1000 / PP * lbTimeFracFor(PP) : 0, noBook: o.noBook, goal: null, ospin: !!(climb && climb.hearts), ready: 0, holes: [], pend: o.pend,
+  const PP = DEMO.ppsNow || DEMO.pps; w.postMessage({ id, W, depth: lbDepthFor(PP), budget: 1000 / PP * 0.4, timeLimit: PP > 3.2 ? 1000 / PP * lbTimeFracFor(PP) : 0, noBook: o.noBook || !!o.goal, goal: o.goal || null, ospin: !!(climb && climb.hearts), ready: 0, holes: [], pend: o.pend,
     lastType: null, bd: o.bd.buffer.slice(0), hold: o.hold || null, q: o.q.slice(), b2b: o.b2b, combo: o.combo, rules: o.rules, shapes });
 }
 // 決策 → 動作序列：[hold]、每個旋轉一步、左右／往下一步（連續往下合成一步）、最後硬降
-function demoPlan(d, off){
+function demoPlan(d, off, goal){
   if (!d || !d.m) return null;
-  const { bd } = demoBoard(); LB_R = demoRules([d.m.type]); const fr = lbPath(bd, d.m) || []; LB_R = {};
+  const { bd } = demoBoard(); LB_R = demoRules([d.m.type]); let fr = lbPath(bd, d.m, goal && goal.id === 'e_ccw12' ? [3] : null) || []; LB_R = {};
+  const spam = (goal && LB_ROTSPAM[goal.id]) || 0;                    // 轉圈任務：出生點先多轉幾圈（跟 Duo 隊友一樣）
+  if (spam && fr.length){ const f0 = fr[0], pre = []; for (let k = 1; k <= spam; k++) pre.push({ ...f0, r: (f0.r + k) & 3 }); fr = [f0, ...pre, ...fr.slice(1)]; }
+  const sdOnly = goal && goal.id === 'c_sd10';                        // 軟降任務：不硬降，一路軟降到底
   const acts = []; if (d.held) acts.push({ k:'hold' });
   for (let i = 1; i < fr.length; i++){
     const a = fr[i - 1], b = fr[i];
@@ -16122,6 +16175,7 @@ function demoPlan(d, off){
     else if (b.y > a.y && b.x === a.x && !b.hard){ const last = acts[acts.length - 1]; if (last && last.k === 'down') last.to = b; else acts.push({ k:'down', to:b }); }
     else if (!b.hard) acts.push({ k:'pos', to:b });
   }
+  if (sdOnly && fr.length > 1){ const last = acts[acts.length - 1], to = fr[fr.length - 1]; if (last && last.k === 'down') last.to = to; else acts.push({ k:'down', to }); }
   acts.push({ k:'hard', to: fr.length ? fr[fr.length - 1] : null });
   const PP = DEMO.ppsNow || DEMO.pps, gap = Math.max(PP > 5 ? 0 : 16, (1000 / PP) * 0.55 / Math.max(1, acts.length));   // 很快時一幀可以播好幾步   // 一顆的時間：前 4 成思考、後面播動作
   return { acts, i: 0, t: 0, next: (1000 / PP) * 0.25, gap, off, type: d.m.type };   // 0.25+0.55＝0.8：留 2 成給換幀、出生
@@ -16136,7 +16190,7 @@ function demoRules(types){
   const C = climb || {};                                              // 選單／PAINT 裡的 demo 沒有 climb（手機回報 null.custom）
   const sx = {}; for (const t of types) if (t) sx[t] = (W === 10 && PIECE_ORDER.includes(t)) ? (t === 'O' ? 4 : 3) : Math.floor((W - (SHAPES[t].s || (t === 'I' ? 4 : t === 'O' ? 2 : 3))) / 2);
   return { noHold: hasMod('nohold') || hasMod('ascetic') || !!(C.custom && !C.custom.holdq), hpad: Math.max(0, BOT_H - Math.min(H, VISIBLE)),
-    allspin: isAllSpin(), voidPlain: hasMod('warlock'), warlock: hasMod('warlock'), pact: hasMod('warlock') && isFs('warlock'), la: C.lastAction || null, ls: C.lastSpinType || null, noB2B: hasMod('damnation'), poly: types.some(t => t && !PIECE_ORDER.includes(t)), sx };
+    allspin: isAllSpin(), dupe: !!(climb && chalOn() && sunHas('as')), voidPlain: hasMod('warlock'), warlock: hasMod('warlock'), pact: hasMod('warlock') && isFs('warlock'), la: C.lastAction || null, ls: C.lastSpinType || null, noB2B: hasMod('damnation'), poly: types.some(t => t && !PIECE_ORDER.includes(t)), sx };
 }
 // 盤面上有垃圾（在挖）時，bot 的速度比設定的 PPS 快 0.5～1
 function botPpsNow(base, garb){ return garb ? base + 0.5 + Math.random() * 0.5 : base; }
@@ -16155,12 +16209,15 @@ function demoTick(dt){
     const sid = spawnSeq, { bd, off } = demoBoard();
     const o = { bd, hold: holdType || null, q: [active.type, ...queue], bag: [], b2b, combo, noBook: (climb.pieces || 0) > 0, pend: climbPending() };
     o.rules = demoRules([o.hold, ...o.q]);
+    let top0 = 0; while (top0 < BOT_H && !bd.subarray(top0 * W, top0 * W + W).some(v => v)) top0++;
+    o.goal = climb.dTrial && top0 >= 11 ? duoGoal(climb.dTrial) : null;   // DEATH F5 的試煉：跟 Duo 復活任務同一套任務模式；疊太高（剩不到 11 行空間）先求生
+    if (o.goal && !climb.dTrialT0) climb.dTrialT0 = climb.elapsed;
     if (o.rules.noHold) o.hold = null;
     if (o.rules.poly) o.q = o.q.slice(0, Math.max(1, nextShown() + 1));   // 五連塊：只看得到的那幾顆（不要讓它用 7-bag 亂補）
     demoRequest(o, d => {
       if (!DEMO || DEMO.sid !== sid || !climb || !active) return;     // 算完時已經離開遊戲（回主選單）→ 丟掉
       if (d && d.held && (holdUsed || hasMod('nohold') || hasMod('ascetic'))){ o.hold = null; o.rules = { ...o.rules, noHold: true }; const keep = LBW.depth; LBW.depth = 4; d = lbDecide(o); LBW.depth = keep; }   // 不能 hold 卻想 hold：當場不准 hold 重想（以前是原地硬降＝自殺）
-      DEMO.plan = demoPlan(d, off) || { acts:[{ k:'hard' }], i:0, t:0, next:0, gap:16, off, type: active.type };
+      DEMO.plan = demoPlan(d, off, o.goal) || { acts:[{ k:'hard' }], i:0, t:0, next:0, gap:16, off, type: active.type };
       DEMO.plan.t = performance.now() - DEMO.slot;                       // 從這一拍開始算（想的時間也算進去；超前時是負的＝等一下）
     });
   }
