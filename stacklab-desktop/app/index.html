@@ -2148,6 +2148,9 @@ document.documentElement.classList.add('booting'); addEventListener('load', func
   body[data-menu="zenith"].zrev header{ background:linear-gradient(rgb(42,7,14),rgb(67,11,22)) !important; border-bottom-color:rgb(255,0,89) !important; }
   body[data-menu="zenith"].zrev header h1{ color:rgb(255,0,89) !important; transform:scaleY(-1) translateY(10px); animation:zrevTextIn 1s ease-out; }   /* 官方 ZenithReverseTextIn */
   @keyframes zrevTextIn{ from{ opacity:0; } to{ opacity:1; } }
+  body[data-menu="zenith"].zrev.dthsel header{ background:linear-gradient(rgb(14,0,3),rgb(34,2,8)) !important; border-bottom-color:rgb(200,0,30) !important; box-shadow:0 2px 14px rgba(200,0,30,.5); }
+  body[data-menu="zenith"].zrev.dthsel header h1{ color:rgb(230,20,44) !important; text-shadow:0 0 12px rgba(255,0,40,.6); font-family:'Cinzel','Trajan Pro','Times New Roman',Georgia,serif; font-weight:900; letter-spacing:.12em; }
+  body[data-menu="zenith"].zrev.dthsel #foot{ background:linear-gradient(rgb(12,0,3),rgb(30,2,7)) !important; border-top-color:rgb(200,0,30) !important; color:rgb(230,20,44) !important; text-shadow:0 0 10px rgba(255,0,40,.6); }
   body[data-menu="zenith"].zrev #foot{ background:linear-gradient(rgb(39,6,13),rgb(65,11,22)) !important; border-top-color:rgb(255,0,89) !important; color:rgb(255,0,89) !important; }
   body[data-menu="league"] header{ background:linear-gradient(rgb(87,34,34),rgb(112,33,33)) !important; border-bottom-color:rgb(115,36,36) !important; }
   body[data-menu="league"] header h1{ color:rgb(238,174,174) !important; }
@@ -3143,6 +3146,41 @@ document.documentElement.classList.add('booting'); addEventListener('load', func
   :is(#modsel, #h2hModHost) .qpl-lbldesc{ font-size:1.2em; font-weight:700; letter-spacing:0; color:rgb(178,96,64); margin-top:-1.1em; padding-bottom:.6em; text-transform:none; }
   :is(#modsel, #h2hModHost) .qpl-ev{ padding:1em; } :is(#modsel, #h2hModHost) .qpl-evt{ font-size:2em; font-weight:700; letter-spacing:0; color:rgb(178,96,64); }
   :is(#modsel, #h2hModHost) .qpl-ev .deckhelp, :is(#modsel, #h2hModHost) .qpl-toggle{ font-weight:700; letter-spacing:0; color:rgb(178,96,64) !important; }
+
+  /* ===== 換卡動畫（官方 ZenithDeckInfoAppear／Ping） ===== */
+  :is(#modsel, #h2hModHost) .qpl-label.ping b{ animation:lblAppear .3s ease-out both; }
+  :is(#modsel, #h2hModHost) .qpl-lbldesc.ping{ animation:lblAppear .3s ease-out both, lblPing .5s linear .3s; }
+  @keyframes lblAppear{ 0%{ opacity:0; transform:translateX(10rem); } 100%{ opacity:1; transform:none; } }
+  @keyframes lblPing{ 0%,33%,67%,100%{ color:inherit; } 17%,50%,83%{ color:rgb(255,216,153); } }
+  /* ===== 逆位（官方 #zenithmenu.reversed 的紅）：上方卡名、下方說明、按鈕、提示字都換色 ===== */
+  #modsel.tyr .qpl-label::before{ background:linear-gradient(to right, transparent 0, rgb(143,13,25) .6rem, rgb(143,13,25) calc(100% - .6rem), transparent 100%); }
+  #modsel.tyr .qpl-label b{ color:rgb(255,108,108); text-shadow:0 0 16px rgba(255,0,89,.4); }
+  #modsel.tyr .qpl-label b::before, #modsel.tyr .qpl-label b::after{ transform:scaleY(-1); }
+  #modsel.tyr .qpl-label b::after{ transform:scale(-1,-1); }
+  #modsel.tyr .qpl-label b.generic, #modsel.tyr .qpl-label button:not(.qpl-reset), #modsel.tyr .qpl-lbldesc, #modsel.tyr .qpl-toggle, #modsel.tyr .qpl-evt,
+  #modsel.tyr .qpl-ev .deckhelp, #modsel.tyr .qpl-more .deckhelp, #modsel.tyr .qpl-info #qpTitle, #modsel.tyr .qpl-pb small, #modsel.tyr .qpl-pb b, #modsel.tyr .qpstart small{ color:rgb(196,58,72) !important; }
+  #modsel.tyr .qpl-info p{ color:rgb(255,108,108); }
+  #modsel.tyr .qpl-label .qpl-reset, #modsel.tyr .qpl-tools button, #modsel.tyr .qpreset{ background-color:rgb(58,8,16); border-color:rgb(120,18,30); color:rgb(220,80,90); }
+  #modsel.tyr .qpl-tools, #modsel.tyr #modNote{ color:rgb(220,80,90); }
+  /* ===== DEATH：整個大廳換成暗紅（比一般逆位更黑、更紅），文字帶血光 ===== */
+  #modsel.dth .qpl-panel, #modsel.dth .qpstart{ background-color:rgb(20,2,6); border-color:rgb(120,0,18) rgb(26,2,6) rgb(8,0,2) rgb(70,0,12); box-shadow:0 0 14px rgba(160,0,24,.45), inset 0 0 30px rgba(90,0,14,.5); }
+  #modsel.dth .qptop, #modsel.dth .qpl-ev{ background-color:rgb(16,1,4) !important; }
+  #modsel.dth .qptop b, #modsel.dth .qptop span{ color:rgb(200,30,50) !important; text-shadow:0 0 10px rgba(255,0,40,.5); }
+  #modsel.dth .qpl-label::before{ background:linear-gradient(to right, transparent 0, rgb(200,0,30) .6rem, rgb(200,0,30) calc(100% - .6rem), transparent 100%); box-shadow:0 0 8px #ff0028; }
+  #modsel.dth .qpl-label b:not(.generic){ font-family:'Cinzel','Trajan Pro','Times New Roman',Georgia,serif; font-weight:900; letter-spacing:.08em; color:#fbe2e6; overflow:visible; text-overflow:clip;
+    text-shadow:0 0 4px #ff2040, 0 0 14px #c00018, 0 3px 0 #2a0006; }
+  #modsel.dth .qpl-label b span{ display:inline-block; }
+  @media (max-width:600px){ #modsel.dth .qpl-label b:not(.generic){ font-size:1.15em; letter-spacing:.04em; } }
+  #modsel.dth .qpl-label.ping b{ animation:none; }
+  #modsel.dth .qpl-label.ping b span{ animation:dlblIn .5s cubic-bezier(.2,1.4,.4,1) calc(var(--k) * .05s) both, dthFlick 5s steps(1) calc(1s + var(--k) * .43s) infinite; }
+  @keyframes dlblIn{ 0%{ opacity:0; transform:translateY(-.8em) scale(1.8); filter:blur(6px); color:#ff2040; } 70%{ opacity:1; filter:blur(0); } 100%{ opacity:1; transform:none; } }
+  #modsel.dth .qpl-lbldesc{ color:rgb(214,70,84) !important; text-shadow:0 0 8px rgba(255,0,40,.35); }
+  #modsel.dth .qpl-lbldesc.ping{ animation:none; }
+  #modsel.dth .qpl-lbldesc span{ display:inline-block; }
+  #modsel.dth .qpl-lbldesc.ping span{ animation:dwordIn .45s ease-out calc(.25s + var(--k) * .045s) both; }
+  @keyframes dwordIn{ 0%{ opacity:0; transform:translateY(.4em); filter:blur(4px); color:#fff; text-shadow:0 0 12px #ff2040; } 100%{ opacity:1; transform:none; filter:none; } }
+  #modsel.dth .qpstart b{ color:rgb(255,60,80); text-shadow:0 0 18px rgba(255,0,40,.7); }
+  #modsel.dth .qpl-label b::before, #modsel.dth .qpl-label b::after{ background-color:#ff2040; filter:drop-shadow(0 0 4px #ff0028); }
 
   /* QP 結算：同一套官方 scroller_block 外框＋ .replayinfo／.watchreplay／.bigscore 配色 */
   #qpResult .qr-wrap{ width:min(800px, 100% - 20px); font-size:clamp(11px, 2.4vw, 16px); font-family:var(--t-font); }
@@ -15156,12 +15194,12 @@ function evToggle(c, rev){
 }
 function refreshQuickPick(){
   renderEvDeck();
-  const revOn = DECK.some(c => cardState(c) >= 2), ex = cardState(DECK[0]) > 0;
-  $('modsel').classList.toggle('tyr', revOn);                                      // 官方 #zenithmenu.reversed：只有逆位才變紅、START 倒過來；EXPERT 只換標題／標語
+  const dthOn = pickedMods.has('death'), revOn = DECK.some(c => cardState(c) >= 2) || dthOn, ex = cardState(DECK[0]) > 0;   // DEATH 是 event 卡，不在 DECK 裡，要另外算逆位
+  $('modsel').classList.toggle('tyr', revOn); $('modsel').classList.toggle('dth', dthOn);                                      // 官方 #zenithmenu.reversed：只有逆位才變紅、START 倒過來；EXPERT 只換標題／標語
   $('modsel').classList.toggle('flip', revOn);                                     // TETR.IO：選了逆位 mod，START 就倒過來
   $('modsel').classList.toggle('flipside', pickedMods.has('flipside')); $('modsel').classList.toggle('abyss', pickedMods.has('abyss'));            // The Tyrant：START 倒過來
   $('qpTitle').textContent = pickedMods.has('world') ? 'QUICK PICK' : 'QUICK PLAY';   // 官方面板裡的 h1 固定 QUICK PLAY
-  clearTimeout(refreshQuickPick.zt); if (!revOn) document.body.classList.remove('zrev'); else if (!document.body.classList.contains('zrev')) refreshQuickPick.zt = setTimeout(() => document.body.classList.toggle('zrev', DECK.some(c => cardState(c) >= 2)), 500);   // 官方：翻完 0.5 秒（card_reverse_impact）才加 body.zenith_reversed
+  clearTimeout(refreshQuickPick.zt); if (!revOn) document.body.classList.remove('zrev'); else if (!document.body.classList.contains('zrev')) refreshQuickPick.zt = setTimeout(() => document.body.classList.toggle('zrev', DECK.some(c => cardState(c) >= 2) || pickedMods.has('death')), 500);   // 官方：翻完 0.5 秒（card_reverse_impact）才加 body.zenith_reversed
   if (screen === 'modsel'){ const h = document.querySelector('header h1'); if (h) h.textContent = (ex ? 'EXPERT ' : '') + (pickedMods.has('world') ? 'QUICK PICK' : 'QUICK PLAY'); }   // 官方 rr()：header_text＝EXPERT QUICK PLAY／QUICK PLAY   // THE WORLD：QUICK PLAY → QUICK PICK
   if (screen === 'modsel') $('foot').textContent = revOn ? 'OVERTHROW THE TOWER!' : ex ? 'CHALLENGE THE TOWER!' : 'SCALE THE TOWER!';   // 官方 rr()：逆位 overthrow／EXPERT challenge／其他 scale   // 實機：選了逆位 mod，底列標語變 OVERTHROW THE TOWER!
   const rev = DECK_ALL.find(c => cardState(c) >= 2 && c !== CHARIOT_CARD);
@@ -15192,8 +15230,14 @@ function showCardInfo(i){
       if (cardLocked(c)){ $('qpLblName').textContent = c.base === 'expert' ? 'EXPERT MODE' : '???'; $('qpLblDesc').textContent = `REACH FLOOR ${MOD_FLOOR[c.base]} TO UNLOCK`; }   // 官方 zenith_deck_info data-for="<mod>_locked"
       else {
       $('qpLblName').textContent = st >= 3 ? tierName(c, st) : m.name;
-      $('qpLblDesc').textContent = st >= 3 ? tierDesc(c, st).toUpperCase() : m.desc.toUpperCase(); }
+      $('qpLblDesc').textContent = st >= 3 ? tierDesc(c, st).toUpperCase() : m.desc.toUpperCase();
+      if (m.id === 'death'){                                                   // DEATH：名字逐字、說明逐字浮現
+        $('qpLblName').innerHTML = [...m.name].map((ch, k) => `<span style="--k:${k}">${ch === ' ' ? '&nbsp;' : ch}</span>`).join('');
+        $('qpLblDesc').innerHTML = m.desc.toUpperCase().split(' ').map((w, k) => `<span style="--k:${k}">${w}</span>`).join(' '); } }
     }
+    const lk = $('qpLblName').textContent + '|' + (i >= 0 ? cardState(QDECK[i]) : -1), lb = $('qpLabel');   // 官方 ZenithDeckInfoAppear：換卡時從右滑進來＋說明閃三下
+    if (lb && lb.dataset.k !== lk){ lb.dataset.k = lk; lb.classList.remove('ping'); void lb.offsetWidth; lb.classList.add('ping');
+      $('qpLblDesc').classList.remove('ping'); void $('qpLblDesc').offsetWidth; $('qpLblDesc').classList.add('ping'); }
     $('qpPrev').disabled = $('qpNext').disabled = false;
   }
   if (i < 0){ $('ciNum').textContent = 'QUICK PLAY'; $('ciName').textContent = 'SELECT MODS';
