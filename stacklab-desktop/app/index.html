@@ -1087,7 +1087,7 @@ document.documentElement.classList.add('booting'); addEventListener('load', func
   .tcard.rev .face{ border-color:#c58cff; box-shadow:0 0 0 2px #c58cff, 0 0 26px rgba(197,140,255,.65), 0 8px 18px rgba(0,0,0,.6);
     background:linear-gradient(170deg, color-mix(in srgb, var(--hue) 25%, #2a1636), #120a1a 70%); }
   .tcard.off{ filter:grayscale(.85) brightness(.55); cursor:not-allowed; }
-  .tcard.off:has(.zlock){ filter:none; } .tcard.off .zthrob, .tcard.off .zout{ display:none; }   /* 官方：鎖住的卡直接蓋 lockfull-N 圖，不另外變灰 */
+  .tcard.off:has(.zlock){ filter:none; } .tcard.off .zthrob, .tcard.off .zout, .tcard.off .zoutc{ display:none; }   /* 官方：鎖住的卡直接蓋 lockfull-N 圖，不另外變灰 */
   .deckfoot{ display:flex; flex-direction:column; align-items:center; gap:6px; margin-top:auto; padding-bottom:6px; }
   #modNote{ margin:0; font-size:15px; letter-spacing:.14em; color:#cdd5ea; }
   #modStart{ font-size:26px; letter-spacing:.2em; padding:10px 48px; }
@@ -1126,7 +1126,7 @@ document.documentElement.classList.add('booting'); addEventListener('load', func
   .tcard .nm{ position:absolute; left:0; right:0; bottom:3%; text-align:center; font:700 clamp(8px,2.2vw,14px) Georgia,"Times New Roman",serif;
     letter-spacing:.06em; color:#3a2a1c; font-variant:small-caps; }
   .tcard.up .face{ border-color:#ffd36b; box-shadow:0 0 0 3px #ffd36b, 0 0 26px rgba(255,190,80,.7), -4px 4px 14px rgba(0,0,0,.5); }
-  .tcard.rev .face{ border-color:#3c8bff; box-shadow:0 0 0 4px #3c8bff, 0 0 30px rgba(255,90,40,.75), -4px 4px 14px rgba(0,0,0,.5);
+  .tcard.rev .face{ border-color:#ff2a4a; box-shadow:0 0 0 4px #ff2a4a, 0 0 30px rgba(255,20,60,.7), -4px 4px 14px rgba(0,0,0,.5);
     background:linear-gradient(170deg,#7a1c1c,#3a0c10); }
   .tcard.rev .num, .tcard.rev .nm{ color:#f1d9a8; }
   .tcard.rev .art{ background:linear-gradient(180deg,#c9a33a,#7a2a14); }
@@ -2592,6 +2592,11 @@ document.documentElement.classList.add('booting'); addEventListener('load', func
   @keyframes zThrob{ from{ opacity:.15; } to{ opacity:.75; } }
   .tcard .zout{ display:none; transform:scale(1.04); } .tcard.up .zout{ display:block; animation:zOut 1.5s ease-in-out infinite; }
   @keyframes zOut{ 0%,100%{ opacity:.55; } 50%{ opacity:1; } }
+  /* 選了逆位／FLIPSIDE／ABYSS 一樣要有外框，顏色看 mod 類型：逆位紅、FLIPSIDE 白、ABYSS 紫。外框圖當 mask，底色直接填，不靠濾鏡猜色 */
+  .tcard .zoutc{ position:absolute; inset:0; pointer-events:none; display:none; transform:scale(1.04); background:var(--oc, #ff2a4a);
+    -webkit-mask:var(--om) center / contain no-repeat; mask:var(--om) center / contain no-repeat; filter:drop-shadow(0 0 5px var(--oc)) drop-shadow(0 0 12px var(--oc)); }
+  .tcard.rev .zoutc{ display:block; animation:zOut 1.5s ease-in-out infinite; }
+  .tcard.flipside{ --oc:#f4f4f4; } .tcard.abyss{ --oc:#b06bff; }
   .tcard .zlock{ z-index:3; }
   /* 官方 .zenith_card_crystal／_crystal_dark／_progress */
   .tcard .zcr{ position:absolute; left:40.5%; top:1.3%; width:19%; height:auto; aspect-ratio:1; pointer-events:none; z-index:4; transform:translate(190%,-50%) rotate(360deg) scale(.5); filter:drop-shadow(0 0 8px #fff) drop-shadow(0 3px 7px #000); opacity:0; transition:transform .3s, opacity .3s; }
@@ -16712,12 +16717,12 @@ function renderModSel(){
       if (img && !own) el.classList.add('ozm');
       if (th) el.insertAdjacentHTML('beforeend', `<img class="zthrob" alt="" src="${th}">`);            // 逆位時的紅色發光層（官方 .zenith_card_throb）
       if (lk) el.insertAdjacentHTML('beforeend', `<img class="zlock" alt="" src="${lk}">`);              // 還沒解鎖：官方的樓層鎖
-      { const o = zmImg('zm_outline', 'outline'); if (o) el.insertAdjacentHTML('beforeend', `<img class="zout" alt="" src="${o}">`); } }
+      { const o = zmImg('zm_outline', 'outline'); if (o) el.insertAdjacentHTML('beforeend', `<img class="zout" alt="" src="${o}"><i class="zoutc" style="--om:url('${o}')"></i>`); } }
     if (c.ev){ el.classList.add('ozm'); const o = zmImg('zm_outline', 'outline'); if (o) el.insertAdjacentHTML('beforeend', `<img class="zout" alt="" src="${o}">`); }   // THE WORLD：選了一樣有外框
     { const cd = zmImg('zm_crystald', 'crystal-dark'), cr = zmImg('zm_crystal', 'crystal');   // 星星（水晶）：本站沒有精通，每張卡都直接顯示
       if (cd) el.insertAdjacentHTML('beforeend', `<img class="zcrd" alt="" src="${cd}">`); if (cr) el.insertAdjacentHTML('beforeend', `<img class="zcr" alt="" src="${cr}">`); }                                   // THE WORLD：去背卡圖，跟官方卡一樣不畫框
     if (c.base === 'gravity' && towerExt) el.insertAdjacentHTML('beforeend', `<b class="extb" style="--exc:${TOWER_EXT[towerExt - 1].col}">+${towerExt}</b>`);   // THE TOWER：目前擴建層數
-    if (st === 4 && MODAB[c.rev]) el.insertAdjacentHTML('beforeend', `<img class="abico" alt="" src="${MODAB[c.rev]}" onerror="this.remove()">`);   // 放在 .face 外面：不吃 abyss 的 invert 濾鏡
+    // ABYSS 卡右上角不放 mod 圖標（使用者要求拿掉）
     // 官方：點一下＝選／取消；按住 0.5 秒＝逆位（按住時卡片縮小；滑鼠移出去取消，移回來重新計時）；手指滑動＝瀏覽，不算點
     let pressT = 0, downPt = null;
     const cancelHold = () => { clearTimeout(pressT); pressT = 0; el.classList.remove('pressing'); };
