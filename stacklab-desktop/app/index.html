@@ -678,7 +678,8 @@ document.documentElement.classList.add('booting'); addEventListener('load', func
   .smrow{ display:flex; align-items:center; gap:6px; background:#0f1322; padding:4px 4px 4px 10px; }
   .smrow span{ flex:1; min-width:0; font-size:13px; letter-spacing:.06em; color:#b9c4e6; }
   .smrow select{ width:46%; max-width:190px; background:#1b2033; color:#eef2ff; border:1px solid #33406a; border-radius:0; font:13px var(--t-font); padding:5px; text-transform:none; }
-  .smrow select.set{ border-color:#7fe0a0; color:#b8ffcc; }
+  .smrow select.set, .smrow .smp.set{ border-color:#7fe0a0; color:#b8ffcc; }
+  .smrow .smp{ width:48px; flex:none; background:#1b2033; color:#eef2ff; border:1px solid #33406a; border-radius:0; font:13px var(--t-font); padding:5px 2px; text-align:center; }
   .smrow button{ border-radius:0; border:1px solid #33406a; background:#232c4a; color:#9fb4ee; font:inherit; font-size:13px; padding:5px 9px; box-shadow:none; }
   .sfx-list summary{ cursor:pointer; font-size:14px; letter-spacing:.1em; color:#9fb4ee; padding:4px 0; }
   #sfxNames{ display:flex; flex-wrap:wrap; gap:4px; max-height:240px; overflow:auto; padding-top:4px; }
@@ -5022,6 +5023,8 @@ const SFX_EVENTS = [
   ['upspeed', 'CLIMB SPEED UP', ['zenith_upspeed_e']], ['downspeed', 'CLIMB SPEED DOWN', ['zenith_downspeed_e']],
   ['hyperw', 'PIECE WILL LOCK OUT', ['hyperalert']], ['srstart', 'SPEEDRUN START', ['zenith_speedrun_start']], ['srend', 'SPEEDRUN F10', ['zenith_speedrun_end']],
   ['cardup', 'MOD CARD FLIP', ['card_select']], ['cardrev', 'MOD CARD REVERSE', ['card_select_reverse']], ['cardslide', 'MOD CARD FOCUS', ['card_slide_1']],
+  ['revimpact', 'MOD CARD REVERSE IMPACT', ['card_reverse_impact']], ['fsimpact', 'FLIPSIDE IMPACT', ['card_impact_flipside']], ['abimpact', 'ABYSS IMPACT', ['card_impact_abyss']],
+  ['jgtone', 'JUDGEMENT TONE', ['card_tone_judgement']], ['jgrtone', 'JUDGEMENT REVERSE TONE', ['card_tone_judgement_reverse']],
   // 結束與紀錄
   ['boardappear', 'GAME START', ['boardappear']], ['topout', 'TOP OUT', ['topout']], ['finish', 'FINISH / TIME UP', ['finish']],
   ['pb', 'PERSONAL BEST', ['personalbest']], ['roundloss', 'TL ROUND LOST', ['losestock']], ['victory', 'TL VICTORY', ['victory']], ['defeat', 'TL DEFEAT', ['failure']],
@@ -5039,6 +5042,10 @@ let sfxQuiet = false;                       // IRS 生成時的旋轉改播 irs�
 const ZENITH_SPEED_NOTES = ['c', 'csharp', 'e', 'fsharp', 'g', 'a', 'ahalfsharp', 'b'];   // ⚠️ 爬升速度每升一階往上一個音（檔案裡有這 8 個音名，順序是推的）
 const sizeTag = n => n < 3 ? 'small' : n > 5 ? 'large' : 'medium';   // 官方：<3 small、>5 large                      // ⚠️ 大中小的界線是推的
 const sfxMap = () => { try { return JSON.parse(localStorage.getItem('bp:sfxmap') || '{}'); } catch(e){ return {}; } };
+// SOUND MAP 每列的移調（半音，存在 bp:sfxpitch）
+const sfxPitchMap = () => { try { return JSON.parse(localStorage.getItem('bp:sfxpitch') || '{}'); } catch(e){ return {}; } };
+// 內建音效（官方音效包沒有、內嵌在 events/ 的）：SOUND MAP 也能選
+const EV_SOUNDS = () => Object.keys(ASSET_URI).filter(k => /^events\/.+\.ogg$/.test(k)).map(k => k.slice(7, -4)).sort();
 // 有自訂就用自訂（'-' = 靜音），沒有就照預設候選名稱
 // 有音高的音效（ZC 的 SFX.play(name, vol, pos, Tone(n))：n 個半音）
 function sfxPitch(name, vol = 1, semis = 0){
@@ -5056,10 +5063,14 @@ function sfxEv(id, ...names){
   if (opt('oNoSound') || RP_OPENING || (climb && climb.rp)) return null;   // 回放沒有聲音
   if (!opt('oHearAtk') && ATK_SFX.has(id)) return null;
   if (!opt('oHearClimb') && CLIMB_SFX.has(id)) return null;
-  const m = sfxMap()[id];
+  const m = sfxMap()[id], p = +sfxPitchMap()[id] || 0;
   const vol = typeof names[names.length - 1] === 'number' ? names[names.length - 1] : 1;
   if (m === '-') return null;
-  return m ? sfx(m, vol) : sfx(...names);
+  if (m) return evSfx(m, vol, p);                                     // 自訂：音效包或內建檔都行
+  const cand = names.filter(n => typeof n === 'string');
+  const hit = SND.sprites && cand.find(n => SND.sprites[n]);
+  if (hit) return p ? sfxPitch(hit, vol, p) : sfx(hit, vol);
+  return cand[0] && EV_SOUNDS().includes(cand[0]) ? evSfx(cand[0], vol, p) : null;   // 預設是內建檔（JUDGEMENT、FS／ABYSS 衝擊）
 }
 const ZENITH_NOTES = ['c', 'b', 'a', 'fsharp', 'e', 'a', 'ahalfsharp', 'e', 'e', 'a'];   // 官方 tetrio.js 升樓音表（索引＝樓層−2）
 // 官方 tetris 鎖定音（tetrio.js 的 clear 流程）：
@@ -15239,12 +15250,19 @@ function renderEvDeck(){
 }
 // 活動卡的音色：TETR.IO 音效包沒有的，放在網站 events/<名稱>.ogg（例如 card_tone_snowball.ogg），解碼一次後重複用
 const EVS = {};
-function evSfx(name, vol = .8){
-  if (sfx(name, vol)) return;                                   // 音效包裡有就用音效包的
-  const ac = audioCtx(); if (!ac) return;
-  const play = buf => { if (!buf || ac.state !== 'running') return; const src = ac.createBufferSource(), g = ac.createGain(); g.gain.value = vol; src.buffer = buf; src.connect(g); g.connect(SND.gain); src.start(); };
+function evSfx(name, vol = .8, semis = 0){
+  if (semis ? sfxPitch(name, vol, semis) : sfx(name, vol)) return name;   // 音效包裡有就用音效包的
+  const ac = audioCtx(); if (!ac) return null;
+  const play = buf => { if (!buf || ac.state !== 'running') return; const src = ac.createBufferSource(), g = ac.createGain(); g.gain.value = vol; src.buffer = buf; src.playbackRate.value = Math.pow(2, semis / 12); src.connect(g); g.connect(SND.gain); src.start(); };
   if (!(name in EVS)) evSfxLoad(name);
   if (EVS[name] instanceof Promise) EVS[name].then(play); else play(EVS[name]);
+  return EVS[name] === null ? null : name;
+}
+// SOUND MAP 能改的卡片音：自訂名稱／靜音／移調都照設定
+function cardSfx(id, def, vol = .8){
+  if (opt('oNoSound') || RP_OPENING || (climb && climb.rp)) return null;
+  const m = sfxMap()[id]; if (m === '-') return null;
+  return evSfx(m || def, vol, +sfxPitchMap()[id] || 0);
 }
 function evSfxLoad(name){
   const ac = audioCtx(); if (!ac){ EVS[name] = null; return; }
@@ -15258,12 +15276,16 @@ let revImpactT = 0;
 const evTone = base => (base === 'pentrio' || base === 'mutation') ? 'pentrio' : base;
 function revToneThenImpact(tone, jank, tier){
   clearTimeout(revImpactT);
-  const impact = () => jank ? evSfx('card_reverse_impact_janktacular', .7) : tier ? evSfx('card_impact_' + tier, .75) : sfx('card_reverse_impact', .7);   // FS／ABYSS：換成加強版衝擊音
-  if (SND.sprites && SND.sprites[tone]){ sfx(tone, .8); revImpactT = setTimeout(impact, SND.sprites[tone][1] * 1000); return; }
+  const impact = () => jank ? evSfx('card_reverse_impact_janktacular', .7)
+    : tier ? cardSfx(tier === 'abyss' ? 'abimpact' : 'fsimpact', 'card_impact_' + tier, .75) : cardSfx('revimpact', 'card_reverse_impact', .7);   // FS／ABYSS：換成加強版衝擊音
+  let semis = 0;
+  if (tone === 'card_tone_judgement_reverse'){ const m = sfxMap().jgrtone; if (m === '-'){ impact(); return; } if (m) tone = m; semis = +sfxPitchMap().jgrtone || 0; }   // SOUND MAP 可改
+  const rate = Math.pow(2, semis / 12);
+  if (SND.sprites && SND.sprites[tone]){ sfxPitch(tone, .8, semis); revImpactT = setTimeout(impact, SND.sprites[tone][1] * 1000 / rate); return; }
   const ac = audioCtx(); if (!ac){ impact(); return; }
   const go = buf => { if (!buf){ impact(); return; }
-    const src = ac.createBufferSource(), g = ac.createGain(); g.gain.value = .8; src.buffer = buf; src.connect(g); g.connect(SND.gain); src.start();
-    revImpactT = setTimeout(impact, buf.duration * 1000); };
+    const src = ac.createBufferSource(), g = ac.createGain(); g.gain.value = .8; src.buffer = buf; src.playbackRate.value = rate; src.connect(g); g.connect(SND.gain); src.start();
+    revImpactT = setTimeout(impact, buf.duration * 1000 / rate); };
   if (!(tone in EVS)) evSfxLoad(tone);
   if (EVS[tone] instanceof Promise) EVS[tone].then(go); else go(EVS[tone]);
 }
@@ -16874,7 +16896,7 @@ function flipCard(i, reversed){
   setCardState(c, ns);
   if (ns === 2 && c.base === 'sun'){ deathRevealFx(); }
   else if (ns === 1 && c.base === 'sun') sfxEv('cardrev', 'card_select_reverse');   // THE SUN：選取跟逆位一樣的演出
-  else if (ns === 1){ sfxEv('cardup', 'card_select'); evSfx('card_tone_' + c.base, 0.8); }   // evSfx：音效包沒有的（JUDGEMENT）讀自備檔
+  else if (ns === 1){ sfxEv('cardup', 'card_select'); c.base === 'judgement' ? cardSfx('jgtone', 'card_tone_judgement') : evSfx('card_tone_' + c.base, 0.8); }   // evSfx：音效包沒有的（JUDGEMENT）讀自備檔
   else if (ns >= 2){ sfxEv('cardrev', 'card_select_reverse'); revToneThenImpact('card_tone_' + c.base + '_reverse', false, ns === 3 ? 'flipside' : ns === 4 ? 'abyss' : ''); }
   if (ns === 2) CSTAR_FLIP.set(i, performance.now()); else CSTAR_FLIP.delete(i);
   document.body.classList.toggle('dthsel', pickedMods.has('death'));
@@ -17290,14 +17312,21 @@ function renderSfx(){
 function renderSfxMap(){
   const box = $('sfxMapRows'); if (!box) return;
   box.innerHTML = '';
-  const map = sfxMap(), names = SND.sprites ? Object.keys(SND.sprites).sort() : [];
+  const map = sfxMap(), pm = sfxPitchMap(), names = [...new Set([...(SND.sprites ? Object.keys(SND.sprites).sort() : []), ...EV_SOUNDS()])];
   for (const [id, label, def] of SFX_EVENTS){
     const row = document.createElement('div'); row.className = 'smrow';
     const cur = map[id] || '';
     const opts = [['', 'AUTO'], ['-', 'MUTE'], ...names.map(n => [n, n])];
     if (cur && cur !== '-' && !names.includes(cur)) opts.push([cur, cur + ' (missing)']);
-    row.innerHTML = `<span>${label}</span><select>${opts.map(([v, t]) => `<option value="${v}"${v === cur ? ' selected' : ''}>${t}</option>`).join('')}</select><button>▶</button>`;
-    const sel = row.querySelector('select');
+    row.innerHTML = `<span>${label}</span><select>${opts.map(([v, t]) => `<option value="${v}"${v === cur ? ' selected' : ''}>${t}</option>`).join('')}</select><input class="smp" type="number" min="-24" max="24" step="1" value="${+pm[id] || 0}" title="PITCH (SEMITONES)"><button>▶</button>`;
+    const sel = row.querySelector('select'), pin = row.querySelector('.smp');
+    pin.classList.toggle('set', !!+pm[id]);
+    pin.onchange = () => {
+      const v = Math.max(-24, Math.min(24, Math.round(+pin.value || 0))); pin.value = v;
+      const q = sfxPitchMap(); if (v) q[id] = v; else delete q[id];
+      try { localStorage.setItem('bp:sfxpitch', JSON.stringify(q)); } catch(e){}
+      pin.classList.toggle('set', !!v); sfxEv(id, ...def);
+    };
     sel.classList.toggle('set', !!cur);
     sel.onchange = () => {
       const m = sfxMap(); if (sel.value) m[id] = sel.value; else delete m[id];
@@ -17308,7 +17337,7 @@ function renderSfxMap(){
     box.appendChild(row);
   }
 }
-$('sfxMapReset').onclick = () => { try { localStorage.removeItem('bp:sfxmap'); } catch(e){} renderSfxMap(); notice('SOUND MAP RESET'); };
+$('sfxMapReset').onclick = () => { try { localStorage.removeItem('bp:sfxmap'); localStorage.removeItem('bp:sfxpitch'); } catch(e){} renderSfxMap(); notice('SOUND MAP RESET'); };
 async function loadSfxBuffer(buf, from){
   try {
     const info = await useRSD(buf);
