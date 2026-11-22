@@ -3157,6 +3157,33 @@ document.documentElement.classList.add('booting'); addEventListener('load', func
   :is(#modsel, #h2hModHost) .qpl-ev{ padding:1em; } :is(#modsel, #h2hModHost) .qpl-evt{ font-size:2em; font-weight:700; letter-spacing:0; color:rgb(178,96,64); }
   :is(#modsel, #h2hModHost) .qpl-ev .deckhelp, :is(#modsel, #h2hModHost) .qpl-toggle{ font-weight:700; letter-spacing:0; color:rgb(178,96,64) !important; }
 
+
+  /* ===== MOD GUIDE ===== */
+  .mg-help{ margin:4px 0 12px; text-align:center; font:700 12px var(--t-font); letter-spacing:.12em; color:#d59aab; }
+  .mg-list{ display:flex; flex-direction:column; gap:10px; width:100%; min-width:0; box-sizing:border-box; }
+  .mg-help{ overflow-wrap:anywhere; padding:0 16px; }
+  .mg-list{ padding:0 16px 24px 4px; }   /* 右邊留出捲軸／頁緣，手機上文字不會被切 */
+  .mg-row{ box-sizing:border-box; max-width:100%; min-width:0; display:flex; gap:14px; align-items:flex-start; padding:12px; background:#2a1820; border:2px solid #4a2632; transition:background .3s, border-color .3s; }
+  .mg-row.t2{ background:#2a0a12; border-color:#8f0d19; } .mg-row.t3{ background:#151515; border-color:#9a9a9a; } .mg-row.t4{ background:#160a26; border-color:#7a3cd6; }
+  .mg-card{ flex:0 0 auto; width:min(26vw, 120px); aspect-ratio:550/770; padding:0; border:0; background:transparent; cursor:pointer; position:relative; box-shadow:none;
+    transition:transform .45s cubic-bezier(.2,.8,.3,1.2), filter .3s; --oc:#ffb27a; filter:drop-shadow(0 0 2px var(--oc)) drop-shadow(0 0 8px var(--oc)); }
+  .mg-card img{ position:absolute; inset:0; width:100%; height:100%; object-fit:contain; }
+  .mg-card .mg-alt{ position:absolute; inset:0; display:grid; place-items:center; font:700 22px var(--t-font); color:#fff; z-index:-1; background:#3a2a30; }
+  .mg-card.t2{ transform:rotate(180deg); --oc:#ff2040; } .mg-card.t2 img{ filter:brightness(.9) saturate(1.5) hue-rotate(-30deg); }
+  .mg-card.t3{ transform:rotate(180deg); --oc:#f4f4f4; } .mg-card.t3 img{ filter:invert(1) hue-rotate(180deg); }
+  .mg-card.t4{ transform:rotate(180deg); --oc:#b06bff; } .mg-card.t4 img{ filter:invert(1) hue-rotate(180deg) brightness(.55) sepia(1) hue-rotate(220deg) saturate(3.5); }
+  .mg-card.ra img{ filter:none; }                                  /* DEATH：逆位有自己的卡圖 */
+  .mg-row.flipping .mg-card{ animation:mgFlip .45s ease-out; }
+  @keyframes mgFlip{ 0%{ scale:1 1; } 45%{ scale:0 1; } 100%{ scale:1 1; } }
+  .mg-txt{ flex:1; min-width:0; display:flex; flex-direction:column; gap:4px; }
+  .mg-tag{ font:700 11px var(--t-font); letter-spacing:.14em; color:#b98a98; }
+  .mg-name{ font:700 clamp(18px, 5vw, 24px) var(--t-font); letter-spacing:.04em; color:#ffb27a; line-height:1.1; }
+  .mg-row.t2 .mg-name{ color:#ff6c6c; text-shadow:0 0 12px rgba(255,0,89,.4); } .mg-row.t3 .mg-name{ color:#fff; text-shadow:0 0 10px rgba(255,255,255,.5); } .mg-row.t4 .mg-name{ color:#e2c8ff; text-shadow:0 0 12px rgba(160,80,255,.7); }
+  .mg-txt q{ font:700 11px var(--t-font); letter-spacing:.08em; color:#d9b0b8; quotes:none; opacity:.85; }
+  .mg-txt ul{ margin:4px 0 0; padding-left:1.1em; font-size:13px; line-height:1.45; color:#f0dde2; }
+  .mg-txt li{ margin:2px 0; } .mg-txt li b{ color:#ffd0a0; margin-right:.3em; } .mg-row.t2 .mg-txt li b{ color:#ff8090; }
+  .mg-dots{ display:flex; gap:6px; margin-top:6px; } .mg-dots i{ width:10px; height:10px; transform:rotate(45deg); background:#ffb27a; opacity:.25; }
+  .mg-dots i.t2{ background:#ff2040; } .mg-dots i.t3{ background:#f4f4f4; } .mg-dots i.t4{ background:#b06bff; } .mg-dots i.on{ opacity:1; box-shadow:0 0 6px currentColor; }
   /* ===== 換卡動畫（官方 ZenithDeckInfoAppear／Ping） ===== */
   :is(#modsel, #h2hModHost) .qpl-label.ping b{ animation:lblAppear .3s ease-out both; }
   :is(#modsel, #h2hModHost) .qpl-lbldesc.ping{ animation:lblAppear .3s ease-out both, lblPing .5s linear .3s; }
@@ -18380,8 +18407,67 @@ function pcResHTML(R){
     <p class="pct-note">${R.soft ? `${R.soft} piece${R.soft > 1 ? 's need' : ' needs'} a soft drop.` : 'Hard drop only.'} ${R.n > 1 ? R.n + ' solutions found; this is the easiest.' : ''}</p>
     <button class="pct-go" data-pcgo="1">PRACTICE THIS</button></div>`;
 }
+
+/* ---------------- MOD GUIDE（教學 → QUICK PLAY TECHNIQUES 最上面）----------------
+   每個 mod 一張卡，點卡輪流翻：正位 → 逆位 → FLIPSIDE → ABYSS（沒有的階就跳過）
+   規則文字照本站實作寫（數字取自 CLIMB_CFG／climb 系統），不是官方 wiki 原文 */
+const MG_RULES = {
+  expert:    ['Garbage arrives sooner (delay ×0.6) and more often (×1.25)', 'Garbage is messier, and gets messier faster every floor', 'Line clears and cancelling garbage no longer speed up your climb; attacks and KOs do', 'Climb speed drains faster', 'A plain Single with no combo sends nothing', 'No cap on how much garbage rises at once'],
+  nohold:    ['HOLD is disabled for the whole run'],
+  messy:     ['The hole column moves far more often (50% chance per line instead of 20%)', 'Every garbage wave starts 25% messier'],
+  gravity:   ['Gravity rises on every floor', 'Lock delay gets 7% shorter on every floor'],
+  volatile:  ['Every incoming garbage line is doubled', 'Your attacks also cancel twice as much garbage'],
+  doublehole:['40% of garbage lines come with two holes instead of one'],
+  invisible: ['Your placed blocks are invisible', 'The whole board flashes visible once every 5 seconds', 'Garbage stays visible'],
+  allspin:   ['Every piece can spin, and every spin counts as a full spin (no minis)', 'Repeating the same clear twice in a row adds a Wound line: a solid row that rises at once and cannot be cancelled', 'A Wound turns back into normal garbage after enough line clears (6 on floor 1, +1 per floor)'],
+  duo:       ['Climb with a partner (La bot): shared altitude, each of you sends half', 'When one of you tops out, the other can revive them by finishing a task', 'Type /add labot in the chat to bring a partner'],
+};
+const MG_ORDER = [...DECK, SUN_CARD, JUDGE_CARD, WORLD_CARD, CHARIOT_CARD, ...EV_DECK];
+const MG_ST = {};                                   // 每張卡目前翻到哪一階（1 正位、2 逆位、3 FLIPSIDE、4 ABYSS）
+const mgTiers = c => [1, ...(c.rev ? [2] : []), ...(c.rev && !c.noFlip && FLIP_NAMES[c.rev] ? [3] : []), ...(c.rev && !c.noFlip && AB_NAMES[c.rev] ? [4] : [])];
+function mgArt(c, st){
+  if (c.ev) return evImg('card_' + (st >= 2 && c.revArt ? c.rev : c.base));
+  return (typeof zmImg === 'function' && zmImg('zm_' + c.base, c.base)) || (tioImgOn() && CARD_FILE[c.base] ? cardArtUrl(c.base) : '');
+}
+function mgInfo(c, st){
+  const m = modById(st >= 2 ? c.rev : c.base) || {};
+  const name = st >= 3 ? tierName(c, st) : m.name || c.base.toUpperCase();
+  const fl = st >= 3 ? tierFl(c, st) : st === 2 ? (m.fl || '') : '';
+  const tag = ['', 'UPRIGHT', 'REVERSED', 'FLIPSIDE', 'ABYSS'][st];
+  let rules;
+  if (st === 1) rules = MG_RULES[c.base] || [m.desc];
+  else if (st === 2) rules = (m.desc || '').split(/\s*[·;]\s*|,\s+(?=[a-z0-9])/i).filter(Boolean);
+  else rules = [tierDesc(c, st)].concat(st === 4 ? ['Includes everything from FLIPSIDE'] : ['Includes everything from the reversed card']);
+  const FT = c.base === 'sun' ? (st === 2 ? DEATH_FLOORS : st === 1 ? SUN_FLOORS : null) : null;      // CHALLENGE／DEATH：逐層列出詛咒
+  if (FT) rules = rules.concat(Object.keys(FT).map(k => `<b>F${k}</b> ${FT[k].sub}`));
+  if (c.base === 'sun') rules.push(st === 2 ? 'Unlocks after conquering THE SUN · needs the full tower (5/5)' : 'Needs the full tower (5/5) · F1 has no curse');
+  if (st === 2 && c.rev) rules.push('In the lobby: long-press (or right-click) the card');
+  if (st >= 3) rules.push(st === 4 ? 'In the lobby: tap the card 10 times quickly' : 'In the lobby: long-press the card twice');
+  const ta = st >= 2 && m.tarot ? m.tarot.replace(/\s*↺$/, '') : c.tarot || m.tarot || '';   // DEATH 的逆位是自己的牌（Death），不是 THE SUN ↺
+  return { name, fl, tag, rules, tarot: ta.toUpperCase() + (st >= 2 && /↺/.test(m.tarot || '') ? ' ↺' : '') };
+}
+function mgCardHTML(c, i){
+  const st = MG_ST[c.base] || 1, I = mgInfo(c, st), art = mgArt(c, st), T = mgTiers(c);
+  const dots = T.length > 1 ? `<span class="mg-dots">${T.map(t => `<i class="${t === st ? 'on' : ''} t${t}"></i>`).join('')}</span>` : '';
+  return `<div class="mg-row t${st}" data-i="${i}">
+    <button class="mg-card t${st}${c.ev && c.revArt && st >= 2 ? ' ra' : ''}" aria-label="Flip ${I.name}">${art ? `<img alt="" src="${art}" onerror="this.remove()">` : ''}<b class="mg-alt">${c.code}</b></button>
+    <div class="mg-txt"><small class="mg-tag">${I.tag} · ${I.tarot}</small><b class="mg-name">${I.name}</b>${I.fl ? `<q>${I.fl}</q>` : ''}
+      <ul>${I.rules.map(r => `<li>${r.charAt(0).toUpperCase() + r.slice(1)}</li>`).join('')}</ul>${dots}</div></div>`;
+}
+function renderModGuide(el){
+  el.innerHTML = `<p class="mg-help">TAP A CARD TO FLIP IT · UPRIGHT → REVERSED → FLIPSIDE → ABYSS</p><div class="mg-list">${MG_ORDER.map(mgCardHTML).join('')}</div>`;
+  el.onclick = e => {                                                      // 事件委派：整列換掉後不用重綁
+    const card = e.target.closest('.mg-card'); if (!card) return;
+    const row = card.closest('.mg-row'), c = MG_ORDER[+row.dataset.i], T = mgTiers(c); if (T.length < 2) return;
+    const st = MG_ST[c.base] || 1, nx = T[(T.indexOf(st) + 1) % T.length]; MG_ST[c.base] = nx;
+    try { sfxEv('cardsel', nx >= 2 ? 'card_select_reverse' : 'card_select', 'card_select'); } catch(err){}
+    const tmp = document.createElement('div'); tmp.innerHTML = mgCardHTML(c, +row.dataset.i);
+    const nw = tmp.firstElementChild; row.replaceWith(nw); nw.classList.add('flipping');
+  };
+}
 function renderTutList(){
   const done = tutDone(), el = $('tutList');
+  el.onclick = null;
   const catBar = ci => { const ls = TUT.filter(L => !L.hide && L.cat === ci), n = ls.filter(L => done[L.id]).length;
     return tbarHTML(TUT_CAT_STYLE[ci][0], TUT_CAT_STYLE[ci][1], TUT_CATS[ci][0], `${TUT_CAT_STYLE[ci][2]} · ${n} / ${ls.length}${n === ls.length ? ' <i>✓</i>' : ''}`, `data-c="${ci}"`); };
   if (tutCat == null || tutCat === 'spin'){
@@ -18390,6 +18476,7 @@ function renderTutList(){
       return tbarHTML(TUT_SPIN_STYLE[0], TUT_SPIN_STYLE[1], 'SPIN', `${TUT_SPIN_STYLE[2]} · ${n} / ${ls.length}`, 'data-c="spin"'); }).join('');
     el.querySelectorAll('.tbar').forEach(b => b.onclick = () => { tutCat = b.dataset.c === 'spin' ? 'spin' : +b.dataset.c; tutPiece = null; renderTutList(); });
   } else if (tutCat === 'pctbl'){ renderPcoTable(el);
+  } else if (tutCat === 'modguide'){ renderModGuide(el);
   } else if (TUT_GROUPED.includes(tutCat) && !tutPiece){                      // 先選方塊／子分組
     el.innerHTML = [...new Set(TUT.filter(L => !L.hide && L.cat === tutCat).map(L => L.pp))].map(p => { const ls = TUT.filter(L => !L.hide && L.cat === tutCat && L.pp === p), n = ls.filter(L => done[L.id]).length;
       const G = TUT_GRP[p];
@@ -18403,10 +18490,13 @@ function renderTutList(){
         `<em>${['', 'EASY', 'MEDIUM', 'HARD'][L.diff]} ×${L.rounds.filter(r => r.part === 1).length || 1}</em> · ${(L.sub || L.desc.split(/(?<=\.) /)[0]).toUpperCase()}${done[L.id] ? ' · <i>✓ CLEARED</i>' : ''}`, `data-i="${i}"`)).join('');
     el.querySelectorAll('.tbar').forEach(b => b.onclick = () => startClimb('practice', { sub:'tut', lesson:+b.dataset.i }));
   }
+  if (tutCat === 9 && !tutPiece){                                        // QUICK PLAY TECHNIQUES：MOD GUIDE 放最上面
+    el.insertAdjacentHTML('afterbegin', tbarHTML('MOD', TUT_CAT_STYLE[9][1], 'MOD GUIDE', 'EVERY MOD, REVERSED, FLIPSIDE AND ABYSS · TAP A CARD TO FLIP IT', 'data-mg="1"'));
+    el.querySelector('[data-mg]').onclick = () => { tutCat = 'modguide'; renderTutList(); }; }
   const h1 = document.querySelector('header h1');
-  h1.textContent = tutCat == null ? 'TUTORIAL' : tutCat === 'spin' ? 'SPIN' : tutCat === 'pctbl' ? 'PC TABLE' : tutPiece ? (TUT_GRP[tutPiece] ? TUT_GRP[tutPiece][0] : tutPiece + '-PIECE') : ['STANDARD', 'ADVANCED', 'COMBINED', 'OPENERS', 'PERFECT CLEAR', 'CHEESE', 'FINESSE', 'BEGINNER', 'SETUPS', 'QP TECHNIQUES'][tutCat];
+  h1.textContent = tutCat === 'modguide' ? 'MOD GUIDE' : tutCat == null ? 'TUTORIAL' : tutCat === 'spin' ? 'SPIN' : tutCat === 'pctbl' ? 'PC TABLE' : tutPiece ? (TUT_GRP[tutPiece] ? TUT_GRP[tutPiece][0] : tutPiece + '-PIECE') : ['STANDARD', 'ADVANCED', 'COMBINED', 'OPENERS', 'PERFECT CLEAR', 'CHEESE', 'FINESSE', 'BEGINNER', 'SETUPS', 'QP TECHNIQUES'][tutCat];
   h1.classList.toggle('long', h1.textContent.length > 12);
-  $('foot').textContent = tutCat == null ? 'LEARN THE BASICS, SPINS, SETUPS AND OPENERS' : tutCat === 'pctbl' ? 'PERFECT CLEAR LOOKUP' : tutCat === 'spin' ? TUT_SPIN_STYLE[2] : TUT_CAT_STYLE[tutCat][2];
+  $('foot').textContent = tutCat === 'modguide' ? 'EVERY RULE, EVERY SIDE OF EVERY CARD' : tutCat == null ? 'LEARN THE BASICS, SPINS, SETUPS AND OPENERS' : tutCat === 'pctbl' ? 'PERFECT CLEAR LOOKUP' : tutCat === 'spin' ? TUT_SPIN_STYLE[2] : TUT_CAT_STYLE[tutCat][2];
 }
 function tutState(i, r = 0){ const L = TUT[i] || TUT[0], ri = Math.max(0, Math.min(L.rounds.length - 1, r | 0));
   const RD = L.gen ? { ...L.rounds[ri], ...tutGen(L) } : L.rounds[ri];
@@ -18736,7 +18826,7 @@ $('goCheese').onclick = () => openDrill('cheese');                      // CHEES
 $('goFinesse').onclick = () => openDrill('finesse');
 $('goRot').onclick = () => openDrill('rot');
 $('drillBack').onclick = () => setScreen('practicesel');
-$('tutBack').onclick = () => { if (tutCat === 'pctbl'){ if (PCOT.sel){ PCOT.sel = PCOT.sel.slice(0, -1); } else tutCat = 4; renderTutList(); return; } if (tutFromSolo && (tutCat === 5 || tutCat === 6)){ tutFromSolo = false; tutCat = null; setScreen('practicesel'); return; } if (tutPiece){ tutPiece = null; renderTutList(); } else if (typeof tutCat === 'number' && (tutCat <= 2 || tutCat === 8)){ tutCat = 'spin'; renderTutList(); } else if (tutCat != null){ tutCat = null; renderTutList(); } else setScreen('home'); };
+$('tutBack').onclick = () => { if (tutCat === 'modguide'){ tutCat = 9; renderTutList(); return; } if (tutCat === 'pctbl'){ if (PCOT.sel){ PCOT.sel = PCOT.sel.slice(0, -1); } else tutCat = 4; renderTutList(); return; } if (tutFromSolo && (tutCat === 5 || tutCat === 6)){ tutFromSolo = false; tutCat = null; setScreen('practicesel'); return; } if (tutPiece){ tutPiece = null; renderTutList(); } else if (typeof tutCat === 'number' && (tutCat <= 2 || tutCat === 8)){ tutCat = 'spin'; renderTutList(); } else if (tutCat != null){ tutCat = null; renderTutList(); } else setScreen('home'); };
 $('tutHint').onclick = () => { if (!climb || !climb.tut) return; climb.tut.hint = !climb.tut.hint; TDEMO.key = ''; tutUI(); draw(); };
 $('tutHintSpd').onclick = () => { const L = [0.3, 0.6, 1, 1.5, 2], i = (L.indexOf(tutHintPps()) + 1) % L.length; try { localStorage.setItem('bp:tutHintPps', L[i]); } catch(e){} TDEMO.key = ''; tutUI(); draw(); };
 $('tutList2').onclick = () => { tutCat = climb && climb.tut ? climb.tut.L.cat : null; tutFromSolo = tutCat === 5 || tutCat === 6; tutPiece = climb && climb.tut ? climb.tut.L.pp || null : null; climb = null; setMode('edit'); setScreen('tutsel'); };
