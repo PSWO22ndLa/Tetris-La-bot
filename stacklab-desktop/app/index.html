@@ -13109,7 +13109,7 @@ function cspGain(pts){
 }
 function cspDecay(dt){
   const fr = dt / (1000 / 60), t0 = climb.csp;
-  if (climb.lockUntil == null){ climb.lockUntil = 0; climb.fatigue = 0; }
+  if (climb.lockUntil == null){ climb.lockUntil = 0; climb.spFat = 0; }   // 升速鎖定計數；不可和 8 分鐘疲勞時間表 climb.fatigue 共用（會每幀重播 +2 perm）
   if (climb.elapsed >= climb.lockUntil) climb.prog -= ((isExpert() || climb.hearts) ? 5 : 3) * (t0 * t0 + t0) / 3600 * fr;
   const maxR = climb.hearts ? 4 : cspCap();   // CSP 上限 11＋擴建層數                              // Bleeding Hearts：速度上限 4（wiki）
   if (climb.csp >= maxR) climb.prog = Math.min(climb.prog, 4 * climb.csp - .05);
@@ -13118,10 +13118,10 @@ function cspDecay(dt){
     else { climb.prog += 4 * (climb.csp - 1); climb.lastPromote = false; climb.csp--;
       sfxEv('downspeed', 'zenith_downspeed_' + speedNote(), .4 + .6 * Math.min(1, bgmVol())); }
   } else if (climb.prog >= 4 * climb.csp){
-    climb.prog -= 4 * climb.csp; climb.lastPromote = true; climb.lockUntil = climb.elapsed + Math.max(1000, 1000 * (5 - climb.fatigue)); climb.fatigue++; climb.csp++;
+    climb.prog -= 4 * climb.csp; climb.lastPromote = true; climb.lockUntil = climb.elapsed + Math.max(1000, 1000 * (5 - climb.spFat)); climb.spFat++; climb.csp++;
     sfxEv('upspeed', 'zenith_upspeed_' + speedNote(), .4 + .6 * Math.min(1, bgmVol()));
   }
-  if (climb.lastPromote && climb.prog >= 2 * (climb.csp - 1)) climb.fatigue = 0;
+  if (climb.lastPromote && climb.prog >= 2 * (climb.csp - 1)) climb.spFat = 0;
   climb.pauseLeft = Math.max(0, climb.lockUntil - climb.elapsed);        // 畫面：鎖住時速度條是白的
   climb.rankupLast = climb.lastPromote;
 }
