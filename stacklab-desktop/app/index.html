@@ -1064,11 +1064,11 @@ document.documentElement.classList.add('booting'); addEventListener('load', func
   .deck{ position:relative; width:100%; flex:none; touch-action:pan-y; }   /* 橫向手指滑動交給牌組（像滑鼠移過去一樣換卡），直向還是捲頁面 */
   #modGrid.noanim > .tcard, #modGrid.noanim > .tcard .trot{ transition:none !important; }
   /* 官方 .zenith_card：位置 transition .3s；按下 50ms 縮到 .9 */
-  #modGrid > .tcard{ transition:transform .3s, filter .2s, opacity .25s; }
+  #modGrid > .tcard{ transition:transform .3s, filter .2s, opacity .25s; will-change:transform; }
   #modGrid > .tcard.pressing{ transition:transform 50ms, filter .2s, opacity .25s; }
   #modGrid > .tcard.revspin{ transition:transform .4s cubic-bezier(.24,1.62,.65,1), filter .2s, opacity .25s; }   /* 官方 ZenithCardReverseSpin 的回彈曲線 */
-  .tcard .trot{ position:absolute; inset:0; transform-style:preserve-3d; transform:perspective(700px) rotateY(var(--rx, 0deg)) rotateX(var(--ry, 0deg)); transition:transform .3s; }
-  .tcard.hov .trot{ transition:none; }
+  .tcard .trot{ position:absolute; inset:0; transition:transform .3s; }
+  .tcard.hov .trot{ transition:none; transform:perspective(700px) rotateY(var(--rx, 0deg)) rotateX(var(--ry, 0deg)); }
   .tcard.spin .trot{ animation:tcSpin .25s cubic-bezier(.59,.08,.6,.93) 1; }                                     /* 官方 ZenithCardRot＋ZenithCardTilt */
   .tcard.revspin .trot{ animation:tcRevSpin .5s cubic-bezier(.24,1.62,.65,1) 1; }                               /* 官方逆位：放大到 1.4 再收到 .9 */
   .tcard.rev:not(.hov):not(.pressing):not(.revspin) .trot{ animation:tcBobStart 2s ease-in-out .5s 1, tcBob 3s ease-in-out 2.5s infinite alternate; }   /* 官方 ZenithCardReverseBob */
@@ -3176,21 +3176,27 @@ document.documentElement.classList.add('booting'); addEventListener('load', func
 
   /* ===== MOD GUIDE ===== */
   .mg-help{ margin:4px 0 12px; text-align:center; font:700 12px var(--t-font); letter-spacing:.12em; color:#d59aab; }
-  .mg-list{ display:flex; flex-direction:column; gap:10px; width:100%; min-width:0; box-sizing:border-box; }
+  .mg-list{ display:flex; flex-direction:column; gap:10px; width:100%; min-width:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }   /* Android 點下去預設會閃一塊藍框 */
+  #modGrid, #modGrid *{ -webkit-tap-highlight-color:transparent; }
   .mg-help{ overflow-wrap:anywhere; padding:0 16px; }
   .mg-list{ padding:0 16px 24px 4px; }   /* 右邊留出捲軸／頁緣，手機上文字不會被切 */
-  .mg-row{ box-sizing:border-box; max-width:100%; min-width:0; display:flex; gap:14px; align-items:flex-start; padding:12px; background:#2a1820; border:2px solid #4a2632; transition:background .3s, border-color .3s; }
-  .mg-row.t2{ background:#2a0a12; border-color:#8f0d19; } .mg-row.t3{ background:#151515; border-color:#9a9a9a; } .mg-row.t4{ background:#160a26; border-color:#7a3cd6; }
-  .mg-card{ flex:0 0 auto; width:min(26vw, 120px); aspect-ratio:550/770; padding:0; border:0; background:transparent; cursor:pointer; position:relative; box-shadow:none;
-    transition:transform .45s cubic-bezier(.2,.8,.3,1.2), filter .3s; --oc:#ffb27a; filter:drop-shadow(0 0 2px var(--oc)) drop-shadow(0 0 8px var(--oc)); }
-  .mg-card img{ position:absolute; inset:0; width:100%; height:100%; object-fit:contain; }
-  .mg-card .mg-alt{ position:absolute; inset:0; display:grid; place-items:center; font:700 22px var(--t-font); color:#fff; z-index:-1; background:#3a2a30; }
-  .mg-card.t2{ transform:rotate(180deg); --oc:#ff2040; } .mg-card.t2 img{ filter:brightness(.9) saturate(1.5) hue-rotate(-30deg); }
-  .mg-card.t3{ transform:rotate(180deg); --oc:#f4f4f4; } .mg-card.t3 img{ filter:invert(1) hue-rotate(180deg); }
-  .mg-card.t4{ transform:rotate(180deg); --oc:#b06bff; } .mg-card.t4 img{ filter:invert(1) hue-rotate(180deg) brightness(.55) sepia(1) hue-rotate(220deg) saturate(3.5); }
-  .mg-card.ra img{ filter:none; }                                  /* DEATH：逆位有自己的卡圖 */
-  .mg-row.flipping .mg-card{ animation:mgFlip .45s ease-out; }
-  @keyframes mgFlip{ 0%{ scale:1 1; } 45%{ scale:0 1; } 100%{ scale:1 1; } }
+  .mg-row{ box-sizing:border-box; max-width:100%; min-width:0; display:flex; gap:16px; align-items:flex-start; padding:14px 4px 16px; border-bottom:1px solid rgba(255,255,255,.07); }   /* 不要框：卡跟文字直接放 */
+  /* 卡片：跟牌組 .tcard.ozm 一樣——官方卡圖、13.2:18、只有陰影、沒有發光外框；逆位轉 180°、FLIPSIDE／ABYSS 換卡面濾鏡（跟牌組一樣不轉） */
+  .mg-card{ flex:0 0 auto; width:min(26vw, 118px); aspect-ratio:13.2/18; padding:0; border:0; background:none; cursor:pointer; position:relative; box-shadow:none; outline:none;
+    transform:rotate(0deg); transition:transform .4s cubic-bezier(.24,1.62,.65,1); -webkit-tap-highlight-color:transparent; }
+  .mg-card .mg-rot{ position:absolute; inset:0; display:block; }
+  .mg-card img{ position:absolute; inset:0; width:100%; height:100%; object-fit:contain; filter:drop-shadow(0 6px 8px rgba(0,0,0,.55)); transition:filter .2s; }
+  .mg-card .mg-alt{ position:absolute; inset:0; display:grid; place-items:center; font:700 22px var(--t-font); color:#fff; background:#3a2a30; }
+  .mg-card img + .mg-alt, .mg-card .mg-alt:has(+ img){ visibility:hidden; }
+  .mg-card.t2{ transform:rotate(180deg); }
+  .mg-card.t2 img{ filter:brightness(.9) saturate(1.5) hue-rotate(-30deg) drop-shadow(0 6px 8px rgba(0,0,0,.55)); }
+  .mg-card.t3 img{ filter:invert(1) hue-rotate(180deg) drop-shadow(0 6px 8px rgba(0,0,0,.55)); }
+  .mg-card.t4 img{ filter:invert(1) hue-rotate(180deg) brightness(.55) sepia(1) hue-rotate(220deg) saturate(3.5) drop-shadow(0 6px 8px rgba(0,0,0,.55)); }
+  .mg-card.ra img{ filter:drop-shadow(0 6px 8px rgba(0,0,0,.55)); }                                  /* DEATH：逆位有自己的卡圖 */
+  .mg-card:active{ scale:.94; }
+  .mg-card, .mg-card:hover, .mg-card:focus, .mg-card:focus-visible, .mg-card:active{ background:none !important; box-shadow:none !important; outline:none !important; border:0 !important; }   /* 全站 button:hover 會畫底色（手機點完會一直停在 hover）→ 卡片後面出現一塊方框 */
+  .mg-card.spin .mg-rot{ animation:tcSpin .3s cubic-bezier(.59,.08,.6,.93) 1; }
+  .mg-card.revspin .mg-rot{ animation:tcRevSpin .5s cubic-bezier(.24,1.62,.65,1) 1; }
   .mg-txt{ flex:1; min-width:0; display:flex; flex-direction:column; gap:4px; }
   .mg-tag{ font:700 11px var(--t-font); letter-spacing:.14em; color:#b98a98; }
   .mg-name{ font:700 clamp(18px, 5vw, 24px) var(--t-font); letter-spacing:.04em; color:#ffb27a; line-height:1.1; }
@@ -16830,7 +16836,9 @@ function qplLoop(t){
   const resOn = document.body.classList.contains('qpres') || document.body.classList.contains('qpg');
   if ((screen !== 'modsel' && !resOn) || document.hidden || (QPK && QPK.active)){ QPL.last = 0; if (QPK && QPK.active && !QPL.wq){ QPL.wq = setInterval(() => { if (!QPK.active){ clearInterval(QPL.wq); QPL.wq = 0; if (!QPL.raf) QPL.raf = requestAnimationFrame(qplLoop); } }, 500); } return; }   // THE WORLD 開著：大廳的排行榜模擬先停（被蓋住了，還很吃效能）
   const det = uiDetail(), dt = QPL.last ? Math.min(100, t - QPL.last) : 16;
-  const minGap = LOCAL_P ? 500 : det >= 2 ? 0 : det === 1 ? 45 : 250;        // 畫面更新上限：HIGH 跟螢幕、MEDIUM ~22fps、LOW 4fps；RIVALS 看不到排行榜 → 一秒兩次就好
+  let minGap = LOCAL_P ? 500 : det >= 2 ? 0 : det === 1 ? 45 : 250;
+  if (det >= 2 && COARSE_PTR) minGap = 33;                                    // 手機：背景塔最多 30fps，把主執行緒留給選卡
+  if (performance.now() < DECK_BUSY) minGap = Math.max(minGap, 66);           // 正在點／滑卡片：背景先降到 ~15fps，卡片動畫才不會頓        // 畫面更新上限：HIGH 跟螢幕、MEDIUM ~22fps、LOW 4fps；RIVALS 看不到排行榜 → 一秒兩次就好
   if (!QPL.last || t - QPL.last >= minGap){
     QPL.last = t;
     qplStep(dt);
@@ -16854,10 +16862,18 @@ function renderModSel(){
   for (const c of DECK) if (cardLocked(c) && pickedMods.has(c.base) && !(c.rev && pickedMods.has(c.rev))) pickedMods.delete(c.base);   // 鎖住的卡只清掉正位；逆位本站不用解鎖   // 鎖住的卡不能帶進遊戲
   renderParty();
   const grid = $('modGrid'), art = loadArt(), comp = modCompletion(loadProfile());
-  const prevT = [...grid.children].map(e => e.style.transform), prevW = grid.children[0] && grid.children[0].style.width;
-  grid.innerHTML = '';
+  // 不再整副牌重建：每張卡算一個簽名（狀態／鎖／卡圖／圖示），沒變的卡原封不動留著（不用重新解碼圖片、transition 自然接上），變了的那張才換
+  const old = [...grid.children], reuse = old.length === QDECK.length, tio0 = tioImgOn();
+  if (!reuse) grid.innerHTML = '';
   QDECK.forEach((c, i) => {
-    const el = document.createElement('div');
+    // 簽名只放「會換圖」的東西；正位／逆位／FS／ABYSS 只是換 class，不重建（重建＝重新解碼卡圖，手機上會頓一下）
+    const st0 = cardState(c), ownK = c.ev ? 'e' + (st0 >= 2 && c.revArt ? c.rev : c.base) : (art[st0 === 2 ? c.rev : c.base] || art[c.base] || '').length,
+      hasImg = !!(ownK && ownK !== 0) || !!zmImg('zm_' + c.base, c.base),
+      sig = [ownK, cardLocked(c) && st0 < 2 ? 1 : 0, tio0 ? 1 : 0, hasImg ? '' : st0 >= 2 ? 'r' : 'u', c.base === 'gravity' ? towerExt : 0].join('|');
+    if (reuse && old[i]._sig === sig){ const o = old[i];
+      o.classList.toggle('up', st0 === 1); o.classList.toggle('rev', st0 >= 2); o.classList.toggle('flipside', st0 >= 3); o.classList.toggle('abyss', st0 === 4);
+      o.dataset.cmp = comp[c.base] || 0; return; }
+    const el = document.createElement('div'); el._sig = sig;
     el.className = 'tcard' + (cardLocked(c) && cardState(c) < 2 ? ' off' : '');   // 選了逆位就不顯示鎖
     el.style.setProperty('--hue', c.hue);
     const st = cardState(c);
@@ -16891,7 +16907,7 @@ function renderModSel(){
       if (e.pointerType === 'mouse' && e.button !== 0) return;
       if (c.base === 'gravity' && (EXT_HOLD.start || (e.pointerType === 'mouse' && (e.ctrlKey || e.metaKey)))){   // 擴建：手機按住 START 點 THE TOWER／電腦 Ctrl＋點
         e.preventDefault(); downPt = null; deckLong = i; if (EXT_HOLD.start) EXT_HOLD.eat = true; towerExtend(); return; }
-      downPt = { x: e.clientX, y: e.clientY, id: e.pointerId }; deckLong = -1; DECK_MOUSE = e.pointerType === 'mouse'; if (DECK_MOUSE) DECK_MHOV = i;
+      deckBusy(900); downPt = { x: e.clientX, y: e.clientY, id: e.pointerId }; deckLong = -1; DECK_MOUSE = e.pointerType === 'mouse'; if (DECK_MOUSE) DECK_MHOV = i;
       if (deckFocus !== i){ if (e.pointerType !== 'mouse') sfxEv('cardslide', 'card_slide_' + (1 + (i % 4)), 0.7); deckFocus = i; showCardInfo(i); }
       startHold();
     });
@@ -16910,8 +16926,9 @@ function renderModSel(){
     });
     el.addEventListener('contextmenu', e => { e.preventDefault(); cancelHold(); deckLong = i; flipCard(i, true); });   // 桌機右鍵＝逆位
     { const rot = document.createElement('div'); rot.className = 'trot'; [...el.children].forEach(k => { if (!k.classList.contains('cstar')) rot.appendChild(k); }); el.prepend(rot); }
-    el.addEventListener('pointerenter', e => { el.__out = false; DECK_MOUSE = e.pointerType === 'mouse'; if (e.pointerType === 'mouse'){ DECK_MHOV = i; if (deckFocus !== i) sfxEv('cardslide', 'card_slide_' + (1 + (i % 4)), 0.7); deckFocus = i; showCardInfo(i); layoutDeck(); if (e.buttons === 1 && downPt) startHold(); } });
-    grid.appendChild(el);
+    el.addEventListener('pointerenter', e => { deckBusy(); el.__out = false; DECK_MOUSE = e.pointerType === 'mouse'; if (e.pointerType === 'mouse'){ DECK_MHOV = i; if (deckFocus !== i) sfxEv('cardslide', 'card_slide_' + (1 + (i % 4)), 0.7); deckFocus = i; showCardInfo(i); layoutDeck(); if (e.buttons === 1 && downPt) startHold(); } });
+    if (reuse){ const o = old[i]; el.style.cssText = o.style.cssText; el.classList.toggle('hov', o.classList.contains('hov')); grid.replaceChild(el, o); }   // 換新的那張：從舊卡的位置接著動
+    else grid.appendChild(el);
   });
   const codes = QDECK.map(c => cardState(c) === 4 ? 'a' + c.code : cardState(c) === 3 ? 'f' + c.code : cardState(c) === 2 ? 'r' + c.code : cardState(c) === 1 ? c.code : null).filter(Boolean);
   $('modNote').textContent = codes.length ? 'MODS · ' + codes.join(' ') : 'NO MODS';
@@ -16919,17 +16936,17 @@ function renderModSel(){
   $('revMode').setAttribute('aria-pressed', String(revModeOn));
   showCardInfo(deckFocus);
   // 重建後先「瞬間」放到正確位置（不跑 transition），之前每點一下整副牌都從左邊飛回來，手指／滑鼠下面的卡一直在動
-  grid.classList.add('noanim'); layoutDeck();
-  const kids = [...grid.children], same = prevT.length === kids.length && kids[0] && kids[0].style.width === prevW;
-  if (same) kids.forEach((el, i) => { el._to = el.style.transform; el.style.transform = prevT[i]; });   // 先放回舊位置…
-  void grid.offsetWidth; grid.classList.remove('noanim');
-  if (same) kids.forEach(el => { el.style.transform = el._to; });                                         // …再照官方 transition .3s 移到新位置
+  if (!reuse){ grid.classList.add('noanim'); layoutDeck(); void grid.offsetWidth; grid.classList.remove('noanim'); }   // 第一次：直接放好，不從左上角飛進來
+  else layoutDeck();                                                                                                       // 之後：照官方 transition .3s 移到新位置
+  const kids = [...grid.children];
   if (FLIP_FX && kids[FLIP_FX.i]){ const el = kids[FLIP_FX.i], k = FLIP_FX.ns === 1 ? 'spin' : FLIP_FX.ns >= 2 ? 'revspin' : ''; if (k){ el.classList.add(k); const t = el.querySelector('.trot'), done = () => el.classList.remove(k); if (t) t.addEventListener('animationend', done, { once:true }); setTimeout(done, 1500); } }   // 重建後第一格要等圖片解碼，動畫會晚開始：等它真的播完才拿掉
   FLIP_FX = null;
   requestAnimationFrame(layoutDeck);
 }
 let FLIP_FX = null;
-let DECK_MHOV = -1, DECK_MOUSE = false;   // 滑鼠目前停在哪張；最後一次是不是用滑鼠   // flipCard → renderModSel：剛翻的那張要播官方的轉牌動畫
+let DECK_MHOV = -1, DECK_MOUSE = false, DECK_BUSY = 0;
+const COARSE_PTR = matchMedia('(pointer: coarse)').matches;
+const deckBusy = (ms = 700) => { DECK_BUSY = Math.max(DECK_BUSY, performance.now() + ms); };   // 滑鼠目前停在哪張；最後一次是不是用滑鼠   // flipCard → renderModSel：剛翻的那張要播官方的轉牌動畫
 let CARD_TAPS = { i: -1, n: 0, t: 0 };
 // 手指在牌組上左右滑：跟滑鼠移過去一樣，手指下面那張就變成焦點（放大＋右邊資訊），放開不會翻卡
 const DECK_SCRUB = { x: 0, y: 0, on: false, active: false };
@@ -16974,7 +16991,7 @@ function flipCard(i, reversed){
   if (!QR.inline){ if (ns >= 2 || (c.base === 'sun' && ns === 1)) setTimeout(() => showReveal(i, true), 0); else if (qpRevealCard === i) setTimeout(() => showReveal(-1), 0); }   // 結算畫面裡改 mod：不播揭示、牌組留著
   // 取消選卡：沒有專屬音效，不借用別的
   if (reversed && revModeOn){ revModeOn = false; }
-  FLIP_FX = { i, ns };
+  FLIP_FX = { i, ns }; deckBusy(900);
   renderModSel();
 }
 $('artBtn').onclick = async () => {
@@ -18584,19 +18601,41 @@ function mgCardHTML(c, i){
   const st = MG_ST[c.base] || 1, I = mgInfo(c, st), art = mgArt(c, st), T = mgTiers(c);
   const dots = T.length > 1 ? `<span class="mg-dots">${T.map(t => `<i class="${t === st ? 'on' : ''} t${t}"></i>`).join('')}</span>` : '';
   return `<div class="mg-row t${st}" data-i="${i}">
-    <button class="mg-card t${st}${c.ev && c.revArt && st >= 2 ? ' ra' : ''}" aria-label="Flip ${I.name}">${art ? `<img alt="" src="${art}" onerror="this.remove()">` : ''}<b class="mg-alt">${c.code}</b></button>
+    <button class="mg-card t${st}${c.ev && c.revArt && st >= 2 ? ' ra' : ''}" aria-label="Flip ${I.name}"><span class="mg-rot"><b class="mg-alt">${c.code}</b>${art ? `<img alt="" src="${art}" onerror="this.remove()">` : ''}</span></button>
     <div class="mg-txt"><small class="mg-tag">${I.tag} · ${I.tarot}</small><b class="mg-name">${I.name}</b>${I.fl ? `<q>${I.fl}</q>` : ''}
       <ul>${I.rules.map(r => `<li>${r.charAt(0).toUpperCase() + r.slice(1)}</li>`).join('')}</ul>${dots}</div></div>`;
 }
+// MOD GUIDE 翻牌音效：跟牌組選卡一模一樣（正位：選取＋卡片音色；逆位／FS／ABYSS：逆位選取＋逆位音色＋衝擊）
+function mgFlipSfx(c, ns){
+  try {
+    if (c.base === 'sun'){ sfxEv('cardrev', 'card_select_reverse');
+      if (ns === 2){ cardSfx('dthtone', 'card_tone_death', 1); setTimeout(() => cardSfx('revimpact', 'card_reverse_impact', .7), 1080); }   // DEATH：跟揭示一樣 1.08 秒後衝擊
+      else cardSfx('suntone', 'card_tone_sun', 1); return; }
+    const tone = CARD_TONE_ID[c.base] ? c.base : c.ev ? evTone(c.base) : c.base;
+    if (ns === 1){ sfxEv('cardup', 'card_select'); CARD_TONE_ID[c.base] ? cardSfx(CARD_TONE_ID[c.base], 'card_tone_' + c.base, 1) : evSfx('card_tone_' + tone, .8); }
+    else { sfxEv('cardrev', 'card_select_reverse'); revToneThenImpact('card_tone_' + tone + '_reverse', tone === 'pentrio', ns === 3 ? 'flipside' : ns === 4 ? 'abyss' : ''); }
+  } catch(e){}
+}
 function renderModGuide(el){
   el.innerHTML = `<p class="mg-help">TAP A CARD TO FLIP IT · UPRIGHT → REVERSED → FLIPSIDE → ABYSS</p><div class="mg-list">${MG_ORDER.map(mgCardHTML).join('')}</div>`;
-  el.onclick = e => {                                                      // 事件委派：整列換掉後不用重綁
-    const card = e.target.closest('.mg-card'); if (!card) return;
-    const row = card.closest('.mg-row'), c = MG_ORDER[+row.dataset.i], T = mgTiers(c); if (T.length < 2) return;
+  el.onclick = e => {                                                      // 事件委派
+    const card = e.target.closest('.mg-card'); if (!card) return; card.blur();
+    const row = card.closest('.mg-row'), i = +row.dataset.i, c = MG_ORDER[i], T = mgTiers(c); if (T.length < 2) return;
     const st = MG_ST[c.base] || 1, nx = T[(T.indexOf(st) + 1) % T.length]; MG_ST[c.base] = nx;
-    try { sfxEv('cardsel', nx >= 2 ? 'card_select_reverse' : 'card_select', 'card_select'); } catch(err){}
-    const tmp = document.createElement('div'); tmp.innerHTML = mgCardHTML(c, +row.dataset.i);
-    const nw = tmp.firstElementChild; row.replaceWith(nw); nw.classList.add('flipping');
+    mgFlipSfx(c, nx);
+    // 動畫照牌組：翻逆位＝官方回彈轉 180°＋放大；其他＝Y 軸轉一圈（轉到側面時才換卡面）
+    const k = nx === 2 ? 'revspin' : 'spin', rot = card.querySelector('.mg-rot');
+    card.classList.remove('spin', 'revspin'); void card.offsetWidth; card.classList.add(k);
+    const apply = () => {
+      const tmp = document.createElement('div'); tmp.innerHTML = mgCardHTML(c, i); const nw = tmp.firstElementChild;
+      row.className = nw.className; row.querySelector('.mg-txt').replaceWith(nw.querySelector('.mg-txt'));
+      card.className = nw.querySelector('.mg-card').className + (card.classList.contains(k) ? ' ' + k : '');
+      const ni = nw.querySelector('.mg-card img'), oi = card.querySelector('img');
+      if (ni && oi && ni.getAttribute('src') !== oi.getAttribute('src')) oi.src = ni.getAttribute('src');
+      card.setAttribute('aria-label', nw.querySelector('.mg-card').getAttribute('aria-label'));
+    };
+    if (nx === 2) apply(); else setTimeout(apply, 100);
+    const done = () => card.classList.remove(k); if (rot) rot.addEventListener('animationend', done, { once:true }); setTimeout(done, 1200);
   };
 }
 function renderTutList(){
