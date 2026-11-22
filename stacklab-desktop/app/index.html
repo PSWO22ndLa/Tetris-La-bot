@@ -1063,7 +1063,9 @@ document.documentElement.classList.add('booting'); addEventListener('load', func
   .deck{ position:relative; width:100%; flex:none; touch-action:pan-y; }   /* 橫向手指滑動交給牌組（像滑鼠移過去一樣換卡），直向還是捲頁面 */
   #modGrid.noanim > .tcard{ transition:none !important; }
   .tcard{ position:absolute; left:0; top:0; cursor:pointer; user-select:none; -webkit-user-select:none;
-    transform-origin:50% 50%; transition:transform .22s cubic-bezier(.2,.8,.3,1.2), filter .2s; }
+    transform-origin:50% 50%; transition:transform .22s cubic-bezier(.2,.8,.3,1.2), filter .2s, opacity .25s; }
+  #modGrid.solo > .tcard:not(.solo){ opacity:0; pointer-events:none; }   /* 選了 CHALLENGE／DEATH：其他卡淡出、不能點 */
+  #modGrid.solo > .tcard.solo{ transition:transform .45s cubic-bezier(.2,.8,.3,1.1), filter .2s; }
   .tcard .face{ width:100%; height:100%; border-radius:6px; overflow:hidden; position:relative;
     background:linear-gradient(170deg, color-mix(in srgb, var(--hue) 30%, #1a1d2b), #0e1018 70%);
     border:2px solid color-mix(in srgb, var(--hue) 55%, #2a2f44);
@@ -15038,15 +15040,18 @@ function layoutDeck(){
   // 官方 .zenith_card：每張固定位置（--x 平均分佈），滑過去／按住只把那張往上抬並拉到最上層，其他卡完全不動
   //   （之前照 ZenithClicker：焦點卡會把兩邊推開 → 滑鼠一動卡就跑，按到別張，這就是「很難按」的原因）
   const xs = [], x0 = (bw - (cw + (N - 1) * strip)) / 2; for (let i = 0; i < N; i++) xs.push(x0 + i * strip);
+  const solo = pickedMods.has('sun') || pickedMods.has('death');            // CHALLENGE／DEATH：其他 mod 全收掉，這張移到正中間
+  box.classList.toggle('solo', solo);
   cards.forEach((el, i) => {
     const st = cardState(QDECK[i]);
-    const x = xs[i];
+    const sol = solo && QDECK[i] === SUN_CARD, x = sol ? (bw - cw) / 2 : xs[i];
+    el.classList.toggle('solo', sol);
     const focus = i === deckFocus;
     const lift = (st ? ch * 0.06 : 0) + (focus ? ch * 0.1 : 0);                 // 官方：選取 +1.5rem、滑過 −1.5rem（相對）
     const press = el.classList.contains('pressing');
     el.style.width = cw + 'px'; el.style.height = ch + 'px';
     el.style.transform = `translate(${x}px, ${baseY - lift}px) scale(${press ? .9 : 1}) rotate(${st === 2 ? 180 : 0}deg)`;
-    el.style.zIndex = focus ? 40 : 20 - i;                                   // 左邊壓右邊；滑過的那張拉到最上層（官方 :hover z-index 1）
+    el.style.zIndex = sol ? 45 : focus ? 40 : 20 - i;                                   // 左邊壓右邊；滑過的那張拉到最上層（官方 :hover z-index 1）
     el._x = x;
   });
   // 星星跟著卡走（照實機錄影）：放在這張卡「露出來那一段」的正上方；被焦點卡蓋住的就跟著被蓋
@@ -16721,7 +16726,7 @@ function renderModSel(){
       if (th) el.insertAdjacentHTML('beforeend', `<img class="zthrob" alt="" src="${th}">`);            // 逆位時的紅色發光層（官方 .zenith_card_throb）
       if (lk) el.insertAdjacentHTML('beforeend', `<img class="zlock" alt="" src="${lk}">`);              // 還沒解鎖：官方的樓層鎖
       { const o = zmImg('zm_outline', 'outline'); if (o) el.insertAdjacentHTML('beforeend', `<img class="zout" alt="" src="${o}"><i class="zoutc" style="--om:url('${o}')"></i>`); } }
-    if (c.ev){ el.classList.add('ozm'); const o = zmImg('zm_outline', 'outline'); if (o) el.insertAdjacentHTML('beforeend', `<img class="zout" alt="" src="${o}">`); }   // THE WORLD：選了一樣有外框
+    if (c.ev){ el.classList.add('ozm'); const o = zmImg('zm_outline', 'outline'); if (o) el.insertAdjacentHTML('beforeend', `<img class="zout" alt="" src="${o}"><i class="zoutc" style="--om:url('${o}')"></i>`); }   // THE WORLD：選了一樣有外框
     { const cd = zmImg('zm_crystald', 'crystal-dark'), cr = zmImg('zm_crystal', 'crystal');   // 星星（水晶）：本站沒有精通，每張卡都直接顯示
       if (cd) el.insertAdjacentHTML('beforeend', `<img class="zcrd" alt="" src="${cd}">`); if (cr) el.insertAdjacentHTML('beforeend', `<img class="zcr" alt="" src="${cr}">`); }                                   // THE WORLD：去背卡圖，跟官方卡一樣不畫框
     if (c.base === 'gravity' && towerExt) el.insertAdjacentHTML('beforeend', `<b class="extb" style="--exc:${TOWER_EXT[towerExt - 1].col}">+${towerExt}</b>`);   // THE TOWER：目前擴建層數
