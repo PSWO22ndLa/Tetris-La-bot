@@ -2593,10 +2593,13 @@ document.documentElement.classList.add('booting'); addEventListener('load', func
   .tcard .zout{ display:none; transform:scale(1.04); } .tcard.up .zout{ display:block; animation:zOut 1.5s ease-in-out infinite; }
   @keyframes zOut{ 0%,100%{ opacity:.55; } 50%{ opacity:1; } }
   /* 選了逆位／FLIPSIDE／ABYSS 一樣要有外框，顏色看 mod 類型：逆位紅、FLIPSIDE 白、ABYSS 紫。外框圖當 mask，底色直接填，不靠濾鏡猜色 */
-  .tcard .zoutc{ position:absolute; inset:0; pointer-events:none; display:none; transform:scale(1.04); background:var(--oc, #ff2a4a);
-    -webkit-mask:var(--om) center / contain no-repeat; mask:var(--om) center / contain no-repeat; filter:drop-shadow(0 0 5px var(--oc)) drop-shadow(0 0 12px var(--oc)); }
-  .tcard.rev .zoutc{ display:block; animation:zOut 1.5s ease-in-out infinite; }
-  .tcard.flipside{ --oc:#f4f4f4; } .tcard.abyss{ --oc:#b06bff; }
+  .tcard .zoutc{ position:absolute; inset:0; pointer-events:none; display:none; transform:scale(1.04); --oc:#ff2040;
+    filter:drop-shadow(0 0 2px var(--oc)) drop-shadow(0 0 8px var(--oc)) drop-shadow(0 0 16px var(--oc)); }   /* 光暈放在外層：濾鏡先作用在已經 mask 好的框上，才不會被 mask 吃掉 */
+  .tcard .zoutc::before, .tcard .zoutc::after{ content:''; position:absolute; inset:0; background:var(--oc);
+    -webkit-mask:var(--om) center / contain no-repeat; mask:var(--om) center / contain no-repeat; }   /* 疊兩層：外框圖的 alpha 是柔光，單層太淡 */
+  .tcard.rev .zoutc{ display:block; animation:zOutR 1.5s ease-in-out infinite; }
+  @keyframes zOutR{ 0%,100%{ opacity:.8; } 50%{ opacity:1; } }
+  .tcard.flipside .zoutc{ --oc:#f4f4f4; } .tcard.abyss .zoutc{ --oc:#b06bff; }
   .tcard .zlock{ z-index:3; }
   /* 官方 .zenith_card_crystal／_crystal_dark／_progress */
   .tcard .zcr{ position:absolute; left:40.5%; top:1.3%; width:19%; height:auto; aspect-ratio:1; pointer-events:none; z-index:4; transform:translate(190%,-50%) rotate(360deg) scale(.5); filter:drop-shadow(0 0 8px #fff) drop-shadow(0 3px 7px #000); opacity:0; transition:transform .3s, opacity .3s; }
