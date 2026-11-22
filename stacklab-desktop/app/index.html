@@ -5723,9 +5723,12 @@ function drawBadgeGrid(ctx, mods, R, cell, img, kind, duoF, bottom){
       return;
     }
     // Bleeding Hearts 盤面圖集只有愛心徽章 → 其他 mod 的徽章改從逆位／一般盤面圖集拿（以前這裡整排消失）
-    const hx = kind === 'revDuoL', aimg = hx ? (boardSkins.rev || boardSkins.normal || (typeof TIO_X !== 'undefined' && (TIO_X.duoL || TIO_X.exDuoL))) : img;
+    const hx = kind === 'revDuoL';
+    // 正位 mod 一律用一般盤面圖集的菱形徽章：逆位盤面圖集只有爆炸框（以前開了逆位再開正位 mod，正位徽章被轉 180° 畫成逆位樣式）
+    const upN = st === 1 && (hx || kind === 'rev') && (boardSkins.normal || (typeof TIO_X !== 'undefined' && TIO_X.normal)) || null;
+    let aimg = upN ? upN : hx ? (boardSkins.rev || boardSkins.normal || (typeof TIO_X !== 'undefined' && (TIO_X.duoL || TIO_X.exDuoL))) : img;
     if (!aimg) return;
-    const base = hx ? !boardSkins.rev : kind !== 'rev', at = (base ? BADGE_BASE : BADGE_AT)[d.base], src = base ? 126 : 222, f = aimg.width / 4096;
+    const base = upN ? true : hx ? !boardSkins.rev : kind !== 'rev', at = (base ? BADGE_BASE : BADGE_AT)[d.base], src = base ? 126 : 222, f = aimg.width / 4096;
     if (!at) return;
     const row = i % rows, col = Math.floor(i / rows);
     const cx = x0 + dir * (col * 2 * h * K + (row % 2) * h * K), cy = y0 + row * h * K;
