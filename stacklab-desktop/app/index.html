@@ -15093,7 +15093,7 @@ function showReveal(i, animate){
   if (!box.querySelector('.dslash')) box.insertAdjacentHTML('beforeend', '<i class="dslash"></i><i class="dslash d2"></i>');   // DEATH：先是 THE SUN，翻過來變死神
   $('qprName').textContent = sunR ? modById('sun').name : st >= 3 ? tierName(c, st) : (COMBO_NAMES[c.rev] || modById(c.rev).name);
   if (dth) $('qprName').innerHTML = [...'DEATH'].map((ch, k) => `<span style="--k:${k}">${ch}</span>`).join('');   // 一個字母一個字母砸下來
-  if (st === 4 && MODAB[c.rev]) $('qprName').insertAdjacentHTML('afterbegin', `<img class="qpr-ab" alt="" src="${MODAB[c.rev]}" onerror="this.remove()">`);
+  // ABYSS：翻牌大圖的卡名前也不放 mod 圖標（使用者要求）
   $('qprFl').textContent = sunR ? (modById('sun').fl || '') : st >= 3 ? tierFl(c, st) : (modById(c.rev).fl || '');
   box.classList.toggle('flip', st >= 3); box.classList.toggle('abyss', st === 4); box.classList.toggle('sun', sunR); box.classList.toggle('death', dth); box.classList.remove('ext');
   $('qprBg').innerHTML = qprPolys();
