@@ -4928,11 +4928,13 @@ function zmLobby(){
 function zmFloor(n){
   if (LOCAL_P && climb && climb.race && climb.race.cmp){ const b = climb.race.bots[0]; if (b) n = Math.max(n, floorOf(b.v || 0).n); }   // RIVALS（QP）：音樂跟兩人裡比較高的那層
   n = zFl(n);                                                            // THE OBSERVATORY 沒有自己的曲 → 延續 F9；頂樓放官方 F10 曲
-  const rev = qpRevMusic(), ex = qpHas('expert') || qpHas('tyrant');
-  if (n <= 1) zmPlay('f1' + zmTone(), [{ file:zmT('f1'), vol:1 }, { file:zmT('f1ex'), vol:ex ? 1 : 0 }, { file:zmT('f1rev'), vol:rev ? 1 : 0 }], 'f1',
+  const rev = qpRevMusic(), ex = qpHas('expert') || qpHas('tyrant'), ch = chalOn();
+  // 本站 CHALLENGE（THE SUN／DEATH）：F1 三軌全疊（主軌＋f1ex＋f1rev）；F2 升 1 個半音（music/f2-up、f2-rev-up）
+  const chT = f => ch && !zmTone() && /^f2(-rev)?$/.test(f) ? f + '-up' : zmT(f);
+  if (n <= 1) zmPlay('f1' + zmTone() + (ch ? 'c' : ''), [{ file:zmT('f1'), vol:1 }, { file:zmT('f1ex'), vol:ex || ch ? 1 : 0 }, { file:zmT('f1rev'), vol:rev || ch ? 1 : 0 }], 'f1',
     rev ? ZM_TITLE.f1r : ex ? ZM_TITLE.f1ex : ZM_TITLE.f1);
-  else { const k = 'f' + Math.min(10, n); zmPlay(k + (rev ? 'r' : '') + zmTone(), [{ file: zmT(k + (rev ? '-rev' : '')), vol:1 }], k, ZM_TITLE[k + (rev ? 'r' : '')]); }
-  if (n < 10) zmFetch(zmT('f' + (n + 1) + (rev ? '-rev' : ''))).catch(() => {});      // 先把下一層的檔案抓好（壓縮檔，1–3MB）
+  else { const k = 'f' + Math.min(10, n), f = chT(k + (rev ? '-rev' : '')); zmPlay(k + (rev ? 'r' : '') + (f.endsWith('-up') ? '-up' : zmTone()), [{ file: f, vol:1 }], k, ZM_TITLE[k + (rev ? 'r' : '')]); }
+  if (n < 10) zmFetch(chT('f' + (n + 1) + (rev ? '-rev' : ''))).catch(() => {});      // 先把下一層的檔案抓好（壓縮檔，1–3MB）
 }
 const zmHyper = () => { const rev = qpRevMusic(); zmPlay((rev ? 'terar' : 'tera') + zmTone(), [{ file: zmT(rev ? 'tera-rev' : 'tera'), vol:1 }], rev ? 'terar' : 'tera', ZM_TITLE[rev ? 'terar' : 'tera']); };
 
