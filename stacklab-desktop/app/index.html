@@ -5222,8 +5222,7 @@ function mutBlock(){
   // DEATH F3：照這層爬的進度，突變塊 1→5 顆（每 14 顆）、可用的組從 F1 一路開到 F8；F11 抽到時直接全開
   let fl = floorOf(climb.alt).n, nm = 3;
   if (sunHas('mut')){
-    const F = sunCur(), f0 = floorOf(climb.alt), f1 = FLOORS[f0.n];
-    const t = F.eclipse || !f1 ? 1 : Math.max(0, Math.min(1, (climb.alt - f0.m) / (f1.m - f0.m)));
+    const t = sunCur().eclipse ? 1 : floorT();
     fl = 1 + Math.round(t * 7); nm = 1 + Math.round(t * 4);
   }
   const pool = Object.keys(MUT_SRC).filter(k => +k.slice(1) <= fl).map(k => MUT[k]);
@@ -12028,7 +12027,7 @@ const DEATH_FLOORS = {
   1:  { t:'THE CANDLE FLICKERS…',      sub:'pieces repeat: 50% chance the next piece is the same as the last one', rep:true },
   2:  { t:'THE WORLD TURNS OVER…',      sub:'inverted controls: left ↔ right, CW ↔ CCW, soft drop ↔ hard drop', inv:true },
   3:  { t:'FLESH TWISTS…',              sub:'mutated pieces creep in: from 1 to 5 in every 14 pieces, and from floor 1 sets up to floor 8 sets as you climb', mut:true },
-  4:  { t:'NOTHING STAYS STILL…',       sub:'all-spin rules · double-hole garbage', mods:['allspin', 'doublehole'] },
+  4:  { t:'NOTHING STAYS STILL…',       sub:'all-spin rules · every garbage line has two 2-wide holes', mods:['allspin'], dwh:true },
   5:  { t:'THE TRIALS OF THE DEAD…',    sub:'5 trials at 450 · 500 · 550 · 600 · 650m, easiest to hardest · you cannot pass one before finishing it · +2 permanent lines', trials:true, perm:2 },
   6:  { t:'TIME SLOWS TO A CRAWL…',     sub:'every line clear is delayed (loaded dice)', cdelay:true },
   7:  { t:'THE GROUND FREEZES OVER…',   sub:'permafrost handling · volatile garbage · +2 permanent lines that slowly sink away (one every 20 seconds)', slip:true, mods:['volatile'], perm:2, recede:20000 },
@@ -12046,6 +12045,7 @@ const sunCur = () => chalOn() ? (chalTab()[Math.min(11, floorOf(climb.alt).n)] |
 const hasModRaw = id => !!(climb && climb.mods.has(id));
 const sunHas = k => { const F = sunCur(); if (!F) return false; if (F.eclipse) return climb.sunEcl === k || (climb.sunEcl === 'noghost' && k === 'next1'); return !!F[k]; };
 const sunGmul = () => { const F = sunCur(); return F && F.gmul ? F.gmul : 1; };
+const floorT = () => { const f0 = floorOf(climb.alt), f1 = FLOORS[f0.n]; return !f1 ? 1 : Math.max(0, Math.min(1, (climb.alt - f0.m) / (f1.m - f0.m))); };   // 這層爬了幾成（DEATH F3／F4 的漸強用）
 const damnGarb = () => hasMod('damnation') || sunHas('damn');
 const sunGrav = () => { if (!sunHas('grav')) return null; const n = floorOf(climb.alt).n, lo = FLOORS[n - 1].m, hi = FLOORS[n].m, p = Math.max(0, Math.min(1, (climb.alt - lo) / (hi - lo))); return 0.2 * Math.pow(100, p); };   // 0.2G → 20G（照高度指數上升：一半高度＝2G）
 const UGLY_W = { S:3, Z:3, O:2, L:1, J:1, T:.6, I:.25 };
@@ -13798,6 +13798,11 @@ function climbInsert(lines, wound, fresh, plan){
         const cols = [...Array(W).keys()].sort(() => Math.random() - 0.5).slice(0, n);
         for (let x=0; x<W; x++) g[base+x] = 8;
         for (const x of cols) g[base+x] = 0;
+      }
+      if (sunHas('dwh')){                                           // DEATH F4：兩個 2 格寬的洞（第二個洞跟著主洞換，中間至少隔 1 格）
+        const x0 = Math.min(climb.hole, W - 2); g[base + x0] = g[base + x0 + 1] = 0;
+        if (climb.dwhAt !== x0){ const ok = []; for (let x = 0; x <= W - 2; x++) if (x + 2 < x0 || x > x0 + 2) ok.push(x); climb.dwh2 = ok.length ? ok[(Math.random() * ok.length) | 0] : null; climb.dwhAt = x0; }
+        if (climb.dwh2 != null) g[base + climb.dwh2] = g[base + climb.dwh2 + 1] = 0;
       }
       if (hasMod('doublehole') && Math.random() < 0.4){
         let h2 = (Math.random()*W)|0;
