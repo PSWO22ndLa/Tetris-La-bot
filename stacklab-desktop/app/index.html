@@ -4862,13 +4862,24 @@ function zmFadeOut(c, dur){
   try { const now = SND.ac.currentTime; c.g.gain.cancelScheduledValues(now); c.g.gain.setValueAtTime(c.g.gain.value, now); c.g.gain.linearRampToValueAtTime(0, now + dur); c.src.stop(now + dur + .05); if (c.pre) c.pre.stop(now + dur + .05); } catch(e){}
 }
 const ZM_BUF = new Map();                                            // 混好的音軌快取（最多 2 條）：回大廳不用再等好幾秒重新解碼
+const ZM_JOB = new Map();                                            // 解碼中的工作：預先解碼跟正式播放同一組聲部時共用，不解兩次
+function zmGet(stems){
+  const ck = stems.map(s => s.file + ':' + s.vol).join('|');
+  if (ZM_BUF.has(ck)) return Promise.resolve(ZM_BUF.get(ck));
+  if (ZM_JOB.has(ck)) return ZM_JOB.get(ck);
+  const j = zmRender(stems).then(b => { ZM_JOB.delete(ck); if (b){ ZM_BUF.set(ck, b); while (ZM_BUF.size > 2) ZM_BUF.delete(ZM_BUF.keys().next().value); } return b; }, e => { ZM_JOB.delete(ck); return null; });
+  ZM_JOB.set(ck, j); return j;
+}
+// 下一層先解碼好放快取（快取最多 2 條＝現在這首＋下一首）：升樓時直接接上，不用等解碼
+function zmPrep(file){ const st = [{ file, vol: 1 }], ck = file + ':1'; if (!ZM_BUF.has(ck) && !ZM_JOB.has(ck) && !ZM.bad.has(file)) zmGet(st); }
 function zmApply(fresh){
   const gen = ++ZM.gen; ZM.loading = true; ZM.mixKey = ZM.stems.map(s => s.vol).join(','); renderBgm();
   const ck = ZM.stems.map(s => s.file + ':' + s.vol).join('|');
-  const job = ZM_BUF.has(ck) ? Promise.resolve(ZM_BUF.get(ck)) : zmRender(ZM.stems).then(b => { if (b){ ZM_BUF.set(ck, b); while (ZM_BUF.size > 2) ZM_BUF.delete(ZM_BUF.keys().next().value); } return b; });
+  const job = zmGet(ZM.stems);
   job.then(buf => {
     if (gen !== ZM.gen) return;
     ZM.loading = false;
+    if (ZM.hand){ zmFadeOut(ZM.hand, buf ? .35 : .6); ZM.hand = null; }
     if (!buf){ renderBgm(); return; }
     const old = ZM.cur, at = fresh || !old ? 0 : zmPos();
     ZM.cur = zmStart(buf, at, fresh ? .05 : .4, fresh && ZM_INTRO[zmBase(ZM.key)] ? ZM_INTRO[zmBase(ZM.key)]() : null);
@@ -4881,7 +4892,8 @@ function zmPlay(key, stems, loopKey, title){
   if (!bgmOn()){ zmStop(); return; }
   BGM.want = null; if (BGM.el){ BGM.el.pause(); BGM.cur = null; }                // 一般 BGM 不能跟 QP 音樂同時響；want 也清掉（不然點一下畫面會把選單曲叫回來）
   if (ZM.key === key){ zmMix(stems); return; }
-  zmStop(true);
+  const keep = ZM.cur; ZM.cur = null;                                         // 本站：換曲不留空白——舊曲繼續播，新曲解碼好才交叉淡入／淡出
+  zmStop(true); ZM.hand = keep;
   ZM.key = key; ZM.title = title; ZM.loop = ZM_LOOP[loopKey] || null;
   ZM.stems = stems.map(s => ({ file: s.file, name: s.name || s.file, vol: s.vol }));
   ZM.layers = ZM.stems.map(s => ({ name: s.name }));
@@ -4903,6 +4915,7 @@ function zmMix(stems){
 }
 function zmStop(quick){
   ZM.gen++; ZM.loading = false;
+  if (ZM.hand){ zmFadeOut(ZM.hand, quick ? .08 : .6); ZM.hand = null; }       // 換曲中還在播的舊曲
   if (ZM.outro){ try { ZM.outro.src.stop(); } catch(e){} ZM.outro = null; }        // HYPERSPEED 結尾那段也要停
   zmFadeOut(ZM.cur, quick ? .08 : .6); ZM.cur = null;
   ZM.layers = []; ZM.stems = []; ZM.key = null;
@@ -4926,6 +4939,7 @@ function zmLobby(){
 }
 // 樓層：F1 是同一首疊 f1ex／f1rev；其他樓逆位換 -rev 版
 function zmFloor(n){
+  const n0 = n;
   if (LOCAL_P && climb && climb.race && climb.race.cmp){ const b = climb.race.bots[0]; if (b) n = Math.max(n, floorOf(b.v || 0).n); }   // RIVALS（QP）：音樂跟兩人裡比較高的那層
   n = zFl(n);                                                            // THE OBSERVATORY 沒有自己的曲 → 延續 F9；頂樓放官方 F10 曲
   const rev = qpRevMusic(), ex = qpHas('expert') || qpHas('tyrant'), dth = chalOn() && hasModRaw('death'), ch = chalOn() && !dth;
@@ -4938,7 +4952,9 @@ function zmFloor(n){
   if (n <= 1) zmPlay('f1' + zmTone() + (ch ? 'c' : ''), [{ file:zmT('f1'), vol:1 }, { file:zmT('f1ex'), vol:ex || ch ? 1 : 0 }, { file:zmT('f1rev'), vol:rev || ch ? 1 : 0 }], 'f1',
     rev ? ZM_TITLE.f1r : ex ? ZM_TITLE.f1ex : ZM_TITLE.f1);
   else { const k = 'f' + Math.min(10, n), f = chT(k + (rev ? '-rev' : '')); zmPlay(k + (rev ? 'r' : '') + ((f.match(/-(up|dn)\d?$/) || [])[0] || zmTone()), [{ file: f, vol:1 }], k, ZM_TITLE[k + (rev ? 'r' : '')]); }
-  if (n < 10) zmFetch(chT('f' + (n + 1) + (rev ? '-rev' : ''))).catch(() => {});      // 先把下一層的檔案抓好（壓縮檔，1–3MB）
+  const nx = zFl(n0 + 1);
+  if (nx !== n && nx <= 10){ const nf = chT('f' + nx + (rev ? '-rev' : '')), g = ZM.gen;                    // 下一層：先抓壓縮檔，現在這首開始播之後再解碼好
+    zmFetch(nf).catch(() => {}); const go = () => { if (ZM.gen !== g) return; if (ZM.loading) return setTimeout(go, 1000); zmPrep(nf); }; setTimeout(go, 2500); }
 }
 const zmHyper = () => { const rev = qpRevMusic(); zmPlay((rev ? 'terar' : 'tera') + zmTone(), [{ file: zmT(rev ? 'tera-rev' : 'tera'), vol:1 }], rev ? 'terar' : 'tera', ZM_TITLE[rev ? 'terar' : 'tera']); };
 
