@@ -5379,8 +5379,8 @@ function drawCell(c, v, px, py, s){
   c.fillRect(px,py,s,1); c.fillRect(px,py,1,s);
   c.fillRect(px,py+s-1,s,1); c.fillRect(px+s-1,py,1,s);
 }
-const GUTL = () => (mode === 'sim' ? (genBoard() ? 6.2 + (genBar1() ? .8 : 0) : boardSkinOn() ? (typeof sideScale === 'function' && sideScale() < 1 ? 1.05 + 7.6 * sideScale() :   /* 主框左緣固定外推 0.86 格，HOLD＋側欄才跟著縮 */ typeof DUO_FULL === 'function' && DUO_FULL() ? 8.5 : 6.5) : climb && climb.snow && W < 10 ? 3.2 : 5) : 0);   // 左側：HOLD + 消行提示
-const GUTR0 = () => (mode === 'sim' ? (genBoard() ? 5.4 + (genBar2() ? .8 : 0) : boardSkinOn() ? (typeof sideScale === 'function' && sideScale() < 1 ? 1.05 + 6.1 * sideScale() : 5.2) : climb && climb.snow && W < 10 ? 3.2 : 5) : 0);   // 右側：NEXT
+const GUTL = () => (mode === 'sim' ? (genBoard() ? 6.2 + (genBar1() ? .8 : 0) : boardSkinOn() ? (typeof sideScale === 'function' && sideScale() < 1 ? 1.05 + 7.6 * sideScale() :   /* 主框左緣固定外推 0.86 格，HOLD＋側欄才跟著縮 */ typeof DUO_FULL === 'function' && DUO_FULL() ? 8.5 : 8.4) : climb && climb.snow && W < 10 ? 3.2 : 5) : 0);   // 左側：HOLD + 消行提示
+const GUTR0 = () => (mode === 'sim' ? (genBoard() ? 5.4 + (genBar2() ? .8 : 0) : boardSkinOn() ? (typeof sideScale === 'function' && sideScale() < 1 ? 1.05 + 6.1 * sideScale() : 6.7) : climb && climb.snow && W < 10 ? 3.2 : 5) : 0);   // 右側：NEXT
 // 電腦版 DUO：隊友盤面跟你一樣大、並排在 NEXT 右邊（再加一欄放它的 HOLD／NEXT 小圖）
 const duoWide = () => mode === 'sim' && !!(climb && (climb.duo || (climb.kind === 'league' && !(climb.opp && climb.opp.remote)))) && (climb.duo || opt('oSideBySide')) && W === 10 && (climb.kind === 'league' || (typeof padOn === 'function' && !padOn()));   // 官方 TL 不分電腦手機都是兩套盤面並排（整個舞台縮小）
 const DUO_FULL = () => typeof duoWide === 'function' && duoWide() && typeof TIO_X !== 'undefined' && climb && (climb.kind === 'league' ? !!(boardSkins && boardSkins.normal) : !!(TIO_X.duoR || TIO_X.exDuoR || TIO_X.revDuoR) && boardSkins && (boardSkins.normal || boardSkins.expert || TIO_X.duoL));
@@ -5438,7 +5438,7 @@ const genR = () => genBar2() ? cell * 20 / 30 + cell * 9 / 92 : 0;   // 雪球�
 // 官方 Kc.generic.ns.boardsides：盤面矮於 20 行時，HOLD／NEXT／數據整組縮成 H÷20（雪球 4 行＝0.2 倍），高於 30 行縮成 H÷30
 const sideScale = () => mode === 'sim' && VISIBLE < 20 ? VISIBLE / 20 : mode === 'sim' && VISIBLE > 30 ? VISIBLE / 30 : 1;
 function skinRects(){
-  const s = cell / 92, k = s * (DUO_FULL() || sideScale() < 1 ? 1 : 0.75) * sideScale(),   /* 縮小盤面（雪球）照官方原尺寸×H/20，不再額外 ×0.75 */ Y0 = (H - VISIBLE) * cell, vs = VISIBLE / 20;   // 實機 Duo：HOLD／NEXT 是原尺寸（NEXT 高到盤面約 8 成）   // HOLD／NEXT／側欄縮 0.75 倍，手機才放得下
+  const s = cell / 92, k = s * sideScale(),   /* 實機 QP：HOLD／NEXT 跟盤面框同比例（原本縮 0.75，跟使用者的實機截圖比太小） */   /* 縮小盤面（雪球）照官方原尺寸×H/20，不再額外 ×0.75 */ Y0 = (H - VISIBLE) * cell, vs = VISIBLE / 20;   // 實機 Duo：HOLD／NEXT 是原尺寸（NEXT 高到盤面約 8 成）   // HOLD／NEXT／側欄縮 0.75 倍，手機才放得下
   const frame = { x:-79*s, y:Y0 - 29*s, w:(W * 92 + 160)*s, h:(VISIBLE * 92 + 188)*s };   // 10×20 時＝1080×2028（原圖大小）；雪球等其他尺寸用九宮格拉
   // Duo（原尺寸）：照圖集量到的可見邊界密合——側欄右緣(160)＝盤框左緣(29)、HOLD 右緣(540)＝側欄左緣(29)、NEXT 左緣(0)＝盤框右緣(1049)
   const DF = DUO_FULL();
@@ -6000,6 +6000,7 @@ function drawClearLines(c, lines, gutPx, cellSize, age = 0, M = null){
   const [ls, al] = clKeyAt(p, [[0, 0, 1], [.6, 10, .95], [1, 20, keep ? .7 : 0]]);
   if (!keep && age >= 6000) return;
   c.save(); c.textAlign = 'right'; c.textBaseline = 'top';
+  if (c === ctx && cellSize === cell && boardSkinOn()){ const R = skinRects(), oy = R.hold.y + R.hold.h + cell * .3 - (top + CL_SLOT.tspin.y * k); if (oy > 0) c.translate(0, oy); }   // 實機 QP：HOLD 框是原尺寸，消行字排在框下面
   // 分欄：第一個 spin → tspin、第一個大字 → clear、COMBO → combo、其他 → also 往下排
   let alsoY = CL_SLOT.also.y, usedClear = false;
   const avail = Math.max(20, gutPx - 14 * k);                              // 盤面左邊的空間；手機上放不下就整行等比縮小（官方左邊有很多空間）
@@ -6795,10 +6796,14 @@ function drawClimbHUD(wide){
   const GC = bare && genBoard() && climb.kind !== 'qp' && climb.kind !== 'league' && !(climb.snow && W < 10);   // TL：對手小盤面的數據是另一套大小，兩邊要一致 → 不套
   const gu = cell / 30, gf = GC ? Math.min(1, 4 / lines) : 1, gk = GC ? ftCap(ctx) / 100 : 1, gV = 1.09 * cell * gf / gk, gT = .575 * cell * gf / gk;
   if (GC){ step = 70 * gu * gf; y = H * cell - 2 * gu; }
+  // 實機 QP（zenith 盤面）：照使用者的實機截圖量——數值字高 .85 格、尾巴 .6 倍、標題字高 .37 格（字距拉開）、每欄 2.3 格、標題基線在數值基線上 1.3 格
+  const QZ = !GC && skin && !!SR && climb.kind === 'qp' && !(climb.snow && W < 10), qk = QZ ? ftCap(ctx) / 100 : 1;
+  const qV = .85 * cell / qk, qL = .37 * cell / qk;
+  if (QZ){ step = Math.min(2.3 * cell, Math.max(1.9 * cell, avail / lines)); y = H * cell - cell * .25; }
   // val 可以是 [大字, 小字]：TETR.IO 的「1248, 2.08/S」「10:00.267」後半段比較小
   const line = (label, val, color) => {
     const [main, tail] = Array.isArray(val) ? val : [val, ''];
-    const big = GC ? `600 ${gV}px ${CANVAS_FONT}` : `700 ${fs*1.35}px ${CANVAS_FONT}`, sm = GC ? `600 ${gV * .6}px ${CANVAS_FONT}` : `600 ${fs*0.82}px ${CANVAS_FONT}`;
+    const big = GC ? `600 ${gV}px ${CANVAS_FONT}` : QZ ? `600 ${qV}px ${CANVAS_FONT}` : `700 ${fs*1.35}px ${CANVAS_FONT}`, sm = GC ? `600 ${gV * .6}px ${CANVAS_FONT}` : QZ ? `600 ${qV * .6}px ${CANVAS_FONT}` : `600 ${fs*0.82}px ${CANVAS_FONT}`;
     const wm = tioMeasure(ctx, main, big), wt = tail ? tioMeasure(ctx, tail, sm) : 0;
     const k = maxW && wm + wt > maxW ? maxW / (wm + wt) : 1;              // 放不下就整串縮小
     const x0 = skin ? hx - (wm + wt) * k : hx;
@@ -6809,6 +6814,9 @@ function drawClimbHUD(wide){
     ctx.restore();
     ctx.save(); ctx.globalAlpha = .75;
     if (GC) tioText(ctx, label, hx, y - 38.5 * gu * gf, color, `500 ${gT}px ${CANVAS_FONT}`, 'right');
+    else if (QZ){ const ls = qL * qk * .32, f = `500 ${qL}px ${CANVAS_FONT}`;   // 標題字距約 0.32 個字高
+      if (bmfOn()) bmfText(ctx, label, hx, y - 1.3 * cell, qL * 1.05, color, 'right', ls, 500);
+      else { ctx.font = f; ctx.fillStyle = color; ctx.textAlign = 'right'; ctx.textBaseline = 'alphabetic'; try { ctx.letterSpacing = ls + 'px'; } catch(e){} ctx.fillText(label, hx + ls, y - 1.3 * cell); try { ctx.letterSpacing = '0px'; } catch(e){} } }
     else tioText(ctx, label, hx, y - fs*1.25, color, `600 ${fs*0.7}px ${CANVAS_FONT}`, skin ? 'right' : 'left');
     ctx.restore();
     y -= step;
@@ -9163,9 +9171,9 @@ function drawFrame(){
   syncVisible();
   const VT = VIEW_TOP();
   const totalH = (H - VT + GUTB()) * cell;
-  // 效能：主畫布每幀整張重畫。上限 2x，而且實際像素最多約 2.5MP（電腦大螢幕＋高 DPI 時不會一幀畫好幾百萬像素）
+  // 效能：主畫布每幀整張重畫。上限 3x（手機 DPR 3 時 2x 會糊），而且實際像素最多約 2.5MP（電腦大螢幕＋高 DPI 時不會一幀畫好幾百萬像素）
   // RIVALS：同一個畫面要畫兩個完整遊戲 → 每邊固定 1 倍（實測跟單人 QP 一樣順；2 倍時兩邊加起來掉一半幀數）
-  const dpr = opt('oLowRes') ? .5 : fxOn() ? Math.max(1, Math.min(LOCAL_P ? 1 : 2, window.devicePixelRatio || 1, Math.sqrt((LOCAL_P ? 1.2e6 : 2.5e6) / Math.max(1, totalW * totalH)))) : 1;   // 特效關：畫布用 1 倍解析度
+  const dpr = opt('oLowRes') ? .5 : fxOn() ? Math.max(1, Math.min(LOCAL_P ? 1 : 3, window.devicePixelRatio || 1, Math.sqrt((LOCAL_P ? 1.2e6 : 2.5e6) / Math.max(1, totalW * totalH)))) : 1;   // 特效關：畫布用 1 倍解析度
   const cw = Math.round(totalW*dpr), ch = Math.round(totalH*dpr);
   if (cv.width !== cw || cv.height !== ch || cv._cssW !== totalW || cv._cssH !== totalH){         // 效能：尺寸沒變就不重設畫布
     cv.style.width = totalW+'px'; cv.style.height = totalH+'px'; cv._cssW = totalW; cv._cssH = totalH;
@@ -15764,7 +15772,7 @@ function drawCover(x, im, w, h, n){
 function qpBg(dt){
   const cv = document.getElementById('qpbg'); if (!cv) return;
   const on = dt > 0 && climb && climb.kind === 'qp' && !(climb.custom && !climb.custom.tower) && stage.dataset.bgkey === 'zcscroll';
-  const r = cv.getBoundingClientRect(), dpr = Math.min(1, window.devicePixelRatio || 1);
+  const r = cv.getBoundingClientRect(), dpr = Math.max(1, Math.min(2, window.devicePixelRatio || 1, Math.sqrt(2.2e6 / Math.max(1, r.width * r.height))));   // 塔背景只在捲動時重畫：高 DPI 用 2 倍（1 倍在手機上糊）
   const w = Math.round(r.width * dpr), h = Math.round(r.height * dpr);
   if (cv.width !== w || cv.height !== h){ cv.width = w; cv.height = h; QPB.key = null; }
   const x = cv.getContext('2d');
@@ -16636,7 +16644,7 @@ function qplSpecToggle(on){
 }
 /* ---- 畫：背景（塔圖）→ 小盤面 → 觀戰盤面 ---- */
 function qplRectsFor(cs, DF){                                               // 跟 skinRects 同一套圖集量測（QP 版：HOLD／NEXT 縮 0.75；DF＝實機 Duo：原尺寸、邊界密合），原點＝盤面可視區左上
-  const s = cs / 92, k = s * (DF ? 1 : .75);
+  const s = cs / 92, k = s;
   const frame = { x: -79 * s, y: -29 * s, w: 1080 * s, h: 2028 * s };
   const lbar = { x: DF ? frame.x + 29 * s - 160 * k : frame.x - 146 * k, y: frame.y, w: 160 * k, h: 1950 * s };
   const hold = { x: DF ? lbar.x + 29 * k - 540 * k : lbar.x - 534 * k, y: frame.y, w: 540 * k, h: 490 * k };
