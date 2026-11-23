@@ -10188,8 +10188,8 @@ function nextBag0(){
 }
 // 官方 cancel streak（QP 防拖延）：抵銷 +行數；75 顆沒吃垃圾 +5；每 30 秒沒吃垃圾 +5；All Clear +3
 //   吃進垃圾 −3／行；清到垃圾歸零；Quad −3；I spin 消行 −2
-// HYPERSPEED 條件：沒開 mod（官方）；或選的每張卡都是 FLIPSIDE／ABYSS（本站）
-function hyperOK(M){ const core = [...M].filter(id => !/^(fs_|ab_)/.test(id) && id !== 'flipside' && id !== 'abyss'); return core.every(id => M.has('fs_' + id)); }
+// HYPERSPEED 條件：沒開 mod（官方）；或選的每張卡都是逆位（本站：REVERSED／FLIPSIDE／ABYSS 都算；DEATH 挑戰不算）
+function hyperOK(M){ const core = [...M].filter(id => !/^(fs_|ab_)/.test(id) && id !== 'flipside' && id !== 'abyss'); return core.every(id => id !== 'death' && DECK_ALL.some(c => c.rev === id)); }
 function cstreakAdd(n){ if (climb && climb.kind === 'qp' && !(climb.custom && !climb.custom.tower)) climb.cstreak = Math.max(0, (climb.cstreak || 0) + n); }
 function cstreakFresh(){ if (climb){ climb.staleP = 0; climb.staleT = climb.elapsed; } }
 function refillQueue(){
@@ -14460,7 +14460,7 @@ function climbTick(dt){
   climb.target = 1 + CLIMB_CFG.targetStep * [180, 300, 420].filter(t => secs >= t).length;
   // HYPERSPEED：無 mod、F1–5 達到門檻 CSP 啟動；CSP<7 結束
   const hn = CLIMB_CFG.hyperNeed[f.n];
-  if (!climb.hyper && hyperOK(climb.mods) && hn && climb.csp >= hn && !(C && !C.hyper)){   // 官方：完全沒開 mod 才有 HYPERSPEED；本站：FLIPSIDE／ABYSS 也可以
+  if (!climb.hyper && hyperOK(climb.mods) && hn && climb.csp >= hn && !(C && !C.hyper)){   // 官方：完全沒開 mod 才有 HYPERSPEED；本站：全逆位（含 FLIPSIDE／ABYSS）也可以
     climb.hyper = climb.hyperEver = true; say('HYPERSPEED!!!'); zmHyper();   // 官方 _PlaySpeedrunStart：只放 zenith_speedrun_start（hyperalert 是「方塊放不下」的極限警告）
     for (let i = 0; i < 24; i++) fxSpawn('fire', fxR(0, W), H - fxR(0, 2), { vy: fxR(-10, -4), vx: fxR(-1, 1), max: fxR(700, 1100), size: fxR(1, 1.6), grow: .5 }); sfxEv('srstart', 'zenith_speedrun_start'); }
   if (climb.hyper && climb.csp < 7){ climb.hyper = false; say('HYPERSPEED LOST'); { const run = climb; zmOutroThen(() => { if (climb === run && climb.kind === 'qp' && !climb.over && !climb.hyper && mode === 'sim') zmFloor(floorOf(climb.alt).n); }, floorOf(climb.alt).n); } }
@@ -16515,7 +16515,7 @@ function specExtrasTick(o, dt){
   const F = floorOf(o.p.alt); if (o.fN == null) o.fN = F.n; else if (F.n > o.fN){ o.fN = F.n; o.floorToast = { n: F.n, name: F.name, t: now }; }
   // CSP：跟爬升速度走（⚠️ 換算是近似：房間模擬的爬速 → 你那套 1–10+ 的 Climb Speed）；沒開正位 mod、F1–5 到門檻就 HYPERSPEED
   o.csp = Math.max(1, Math.min(12, Math.round(1 + (o.p.rate - .4) * 2.1 + (o.p.alt / 900))));
-  const allRev = hyperOK(M);   // 官方：沒開 mod 才有 HYPERSPEED；本站 FLIPSIDE／ABYSS 也可以
+  const allRev = hyperOK(M);   // 官方：沒開 mod 才有 HYPERSPEED；本站全逆位（含 FLIPSIDE／ABYSS）也可以
   const hn = CLIMB_CFG.hyperNeed[F.n];
   if (!o.hyper && allRev && hn && o.csp >= hn){ o.hyper = true; o.toast = { text: 'HYPERSPEED', t: now, hyper: true }; }
   if (o.hyper && o.csp < 7) o.hyper = false;
@@ -19364,7 +19364,7 @@ const CR_SCHEMA = {
       ['floor','START FLOOR','floor',1,''],
       ['climb','CLIMB (ALTITUDE · SPEED · FLOORS)','bool',true,''],
       ['garbage','TOWER GARBAGE','bool',true,''],
-      ['hyper','HYPERSPEED (NO MODS ONLY)','bool',true,''],
+      ['hyper','HYPERSPEED (NO MODS OR ALL REVERSED)','bool',true,''],
       ['inf','NO GAME OVER (BOARD RESETS ON TOP OUT)','bool',false,''],
     ]],
     ['MODS', 'MODS'],
