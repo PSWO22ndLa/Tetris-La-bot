@@ -12430,7 +12430,7 @@ const DEATH_RE_FLOORS = {
   2:  { t:'TALENTLESS.',                sub:'rotation is forbidden on this floor', norot:true },
   3:  { t:'THE LINE IS LOST…',          sub:'no I pieces · inverted controls: left ↔ right, CW ↔ CCW, soft drop ↔ hard drop', noI:true, inv:true },
   4:  { t:'NOTHING LEFT TO LEAN ON…',   sub:'no T or I pieces · every garbage line has a 3-wide hole', noI:true, noT:true, tri:true },
-  5:  { t:'NO ONE IS COMING…',          sub:'revive tasks, one after another · fail to finish one within 30 seconds and you start to fall, as far down as floor 4 · +2 permanent lines', rv:true, perm:2 },
+  5:  { t:'THE TRIALS OF THE DAMNED…',  sub:'5 trials at 450 · 500 · 550 · 600 · 650m, easiest to hardest · you cannot pass one before finishing it · take longer than 30 seconds on a trial and you fall, a whole floor every 30 seconds, as far down as floor 4 · +2 permanent lines', trials:true, rv:true, perm:2 },
   6:  { t:"THE FOOL'S LAST ERRAND…",    sub:'a hexomino every 50 pieces · normal line clears are VOID: only spins send garbage', hexo:true, voidc:true },
   7:  { t:'THE WALLS FALL AWAY…',       sub:'the board slowly grows to 20 wide and stays that way · some garbage is damnation-style · all-spin · +3 permanent lines', widen:true, wmax:20, dlite:true, mods:['allspin'], perm:3 },
   8:  { t:'THE PIT DEEPENS…',           sub:'the board grows to 25 rows tall and stays that way · half of all pieces are O', vis:25, o50:true },
@@ -12461,7 +12461,7 @@ function sunEnter(n){
   if (F.perm){ climb.permanent += F.perm; climbInsert(F.perm, 'perm'); }
   if (F.permDown) for (let k = 0; k < F.permDown; k++){ if (climb.permQ > 0){ climb.permQ--; climb.permanent = Math.max(0, climb.permanent - 1); } else if (!permRecede()) break; }   // REQUIEM F9：打碎 3 條永久行
   if (F.vis) climb.visBase = Math.max(climb.visBase ?? climb.vis, F.vis);   // REQUIEM F8：盤面變 25 高（之後一直留著）
-  if (F.rv && !climb.rvDone){ climb.rvOn = true; climb.rvT0 = climb.elapsed; }   // REQUIEM F5：連續復活任務
+  if (F.rv && !climb.rvDone){ climb.rvOn = true; }   // REQUIEM F5：試煉超時會往下掉
   if (F.recede){ climb.recedeN = (climb.recedeN || 0) + F.perm; climb.recedeGap = F.recede; climb.recedeT = climb.elapsed + F.recede; }   // DEATH F7：這兩行之後一行一行退掉
   if (F.eclipse){ climb.sunEclT = climb.elapsed; sunEclipseRoll(true); }
   waterfall(F.t + wfSub(F.sub), { bgcolor: DT ? '#5a0a16' : '#9a5a08', timeout:5000 }); sfxEv('warn', 'warning');
@@ -12522,7 +12522,7 @@ const D_INVT = { left:'right', right:'left', cw:'ccw', ccw:'cw', soft:'drop', dr
 const deathInv = (a, touch) => a && climb && !climb.over && sunHas('inv') ? ((touch ? D_INVT : D_INV)[a] || a) : a;
 // F5：到關卡高度就卡住，做完那一個任務才能往上
 function deathGate(alt){
-  if (!climb || !hasModRaw('death') || dRe() || (climb.dIdx || 0) >= D_CP.length) return alt;   // REQUIEM 沒有 F5 試煉
+  if (!climb || !hasModRaw('death') || (climb.dIdx || 0) >= D_CP.length) return alt;
   const i = climb.dIdx || 0, lim = i === D_CP.length - 1 ? D_CP[i] - 0.01 : D_CP[i];   // 最後一關停在 F6 門口（649.99m）
   if (alt < lim) return alt;
   if (!climb.dTrial) deathTrialStart(i);
@@ -12533,7 +12533,7 @@ function deathTrialStart(i){
   const noHold = hasMod('nohold') || hasMod('ascetic');
   const pool = DUO_PROMPTS.filter(p => p.t === D_TIER[i] && !p.off && !p.heartsOnly && !(noHold && p.noHold) && !/O-Spin/i.test(p.text));
   const d = pool[(Math.random() * pool.length) | 0];
-  climb.dTrial = [{ def: d, tier: D_TIER[i], text: d.text, need: d.need, got: 0, st: {} }]; climb.dTrial.koT = performance.now();
+  climb.dTrial = [{ def: d, tier: D_TIER[i], text: d.text, need: d.need, got: 0, st: {} }]; climb.dTrial.koT = performance.now(); climb.dTrialT0 = climb.elapsed;
   waterfall(`TRIAL ${i + 1} OF 5` + wfSub(d.text.toLowerCase()), { bgcolor:'#5a0a16', timeout:4500 }); sfxEv('boardlock', 'boardlock');
   say(`TRIAL ${i + 1}/5 (${D_TIER[i]}): ${d.text}`);
 }
@@ -12558,27 +12558,14 @@ function deathTaskDone(){
   waterfall(broke ? 'TASK DONE · A PERMANENT LINE BREAKS' : 'TASK DONE', { bgcolor:'#2a0610', timeout:1800 });
   sfxEv('garbage', 'garbagerise', .6);
 }
-// REQUIEM F5：一直有一個復活任務（E／D 起、做越多越難，最高 C）；30 秒內沒做完就開始往下掉，最低掉到 F4 的地板；到 F6 就結束
-function rvTaskNew(){
-  const noHold = hasMod('nohold') || hasMod('ascetic'), k = climb.rvN || 0, tiers = k < 2 ? ['E', 'D'] : k < 5 ? ['D', 'C'] : ['C'];
-  const pool = DUO_PROMPTS.filter(p => tiers.includes(p.t) && !p.off && !p.heartsOnly && !(noHold && p.noHold) && !/O-Spin/i.test(p.text) && p.text !== climb.rvLast);
-  const d = pool[(Math.random() * pool.length) | 0]; if (!d) return;
-  climb.rvLast = d.text; climb.rvTask = [{ def: d, tier: d.t, text: d.text, need: d.need, got: 0, st: {} }]; climb.rvTask.koT = performance.now(); climb.rvT0 = climb.elapsed;
-}
-function rvTaskDone(){
-  climb.rvTask = null; climb.rvNext = climb.elapsed + 800; climb.rvN = (climb.rvN || 0) + 1;
-  if (climb.rvDrain){ climb.rvDrain = false; say('REVIVED · THE FALL STOPS'); }
-  waterfall('REVIVED' + wfSub(`revive task ${climb.rvN} done`), { bgcolor:'#2a0610', timeout:1800 }); sfxEv('boardrevive', 'boardlock_revive');
-}
-function deathPrEv(k, n){ if (climb && climb.rvTask && prEv(climb.rvTask, k, n)) rvTaskDone(); if (climb && climb.dTrial && prEv(climb.dTrial, k, n)) deathTrialDone(); if (climb && climb.dTask && prEv(climb.dTask, k, n)) deathTaskDone(); }
+function deathPrEv(k, n){ if (climb && climb.dTrial && prEv(climb.dTrial, k, n)) deathTrialDone(); if (climb && climb.dTask && prEv(climb.dTask, k, n)) deathTaskDone(); }
 function deathProgress(res){
-  if (!climb || !(climb.dTrial || climb.dTask || climb.rvTask) || !res.type) return;
+  if (!climb || !(climb.dTrial || climb.dTask) || !res.type) return;
   const P = pTrack || {};
   const e = { type: res.type, rot: res.rot, x: res.x, cells: res.cells, n: res.cleared || 0, spin: res.spin || null, combo: res.combo, b2b: res.b2b, pc: !!res.pc,
     garb: res.garb || 0, color: !!res.color, upper: !!res.upper, rotN: P.rotN || 0, dirs: P.dirs || 0, moved: !!P.moved, held: !!P.held, holdT: res.holdT || null, sd: !!P.sd, das: !!P.das };
   if (climb.dTrial && prLock(climb.dTrial, e)) deathTrialDone();
   if (climb.dTask && prLock(climb.dTask, e)) deathTaskDone();
-  if (climb.rvTask && prLock(climb.rvTask, e)) rvTaskDone();
 }
 // F8：盤面一欄一欄變寬到 15（左右輪流），出了這層也不會變回來
 function deathWiden(){
@@ -12603,14 +12590,12 @@ function deathTick(){
   if (!hasModRaw('death')) return;
   const now = climb.elapsed, dt = Math.max(0, Math.min(100, now - (climb.dT || now))); climb.dT = now;
   if (climb.dTrial && prTick(climb.dTrial, dt, duoMyBoard())) deathTrialDone();
-  if (climb.rvOn){
-    if (floorOf(climb.alt).n >= 6){ climb.rvOn = false; climb.rvDone = true; climb.rvTask = null; climb.rvDrain = false; }
+  if (climb.rvOn){                                                      // REQUIEM F5：試煉跟 DEATH 一樣，但一關 30 秒沒解完就開始掉（30 秒掉一整層），最低到 F4 的地板
+    if (floorOf(climb.alt).n >= 6 || (climb.dIdx || 0) >= D_CP.length){ climb.rvOn = false; climb.rvDone = true; climb.rvDrain = false; }
     else {
-      if (!climb.rvTask && now >= (climb.rvNext || 0)) rvTaskNew();
-      if (climb.rvTask && prTick(climb.rvTask, dt, duoMyBoard())) rvTaskDone();
-      const late = !!climb.rvTask && now - climb.rvT0 >= 30000;
+      const late = !!climb.dTrial && now - (climb.dTrialT0 ?? now) >= 30000;
       if (late && !climb.rvDrain){ climb.rvDrain = true; sfxEv('warn', 'warning'); say('TOO SLOW · YOU START TO FALL'); }
-      if (!late) climb.rvDrain = false;
+      if (!late && climb.rvDrain){ climb.rvDrain = false; say('TRIAL PASSED · THE FALL STOPS'); }
     }
   }
   if (dTaskOn()){                                                       // F10 以上：每分鐘 +2 永久行；一直有一個任務，做完一個消一行
@@ -12625,12 +12610,11 @@ function deathTick(){
 }
 function drawDeathHud(){
   if (!climb || climb.over || !hasModRaw('death')) return;
-  if (climb.dTrial) drawTaskHint(0, (H - VISIBLE) * cell, W * cell, climb.dTrial);
-  if (climb.rvTask){                                                    // REQUIEM F5：復活任務＋30 秒倒數（掉落中變紅）
-    drawTaskHint(0, (H - VISIBLE) * cell + cell * .55, W * cell, climb.rvTask);
-    const left = Math.max(0, 30000 - (climb.elapsed - climb.rvT0)), sec = Math.ceil(left / 1000);
+  if (climb.dTrial) drawTaskHint(0, (H - VISIBLE) * cell + (climb.rvOn ? cell * .55 : 0), W * cell, climb.dTrial);
+  if (climb.rvOn && climb.dTrial){                                      // REQUIEM F5：試煉 30 秒倒數（超時＝掉落中，變紅）
+    const left = Math.max(0, 30000 - (climb.elapsed - (climb.dTrialT0 ?? climb.elapsed))), sec = Math.ceil(left / 1000);
     ctx.save(); ctx.font = `800 ${cell * .52}px ${CANVAS_FONT}`; ctx.textAlign = 'center'; ctx.textBaseline = 'top'; ctx.lineWidth = cell * .12; ctx.lineJoin = 'round';
-    const tx = climb.rvDrain ? 'FALLING · FINISH THE TASK' : `REVIVE IN 0:${String(sec).padStart(2, '0')}`, ty = (H - VISIBLE) * cell + cell * .2;
+    const tx = climb.rvDrain ? 'FALLING · FINISH THE TRIAL' : `FALL IN 0:${String(sec).padStart(2, '0')}`, ty = (H - VISIBLE) * cell + cell * .2;
     ctx.strokeStyle = 'rgba(0,0,0,.75)'; ctx.strokeText(tx, W * cell / 2, ty); ctx.fillStyle = climb.rvDrain || left < 10000 ? '#ff4a5a' : '#e8c8cc'; ctx.fillText(tx, W * cell / 2, ty); ctx.restore();
   }
   const dOn = dTaskOn() && climb.dPermT != null;
@@ -14886,7 +14870,7 @@ function climbTick(dt){
   climb.cspSum = (climb.cspSum || 0) + climb.csp * dt; climb.cspPeak = Math.max(climb.cspPeak || 1, climb.csp);   // ME 頁的平均／最高速
   const C = climb.custom;
   if (C && !C.climb){}                                                           // CUSTOM：關掉爬升 → 高度不動
-  else if (climb.rvDrain) addAlt(-1.5 * CLIMB_CFG.tyrantLoss(floorOf(climb.alt).n) * dt / 1000);   // REQUIEM F5：復活任務超時 → 往下掉（F5 每秒 3m）
+  else if (climb.rvDrain) addAlt(-(FLOORS[5].m - FLOORS[4].m) / 30 * dt / 1000);   // REQUIEM F5：試煉超時 → 不管在哪個高度，都用「30 秒掉一整層」的速度往下掉（F5 高 200m → 每秒約 6.7m）
   else if (hasMod('tyrant')) addAlt(-CLIMB_CFG.tyrantLoss(floorOf(climb.alt).n) * dt / 1000);   // Tyrant：只會往下掉
   else if (isFs('hearts') && (climb.downed || (climb.duo && !climb.duo.alive))) addAlt(-CLIMB_CFG.tyrantLoss(floorOf(climb.alt).n) * (isAb('hearts') ? 2 : 1) * dt / 1000);   // BROKEN BOND：救人期間像 Tyrant 一樣往下掉
   else addAlt(CLIMB_CFG.cspPassive * Math.floor(climb.csp) * dt / 1000, true);
