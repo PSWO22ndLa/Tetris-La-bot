@@ -1959,6 +1959,73 @@ document.documentElement.classList.add('booting'); addEventListener('load', func
     radial-gradient(2px 2px at 70% 30%, rgba(200,170,180,.45), transparent), radial-gradient(1px 1px at 85% 80%, rgba(220,200,205,.5), transparent), radial-gradient(1.5px 1.5px at 25% 90%, rgba(170,60,70,.5), transparent);
     background-size:260px 220px; animation:dthAsh 14s linear infinite; mix-blend-mode:screen; }
   body.dthsel #dthBg{ opacity:1; }
+  /* ===== REQUIEM（DEATH 再逆位）：不走 FLIPSIDE 的白，比 DEATH 更黑更紅；死神卡再倒過來一次 ===== */
+  .qpl-reveal.rq{ background:radial-gradient(80% 90% at 50% 45%, #3a0008, #0a0002 55%, #000) !important; }
+  .qpl-reveal.death.rq::before{ background:radial-gradient(70% 80% at 50% 45%, #8a0016, #2a0006 55%, transparent); }
+  .qpl-reveal.death.rq.anim::before{ animation:rqBg 3.2s ease both; }
+  @keyframes rqBg{ 0%{ opacity:0; } 20%,38%{ opacity:.6; } 46%{ opacity:0; } 58%{ opacity:1; } 100%{ opacity:.85; } }
+  .qpl-reveal.death.rq::after{ opacity:.9; filter:hue-rotate(-10deg) saturate(3); }
+  .qpl-reveal.death.rq .qpr-bg polygon{ stroke:#7a0010; }
+  .qpl-reveal.death.rq .qpr-bg{ filter:drop-shadow(0 0 10px #ff0020) drop-shadow(0 0 2px #000); }
+  .qpl-reveal.death.rq .qpr-card{ filter:drop-shadow(0 0 34px rgba(255,0,28,.95)) drop-shadow(0 0 70px rgba(120,0,14,.9)) drop-shadow(0 0 6px #000); }
+  .qpr-card .df-dthup{ transform:rotate(180deg); }
+  .qpr-card .rqflip > .df-rq{ transform:rotateY(180deg); filter:grayscale(1) sepia(1) saturate(9) hue-rotate(-48deg) brightness(.62) contrast(1.7); }
+  .qpl-reveal.death.rq .df-crack path{ stroke:#ff3048; stroke-width:2.8; filter:drop-shadow(0 0 3px #ff0020) drop-shadow(0 0 8px #600008); }
+  .qpl-reveal.death.rq.anim .df-crack path{ animation:dthCrack .55s ease-in .7s forwards; }
+  .qpl-reveal.death.rq.anim .df-front img{ animation:rqDrain 1.4s ease .2s both; }
+  @keyframes rqDrain{ 0%{ filter:none; } 35%{ filter:brightness(1.4) saturate(2) drop-shadow(0 0 22px #ff1030); } 100%{ filter:grayscale(1) sepia(1) saturate(7) hue-rotate(-48deg) brightness(.3) contrast(1.8); } }
+  .qpl-reveal.death.rq.anim .dflip{ animation:rqFlip 2.5s cubic-bezier(.5,0,.2,1) both; }
+  @keyframes rqFlip{
+    0%,30%{ transform:rotateY(0deg) scale(1); }
+    34%{ transform:translateX(-5px) rotate(-2.5deg) scale(1.03); } 38%{ transform:translateX(7px) rotate(3deg) scale(1.05); }
+    42%{ transform:translateX(-8px) rotate(-3.5deg) scale(1.07); } 46%{ transform:translateX(8px) rotate(4deg) scale(1.09); }
+    50%{ transform:translateX(-6px) rotate(-3deg) scale(1.1); }
+    52%{ transform:rotateY(0deg) scale(.82); }
+    66%{ transform:rotateY(180deg) rotate(400deg) scale(1.45); }
+    74%{ transform:rotateY(180deg) rotate(348deg) scale(.9); }
+    82%{ transform:rotateY(180deg) rotate(366deg) scale(1.06); }
+    100%{ transform:rotateY(180deg) rotate(360deg) scale(1); } }
+  .qpl-reveal.death.rq .dslash{ background:linear-gradient(90deg, transparent, #8a0010 20%, #ff1a30 40%, #fff 50%, #ff1a30 60%, #8a0010 80%, transparent); height:14px; box-shadow:0 0 26px #ff0020, 0 0 70px #900010; }
+  .qpl-reveal.death.rq.anim .dslash{ animation:dthSlash .4s cubic-bezier(.2,.8,.3,1) 1.3s both; }
+  .qpl-reveal.death.rq.anim .dslash.d2{ animation:dthSlash2 .4s cubic-bezier(.2,.8,.3,1) 1.42s both; }
+  .qpl-reveal.death.rq.anim{ animation:rqGlitch 3.4s steps(1) both; }
+  @keyframes rqGlitch{ 0%,50%{ filter:none; } 51%{ filter:brightness(0); } 53%{ filter:contrast(2.2) saturate(3) hue-rotate(-20deg); } 55%{ filter:invert(.25) contrast(2.4); } 57%{ filter:none; } 70%{ filter:brightness(.2) contrast(3); } 71%,100%{ filter:none; } }
+  .qpl-reveal.death.rq .qpr-name{ color:#ff1e34; -webkit-text-stroke:2px #000; font-size:clamp(34px, 11vw, 64px); letter-spacing:.26em; padding-left:.26em;
+    text-shadow:0 0 2px #ff8090, 0 0 12px #ff0020, 0 0 30px #d00018, 0 0 80px #800010, 0 6px 0 #000, 0 12px 24px #000; }
+  .qpl-reveal.death.rq.anim .qpr-name span{ animation:rqLetter .5s cubic-bezier(.15,1.6,.35,1) calc(2s + var(--k) * .09s) both, dthFlick 3.2s steps(1) calc(2.8s + var(--k) * .29s) infinite; }
+  @keyframes rqLetter{ 0%{ opacity:0; transform:translateY(-140px) scale(4.5) rotate(calc(var(--k) * 11deg - 33deg)); filter:blur(14px) brightness(3); }
+    55%{ opacity:1; filter:blur(0) brightness(1.6); } 75%{ transform:translateY(6px) scale(.92); } 100%{ opacity:1; transform:none; filter:none; } }
+  .qpl-reveal.death.rq .qpr-fl{ color:#d06070; }
+  .qpl-reveal.death.rq.anim .qpr-fl{ animation:rqText 3.2s ease both; }
+  @keyframes rqText{ 0%,72%{ opacity:0; letter-spacing:.6em; filter:blur(6px); } 90%{ opacity:1; filter:blur(0); } 100%{ opacity:1; letter-spacing:normal; } }
+  .qpl-reveal.death.rq.anim .qpr-bg{ animation:qprFade .4s ease 1.9s both; }
+  /* 全螢幕：熄燈 → 四道交叉斬 → 巨大鐮刀橫掃 → 血光 */
+  #rqFx{ position:fixed; inset:0; z-index:9999981; pointer-events:none; overflow:hidden; visibility:hidden; }
+  #rqFx.go{ visibility:visible; }
+  #rqFx .rqb{ position:absolute; inset:0; background:#000; opacity:0; }
+  #rqFx.go .rqb{ animation:rqBlack .95s ease-out both; }
+  @keyframes rqBlack{ 0%{ opacity:0; } 6%,30%{ opacity:.96; } 100%{ opacity:0; } }
+  #rqFx .rqs{ position:absolute; left:-30%; top:var(--y,50%); width:160%; height:12px; opacity:0; transform:rotate(var(--a)) scaleX(0);
+    background:linear-gradient(90deg, transparent, #9a0012 22%, #ff2238 42%, #fff 50%, #ff2238 58%, #9a0012 78%, transparent); box-shadow:0 0 22px #ff0020, 0 0 60px #a00014; }
+  #rqFx.go .rqs{ animation:rqSlash .38s cubic-bezier(.2,.8,.3,1) var(--d) both; }
+  @keyframes rqSlash{ 0%{ opacity:1; transform:rotate(var(--a)) scaleX(0); } 40%{ opacity:1; transform:rotate(var(--a)) scaleX(1); } 100%{ opacity:0; transform:rotate(var(--a)) scaleX(1) scaleY(.08); } }
+  #rqFx svg{ position:absolute; left:50%; top:46%; width:min(150vw, 1500px); height:auto; transform:translate(-50%,-50%); opacity:0; overflow:visible; }
+  #rqFx svg path{ fill:#e8d8dc; filter:drop-shadow(0 0 10px #ff0020) drop-shadow(0 0 40px #b00014); }
+  #rqFx svg .tr{ fill:none; stroke:#ff1a30; stroke-width:26; stroke-linecap:butt; opacity:.55; filter:blur(6px); }
+  #rqFx.go svg{ animation:rqScythe .7s cubic-bezier(.6,0,.2,1) .5s both; }
+  @keyframes rqScythe{ 0%{ opacity:0; transform:translate(-10%,-60%) rotate(-70deg) scale(.6); } 15%{ opacity:1; } 70%{ opacity:1; transform:translate(-80%,-40%) rotate(40deg) scale(1.1); } 100%{ opacity:0; transform:translate(-95%,-35%) rotate(55deg) scale(1.15); } }
+  #rqFx .rqv{ position:absolute; inset:0; opacity:0; background:radial-gradient(60% 60% at 50% 50%, transparent 30%, rgba(120,0,14,.8) 75%, #000); }
+  #rqFx.go .rqv{ animation:rqVig 2.2s ease-out .9s both; }
+  @keyframes rqVig{ 0%{ opacity:0; } 10%{ opacity:1; } 100%{ opacity:0; } }
+  body.rqshake #app, body.rqshake main, body.rqshake .screen{ animation:dthShake .75s linear 2; }
+  /* 選著 REQUIEM：大廳比 DEATH 更暗更紅，像心跳一樣脈動 */
+  body.rqsel #dthBg{ background:radial-gradient(120% 95% at 50% 42%, rgba(150,0,22,.95) 0%, rgba(70,0,12,.95) 40%, rgba(12,0,2,.98) 75%, #000); animation:rqBeat 1.6s ease-in-out infinite; }
+  @keyframes rqBeat{ 0%,100%{ filter:brightness(.85); } 12%{ filter:brightness(1.25); } 24%{ filter:brightness(.9); } 34%{ filter:brightness(1.15); } 50%{ filter:brightness(.8); } }
+  .tcard.requiem .face{ border-color:#ff1a30; box-shadow:0 0 0 4px #000, 0 0 0 6px #ff1a30, 0 0 40px rgba(255,0,30,.75), 0 0 90px rgba(120,0,14,.7), -4px 4px 14px rgba(0,0,0,.8); }
+  .tcard.requiem .face img{ transform:rotate(180deg); filter:grayscale(1) sepia(1) saturate(9) hue-rotate(-48deg) brightness(.62) contrast(1.7); }
+  .tcard.requiem .zoutc{ --oc:#ff1a30; }
+  .cardinfo.requiem{ background:rgba(90,0,12,.35); } .cardinfo.requiem b{ color:#ff2a40; text-shadow:0 0 12px rgba(255,0,30,.7); }
+
   .qpl-reveal.ext{ background:radial-gradient(90% 90% at 50% 45%, color-mix(in srgb, var(--exc) 45%, #000), #030303); }
   .qpl-reveal.ext .qpr-bg polygon{ stroke:var(--exc); }
   .qpl-reveal.ext .qpr-bg{ filter:drop-shadow(0 0 4px var(--exc)); }
@@ -3333,7 +3400,7 @@ document.documentElement.classList.add('booting'); addEventListener('load', func
   <div class="grow"></div>
   <small id="saveState"></small>
   <div id="socialTray" title="Social"><img id="stPeople" alt=""><img id="stNotif" alt=""><div class="st-sep"></div><div id="stOnline">0</div></div>
-  <div id="dthBg"></div><div id="dthFlash"><i></i><i></i><i></i></div>
+  <div id="dthBg"></div><div id="dthFlash"><i></i><i></i><i></i></div><div id="rqFx"><div class="rqb"></div><i class="rqs" style="--a:-32deg;--y:42%;--d:.04s"></i><i class="rqs" style="--a:30deg;--y:54%;--d:.12s"></i><i class="rqs" style="--a:-62deg;--y:50%;--d:.2s"></i><i class="rqs" style="--a:58deg;--y:46%;--d:.28s"></i><svg viewBox="-520 -340 1040 680"><path class="tr" d="M -480 120 Q -60 -360 470 -40"/><path d="M -500 150 Q -80 -380 480 -60 Q 420 -10 360 30 Q -40 -250 -500 150 Z"/><path d="M 300 -40 L 330 -60 L 120 330 L 92 316 Z"/></svg><div class="rqv"></div></div>
   <div id="oobShade" class="hidden"></div>
   <div id="entry_form" class="oob_modal oob_login_wide hidden noop">
     <div class="preform">
@@ -4955,7 +5022,7 @@ const zmUrl = (f, b = 0) => ZC_BASES[b] + 'music/' + f + '.ogg';
 // 大廳換 mod（聲部音量變）→ 背景重混一條新的，在同一個播放位置交叉淡入。記憶體 ≈ 一條混音（約 30MB）＋解碼中的一個聲部。
 const ZM_SR = 32000, ZMC = new Map();
 // F10 用官方曲（Dr Ocelot：Divine Confirmation／False God）：ZC 的 F10 是 petrtech 的同人曲。music/f10.mp3、f10-rev.mp3 只留 0–252 秒（前奏＋一次循環，循環 140→250.4 秒），音量壓到跟其他樓層一致
-const ZM_OWN = { 'f10':'mp3', 'f10-rev':'mp3', 'f10-rev-up':'mp3', 'f10-rev-dn':'mp3', 'f10-up5':'mp3', 'f10-rev-dn9':'mp3' };                   // F10 官方曲只放在自己網站的 music/（ZC 沒有）
+const ZM_OWN = { 'f10':'mp3', 'f10-rev':'mp3', 'f10-rev-up':'mp3', 'f10-rev-dn':'mp3', 'f10-up5':'mp3', 'f10-rev-dn9':'mp3', 'f10-rev-dn11':'mp3' };                   // F10 官方曲只放在自己網站的 music/（ZC 沒有）
 // 使用者 repo 的 music/ 直接放官方完整版（實際檔名是括號版，放第一個）（360 秒、原始音量），沒改名：f10.mp3 找不到就試這些原檔名；完整版在解碼後裁到 252 秒、音量 ×0.31（-10dB，跟其他樓層一致）
 const ZM_FULL = {
   'f10': ['Divine Confirmation - Zenith Tower (TETR.IO Quick Play 2 Soundtrack) - Dr Ocelot', 'Divine Confirmation - Zenith Tower TETR.IO Quick Play 2 Soundtrack - Dr Ocelot',
@@ -4969,8 +5036,8 @@ function zmFetch(file){
       ZMC.delete(file); throw new Error('music ' + file); }
     try { const r = await fetch('music/' + file + '.' + (ZM_OWN[file] || 'ogg')); if (r.ok) return await r.arrayBuffer(); } catch(e){}   // 先抓同網站的 music/（Vercel 上傳的），抓不到才用 jsDelivr
     for (const n of ZM_FULL[file] || []){ try { const r = await fetch('music/' + encodeURIComponent(n) + '.mp3'); if (r.ok) return await r.arrayBuffer(); } catch(e){} }
-    if (ZM_OWN[file] && !/-(up|dn)\d?$/.test(file)) throw new Error('music ' + file);
-    if (/-(up|dn)\d?$/.test(file)){ ZMC.delete(file); return zmFetch(file.replace(/-(up|dn)\d?$/, '')); }   // 轉調版沒上傳 → 退回原調
+    if (ZM_OWN[file] && !/-(up|dn)\d*$/.test(file)) throw new Error('music ' + file);
+    if (/-(up|dn)\d*$/.test(file)){ ZMC.delete(file); return zmFetch(file.replace(/-(up|dn)\d*$/, '')); }   // 轉調版沒上傳 → 退回原調
     for (let b = 0; b < ZC_BASES.length; b++){ try { const r = await fetch(zmUrl(file, b)); if (r.ok) return await r.arrayBuffer(); } catch(e){} }
     ZMC.delete(file); throw new Error('music ' + file);
   })());
@@ -5156,8 +5223,9 @@ function zmStop(quick){
 const qpRevMusic = () => [...(climb && climb.kind === 'qp' ? climb.mods : pickedMods)].some(id => MODS.find(m => m.id === id)?.rev);
 const qpHas = id => (climb && climb.kind === 'qp' ? climb.mods : pickedMods).has(id);
 // 本站：FLIPSIDE 音樂升 1 個半音、ABYSS 降 1 個半音（music/ 裡的 *-up／*-dn 檔，速度不變；沒上傳就用原調）
-const zmBase = k => String(k || '').replace(/-(up|dn)\d?$/, '');   // FLIPSIDE／ABYSS 轉調版的 key 帶 -up／-dn：開頭／結尾／循環點照原曲（轉調檔時間軸對齊原曲，0ms 偏移）
+const zmBase = k => String(k || '').replace(/-(up|dn)\d*$/, '');   // FLIPSIDE／ABYSS 轉調版的 key 帶 -up／-dn：開頭／結尾／循環點照原曲（轉調檔時間軸對齊原曲，0ms 偏移）
 const ZM_TONED = new Set(['f0-rev', 'f0-expert', 'f1', 'f1ex', 'f1rev', 'f2-rev', 'f3-rev', 'f4-rev', 'f5-rev', 'f6-rev', 'f7-rev', 'f8-rev', 'f9-rev', 'f10-rev', 'tera-rev']);
+const RQ_MUSIC = false;   // REQUIEM 降全音的音檔：使用者試聽 OK 前先關著（關著＝跟 DEATH 同音高）
 const zmTone = () => qpHas('abyss') ? '-dn' : qpHas('flipside') && !qpHas('fs_death') ? '-up' : '';   // REQUIEM（DEATH 的 FLIPSIDE）音樂照 DEATH，不升調
 const zmT = f => { const t = zmTone(); return t && ZM_TONED.has(f) ? f + t : f; };
 // 大廳：f0 多聲部；Expert 加 expert 聲部、No Hold 鋼琴小聲、逆位只剩 rev 聲部
@@ -5174,16 +5242,17 @@ function zmFloor(n){
   const n0 = n;
   if (LOCAL_P && climb && climb.race && climb.race.cmp){ const b = climb.race.bots[0]; if (b) n = Math.max(n, floorOf(b.v || 0).n); }   // RIVALS（QP）：音樂跟兩人裡比較高的那層
   n = zFl(n);                                                            // THE OBSERVATORY 沒有自己的曲 → 延續 F9；頂樓放官方 F10 曲
-  const rev = qpRevMusic(), ex = qpHas('expert') || qpHas('tyrant'), dth = chalOn() && hasModRaw('death'), ch = chalOn() && !dth;
+  const rev = qpRevMusic(), ex = qpHas('expert') || qpHas('tyrant'), dth = chalOn() && hasModRaw('death'), dre = dth && dRe() && RQ_MUSIC, ch = chalOn() && !dth;
   // 本站 THE SUN：F1 三軌全疊（主軌＋f1ex＋f1rev）；F2 起升／降交替、每兩層多半音（+1 −1 +2 −2 … F10 +5）
   // 本站 DEATH：F1 原調，之後每層多降半音（F2 −1 … F10 −9）。檔名 -upN／-dnN（N＝半音數，1 省略）
   const CH_TONE = { f2:'-up', f3:'-dn', f4:'-up2', f5:'-dn2', f6:'-up3', f7:'-dn3', f8:'-up4', f9:'-dn4', f10:'-up5' };
   const chT = f => { if (zmTone()) return zmT(f); const m = /^f(\d+)-rev$/.exec(f);
-    if (dth && m && +m[1] >= 2) return f + '-dn' + (+m[1] > 2 ? +m[1] - 1 : '');
+    if (dth && m && +m[1] >= 2){ const d = +m[1] - 1 + (dre ? 2 : 0); return f + '-dn' + (d > 1 ? d : ''); }   // REQUIEM：再降一個全音
     return ch && CH_TONE[f] ? f + CH_TONE[f] : zmT(f); };
-  if (n <= 1) zmPlay('f1' + zmTone() + (ch ? 'c' : ''), [{ file:zmT('f1'), vol:1 }, { file:zmT('f1ex'), vol:ex || ch ? 1 : 0 }, { file:zmT('f1rev'), vol:rev || ch ? 1 : 0 }], 'f1',
+  const f1T = f => dre ? f + '-dn2' : zmT(f);
+  if (n <= 1) zmPlay('f1' + (dre ? '-dn2' : zmTone()) + (ch ? 'c' : ''), [{ file:f1T('f1'), vol:1 }, { file:f1T('f1ex'), vol:ex || ch ? 1 : 0 }, { file:f1T('f1rev'), vol:rev || ch ? 1 : 0 }], 'f1',
     rev ? ZM_TITLE.f1r : ex ? ZM_TITLE.f1ex : ZM_TITLE.f1);
-  else { const k = 'f' + Math.min(10, n), f = chT(k + (rev ? '-rev' : '')); zmPlay(k + (rev ? 'r' : '') + ((f.match(/-(up|dn)\d?$/) || [])[0] || zmTone()), [{ file: f, vol:1 }], k, ZM_TITLE[k + (rev ? 'r' : '')]); }
+  else { const k = 'f' + Math.min(10, n), f = chT(k + (rev ? '-rev' : '')); zmPlay(k + (rev ? 'r' : '') + ((f.match(/-(up|dn)\d*$/) || [])[0] || zmTone()), [{ file: f, vol:1 }], k, ZM_TITLE[k + (rev ? 'r' : '')]); }
   const nx = zFl(n0 + 1);
   if (nx !== n && nx <= 10){ const nf = chT('f' + nx + (rev ? '-rev' : '')), g = ZM.gen;                    // 下一層：先抓壓縮檔，現在這首開始播之後再解碼好
     zmFetch(nf).catch(() => {}); const go = () => { if (ZM.gen !== g) return; if (ZM.loading) return setTimeout(go, 1000); zmPrep(nf); }; setTimeout(go, 2500); }
@@ -10124,7 +10193,7 @@ async function saveAsProject(){
   $('saveState').textContent = list[0].name + ' · saved';
 }
 function setScreen(sc){
-  try { document.body.classList.toggle('dthsel', sc === 'modsel' && pickedMods.has('death')); } catch(e){}
+  try { document.body.classList.toggle('dthsel', sc === 'modsel' && pickedMods.has('death')); document.body.classList.toggle('rqsel', sc === 'modsel' && pickedMods.has('fs_death')); } catch(e){}
   try { popClear(); } catch(e){}                                      // 攻擊數字的浮層：離開遊戲畫面一定清掉（之前會黏在選單上）
   document.documentElement.classList.remove('booting');
   if (typeof h2hMods === 'function' && !(sc === 'solopre' && soloPreKind === 'h2h')) h2hMods(false);
@@ -12582,6 +12651,7 @@ function drawDeathHud(){
 }
 // THE SUN 翻成 DEATH：音效分三段、翻面那一刻全螢幕閃光＋衝擊波＋震動
 function deathRevealFx(){
+  for (const id of ['dthFlash', 'rqFx']){ const e = $(id); if (e && e.parentNode !== document.body) document.body.appendChild(e); }   // 原本放在 header（z-index 1）裡，會被大廳面板蓋住 → 搬到 body 才真的全螢幕
   sfxEv('cardrev', 'card_select_reverse');
   cardSfx('dthtone', 'card_tone_death', 1);   // DEATH 專屬翻牌旋律：七個音約 0.7 秒彈完，剛好在 1.08 秒的裂開／閃光前收尾
   const T = [];
@@ -12596,6 +12666,14 @@ function deathRevealFx(){
   T.push(setTimeout(() => document.body.classList.remove('dthshake'), 1900));
   T.push(setTimeout(() => sfxEv('boardlock', 'boardlock'), 620));
   document.body.classList.add('dthsel');
+}
+// REQUIEM：DEATH 的翻牌再加碼（音效跟 DEATH 同一套，只多畫面）：熄燈、四道交叉斬、巨大鐮刀橫掃、兩次血光、震兩輪
+function requiemRevealFx(){
+  deathRevealFx(); document.body.classList.add('rqsel');
+  setTimeout(() => { const x = $('rqFx'); x.classList.remove('go'); void x.offsetWidth; x.classList.add('go'); }, 1250);
+  setTimeout(() => { const f = $('dthFlash'); f.classList.remove('go'); void f.offsetWidth; f.classList.add('go');
+    document.body.classList.remove('rqshake'); void document.body.offsetWidth; document.body.classList.add('rqshake'); }, 1850);
+  setTimeout(() => { document.body.classList.remove('rqshake'); $('rqFx').classList.remove('go'); }, 3600);
 }
 function sunReached(){
   if (!climb || !chalOn() || climb.sunWin) return;
@@ -15675,14 +15753,16 @@ function showReveal(i, animate){
   const src = own || (tioImgOn() && CARD_FILE[c.base] ? cardArtUrl(c.base) : '');
   $('qprCard').innerHTML = src ? `<img src="${src}" alt="" onerror="if(!this.dataset.t&&'${own ? '' : cardArtThumb(c.base)}'){this.dataset.t=1;this.src='${own ? '' : cardArtThumb(c.base)}'}else if(this.parentNode){this.outerHTML='<div class=alt>${c.code}</div>'}">`
     : `<div class="alt">${c.code}</div>`;
-  const sunR = c.base === 'sun' && st === 1, dth = !!(c.revArt && st === 2);
+  const sunR = c.base === 'sun' && st === 1, dth = !!(c.revArt && st === 2), rq = !!(c.revArt && st === 3);
   if (dth) $('qprCard').innerHTML = `<div class="dflip"><div class="df-front"><img class="df-sun" alt="" src="${evImg('card_' + c.base)}"><svg class="df-crack" viewBox="0 0 183 279" preserveAspectRatio="none"><path d="M92 96 L80 70 L86 52 L74 30 L78 8"/><path d="M92 96 L112 82 L120 60 L140 52 L150 28"/><path d="M92 96 L70 112 L52 108 L34 126 L14 122"/><path d="M92 96 L104 124 L98 150 L112 178 L106 210 L118 246 L112 272"/><path d="M92 96 L128 112 L150 132 L176 136"/><path d="M98 150 L74 168 L60 196 L36 206"/><path d="M112 178 L138 190 L152 214"/><path d="M80 70 L60 64 L44 46"/></svg></div><img class="df-dth" alt="" src="${evImg('card_' + c.rev)}"></div>`;
+  if (rq) $('qprCard').innerHTML = `<div class="dflip rqflip"><div class="df-front"><img class="df-dthup" alt="" src="${evImg('card_' + c.rev)}"><svg class="df-crack" viewBox="0 0 183 279" preserveAspectRatio="none"><path d="M92 140 L78 110 L88 80 L70 50 L80 18"/><path d="M92 140 L118 120 L126 92 L150 80 L164 48"/><path d="M92 140 L62 150 L44 138 L22 160 L4 150"/><path d="M92 140 L106 170 L96 200 L116 230 L104 276"/><path d="M92 140 L132 154 L156 176 L180 174"/><path d="M96 200 L70 214 L56 240 L28 250"/><path d="M116 230 L144 238 L160 262"/><path d="M78 110 L54 100 L36 76"/><path d="M126 92 L146 60 L140 26"/></svg></div><img class="df-rq" alt="" src="${evImg('card_' + c.rev)}"></div>`;   // REQUIEM：正著的死神裂開，再整張倒過來
   if (!box.querySelector('.dslash')) box.insertAdjacentHTML('beforeend', '<i class="dslash"></i><i class="dslash d2"></i>');   // DEATH：先是 THE SUN，翻過來變死神
   $('qprName').textContent = sunR ? modById('sun').name : st >= 3 ? tierName(c, st) : (COMBO_NAMES[c.rev] || modById(c.rev).name);
+  if (rq) $('qprName').innerHTML = [...'REQUIEM'].map((ch, k) => `<span style="--k:${k}">${ch}</span>`).join('');
   if (dth) $('qprName').innerHTML = [...'DEATH'].map((ch, k) => `<span style="--k:${k}">${ch}</span>`).join('');   // 一個字母一個字母砸下來
   // ABYSS：翻牌大圖的卡名前也不放 mod 圖標（使用者要求）
   $('qprFl').textContent = sunR ? (modById('sun').fl || '') : st >= 3 ? tierFl(c, st) : (modById(c.rev).fl || '');
-  box.classList.toggle('flip', st >= 3); box.classList.toggle('abyss', st === 4); box.classList.toggle('sun', sunR); box.classList.toggle('death', dth); box.classList.remove('ext');
+  box.classList.toggle('flip', st >= 3 && !rq); box.classList.toggle('abyss', st === 4); box.classList.toggle('sun', sunR); box.classList.toggle('death', dth || rq); box.classList.toggle('rq', rq); box.classList.remove('ext');
   $('qprBg').innerHTML = qprPolys();
   const fromR = animate && !$('modGrid').classList.contains('hidden') && $('modGrid').children[i] ? $('modGrid').children[i].getBoundingClientRect() : null;   // 牌在牌組裡的位置（要從這裡飛出來）
   box.classList.remove('hidden'); $('modGrid').classList.add('hidden'); $('qpStars').classList.add('hidden');
@@ -15832,7 +15912,7 @@ function refreshQuickPick(){
   const dthOn = pickedMods.has('death'), revOn = DECK.some(c => cardState(c) >= 2) || dthOn, ex = cardState(DECK[0]) > 0;   // DEATH 是 event 卡，不在 DECK 裡，要另外算逆位
   $('modsel').classList.toggle('tyr', revOn); $('modsel').classList.toggle('dth', dthOn);                                      // 官方 #zenithmenu.reversed：只有逆位才變紅、START 倒過來；EXPERT 只換標題／標語
   $('modsel').classList.toggle('flip', revOn);                                     // TETR.IO：選了逆位 mod，START 就倒過來
-  $('modsel').classList.toggle('flipside', pickedMods.has('flipside')); $('modsel').classList.toggle('abyss', pickedMods.has('abyss'));            // The Tyrant：START 倒過來
+  $('modsel').classList.toggle('flipside', pickedMods.has('flipside') && !pickedMods.has('fs_death')); $('modsel').classList.toggle('abyss', pickedMods.has('abyss'));            // The Tyrant：START 倒過來
   $('qpTitle').textContent = pickedMods.has('world') ? 'QUICK PICK' : 'QUICK PLAY';   // 官方面板裡的 h1 固定 QUICK PLAY
   clearTimeout(refreshQuickPick.zt); if (!revOn) document.body.classList.remove('zrev'); else if (!document.body.classList.contains('zrev')) refreshQuickPick.zt = setTimeout(() => document.body.classList.toggle('zrev', DECK.some(c => cardState(c) >= 2) || pickedMods.has('death')), 500);   // 官方：翻完 0.5 秒（card_reverse_impact）才加 body.zenith_reversed
   if (screen === 'modsel'){ const h = document.querySelector('header h1'); if (h) h.textContent = (ex ? 'EXPERT ' : '') + (pickedMods.has('world') ? 'QUICK PICK' : 'QUICK PLAY'); }   // 官方 rr()：header_text＝EXPERT QUICK PLAY／QUICK PLAY   // THE WORLD：QUICK PLAY → QUICK PICK
@@ -15879,13 +15959,14 @@ function showCardInfo(i){
     $('ciDesc').textContent = 'Tap a card to flip it. Long-press (or turn on ↺ REVERSE) to play it reversed.'; $('ciFl').textContent = ''; return; }
   const c = QDECK[i], st = cardState(c);
   const m = modById(st >= 2 ? c.rev : c.base);
-  $('ciNum').textContent = `${c.num} · ${c.tarot}${st === 4 ? ' · ABYSS' : st === 3 ? ' · FLIPSIDE' : st === 2 ? ' · REVERSED' : ''}`;
-  $('ciName').textContent = st === 4 ? `>>> ${AB_NAMES[c.rev]} <<<` : st === 3 ? `>> ${FLIP_NAMES[c.rev]} <<` : st === 2 ? `> ${m.name} <` : m.name;
+  const rqI = st === 3 && c.noAb;
+  $('ciNum').textContent = `${c.num} · ${c.tarot}${st === 4 ? ' · ABYSS' : rqI ? ' · REVERSED AGAIN' : st === 3 ? ' · FLIPSIDE' : st === 2 ? ' · REVERSED' : ''}`;
+  $('ciName').textContent = st === 4 ? `>>> ${AB_NAMES[c.rev]} <<<` : rqI ? `> ${FLIP_NAMES[c.rev]} <` : st === 3 ? `>> ${FLIP_NAMES[c.rev]} <<` : st === 2 ? `> ${m.name} <` : m.name;
   $('ciDesc').textContent = st === 4 ? AB_DESC[c.rev] : st === 3 ? FLIP_DESC[c.rev]
-    : m.desc + (cardLocked(c) ? '' : st === 0 && c.rev ? '  —  REVERSED: ' + modById(c.rev).name : st === 2 ? '  —  LONG-PRESS AGAIN FOR FLIPSIDE' : '');
+    : m.desc + (cardLocked(c) ? '' : st === 0 && c.rev ? '  —  REVERSED: ' + modById(c.rev).name : st === 2 ? (c.noAb ? '  —  LONG-PRESS AGAIN TO REVERSE IT AGAIN' : '  —  LONG-PRESS AGAIN FOR FLIPSIDE') : '');
   $('ciFl').textContent = st >= 3 && c.rev ? tierFl(c, st) : st === 2 ? (m.fl || '') : '';
   $('cardInfo').classList.toggle('rev', st >= 2);
-  $('cardInfo').classList.toggle('flipside', st >= 3); $('cardInfo').classList.toggle('abyss', st === 4);
+  $('cardInfo').classList.toggle('flipside', st >= 3 && !rqI); $('cardInfo').classList.toggle('requiem', rqI); $('cardInfo').classList.toggle('abyss', st === 4);
 }
 const ART_KEY = 'bp:modart';
 const loadArt = () => { try { return JSON.parse(store.get(ART_KEY) || '{}'); } catch(e){ return {}; } };
@@ -17367,13 +17448,13 @@ function renderModSel(){
       hasImg = !!(ownK && ownK !== 0) || !!zmImg('zm_' + c.base, c.base),
       sig = [ownK, cardLocked(c) && st0 < 2 ? 1 : 0, tio0 ? 1 : 0, hasImg ? '' : st0 >= 2 ? 'r' : 'u', c.base === 'gravity' ? towerExt : 0].join('|');
     if (reuse && old[i]._sig === sig){ const o = old[i];
-      o.classList.toggle('up', st0 === 1); o.classList.toggle('rev', st0 >= 2); o.classList.toggle('flipside', st0 >= 3); o.classList.toggle('abyss', st0 === 4);
+      o.classList.toggle('up', st0 === 1); o.classList.toggle('rev', st0 >= 2); o.classList.toggle('flipside', st0 >= 3 && !c.noAb); o.classList.toggle('requiem', st0 === 3 && !!c.noAb); o.classList.toggle('abyss', st0 === 4);
       o.dataset.cmp = comp[c.base] || 0; return; }
     const el = document.createElement('div'); el._sig = sig;
     el.className = 'tcard' + (cardLocked(c) && cardState(c) < 2 ? ' off' : '');   // 選了逆位就不顯示鎖
     el.style.setProperty('--hue', c.hue);
     const st = cardState(c);
-    el.classList.toggle('up', st === 1); el.classList.toggle('rev', st >= 2); el.classList.toggle('flipside', st >= 3); el.classList.toggle('abyss', st === 4);
+    el.classList.toggle('up', st === 1); el.classList.toggle('rev', st >= 2); el.classList.toggle('flipside', st >= 3 && !c.noAb); el.classList.toggle('requiem', st === 3 && !!c.noAb); el.classList.toggle('abyss', st === 4);   // REQUIEM 不用 FLIPSIDE 的白
     el.dataset.cmp = comp[c.base] || 0;                        // ★ 金＝正位到過 F10、紅＝逆位到過
     const own = c.ev ? evImg('card_' + (st >= 2 && c.revArt ? c.rev : c.base)) : art[st === 2 ? c.rev : c.base] || art[c.base], img = own || zmImg('zm_' + c.base, c.base);   // THE WORLD 用自己的卡圖   // 官方 /res/zenith-mods/<mod>.png 卡面（自己上傳的圖優先）
     const tio = !img && tioImgOn() && CARD_FILE[c.base];
@@ -17479,11 +17560,12 @@ function flipCard(i, reversed){
   if (!reversed && c.rev && !c.noFlip && !c.noAb && CARD_TAPS.n >= 10){ ns = 4; CARD_TAPS = { i: -1, n: 0, t: 0 }; }
   setCardState(c, ns);
   if (ns === 2 && c.base === 'sun'){ deathRevealFx(); }
+  else if (ns === 3 && c.base === 'sun'){ requiemRevealFx(); }
   else if (ns === 1 && c.base === 'sun'){ sfxEv('cardrev', 'card_select_reverse'); cardSfx('suntone', 'card_tone_sun', 1); }   // THE SUN：選取跟逆位一樣的演出＋專屬旋律
   else if (ns === 1){ sfxEv('cardup', 'card_select'); CARD_TONE_ID[c.base] ? cardSfx(CARD_TONE_ID[c.base], 'card_tone_' + c.base, 1) : evSfx('card_tone_' + c.base, 0.8); }   // 自製旋律已經是 -25 LUFS，音量 1   // evSfx：音效包沒有的（JUDGEMENT）讀自備檔
   else if (ns >= 2){ sfxEv('cardrev', 'card_select_reverse'); revToneThenImpact('card_tone_' + c.base + '_reverse', false, ns === 3 ? 'flipside' : ns === 4 ? 'abyss' : ''); }
   if (ns === 2) CSTAR_FLIP.set(i, performance.now()); else CSTAR_FLIP.delete(i);
-  document.body.classList.toggle('dthsel', pickedMods.has('death'));
+  document.body.classList.toggle('dthsel', pickedMods.has('death')); document.body.classList.toggle('rqsel', pickedMods.has('fs_death'));
   if (!QR.inline){ if (ns >= 2 || (c.base === 'sun' && ns === 1)) setTimeout(() => showReveal(i, true), 0); else if (qpRevealCard === i) setTimeout(() => showReveal(-1), 0); }   // 結算畫面裡改 mod：不播揭示、牌組留著
   // 取消選卡：沒有專屬音效，不借用別的
   if (reversed && revModeOn){ revModeOn = false; }
@@ -19080,11 +19162,11 @@ function mgInfo(c, st){
   const m = modById(st >= 2 ? c.rev : c.base) || {};
   const name = st >= 3 ? tierName(c, st) : m.name || c.base.toUpperCase();
   const fl = st >= 3 ? tierFl(c, st) : st === 2 ? (m.fl || '') : '';
-  const tag = ['', 'UPRIGHT', 'REVERSED', 'FLIPSIDE', 'ABYSS'][st];
+  const tag = c.noAb && st === 3 ? 'REVERSED AGAIN' : ['', 'UPRIGHT', 'REVERSED', 'FLIPSIDE', 'ABYSS'][st];
   let rules;
   if (st === 1) rules = MG_RULES[c.base] || [m.desc];
   else if (st === 2) rules = (m.desc || '').split(/\s*[·;]\s*|,\s+(?=[a-z0-9])/i).filter(Boolean);
-  else rules = [tierDesc(c, st)].concat(st === 4 ? ['Includes everything from FLIPSIDE'] : ['Includes everything from the reversed card']);
+  else rules = [tierDesc(c, st)].concat(st === 4 ? ['Includes everything from FLIPSIDE'] : c.noAb ? ['Death, reversed once more'] : ['Includes everything from the reversed card']);
   const FT = c.base === 'sun' ? (st === 3 ? DEATH_RE_FLOORS : st === 2 ? DEATH_FLOORS : st === 1 ? SUN_FLOORS : null) : null;      // CHALLENGE／DEATH：逐層列出詛咒
   if (FT) rules = rules.concat(Object.keys(FT).map(k => `<b>F${k}</b> ${FT[k].sub}`));
   if (c.base === 'sun') rules.push(st === 2 ? 'Unlocks after conquering THE SUN · needs the full tower (5/5)' : 'Needs the full tower (5/5) · F1 has no curse');
