@@ -12024,7 +12024,7 @@ const DEATH_FLOORS = {
   4:  { t:'NOTHING STAYS STILL…',       sub:'all-spin rules · double-hole garbage', mods:['allspin', 'doublehole'] },
   5:  { t:'THE TRIALS OF THE DEAD…',    sub:'5 trials at 450 · 500 · 550 · 600 · 650m, easiest to hardest · you cannot pass one before finishing it · +2 permanent lines', trials:true, perm:2 },
   6:  { t:'TIME SLOWS TO A CRAWL…',     sub:'every line clear is delayed (loaded dice)', cdelay:true },
-  7:  { t:'THE GROUND FREEZES OVER…',   sub:'permafrost handling · all-spin · volatile garbage · +2 permanent lines', slip:true, mods:['allspin', 'volatile'], perm:2 },
+  7:  { t:'THE GROUND FREEZES OVER…',   sub:'permafrost handling · volatile garbage · +2 permanent lines that slowly sink away (one every 20 seconds)', slip:true, mods:['volatile'], perm:2, recede:20000 },
   8:  { t:'THE ABYSS WIDENS…',          sub:'the board slowly grows to 15 wide and stays that way · no shadow · 1 next · DAS fixed at 20 frames', widen:true, noghost:true, next1:true, das20:true },
   9:  { t:'THE SCYTHE IS RAISED…',      sub:'clear a line at least every 8 seconds, or 2 garbage lines rise', scythe:true },
   10: { t:'MIDNIGHT.',                  sub:'receive 3× garbage on this floor · +5 permanent lines', gmul:3, perm:5 },
@@ -12049,6 +12049,7 @@ function sunEnter(n){
   const DT = hasModRaw('death');
   climb.dLastClr = climb.elapsed;                                       // DEATH F9：鐮刀計時從進樓層開始
   if (F.perm){ climb.permanent += F.perm; climbInsert(F.perm, 'perm'); }
+  if (F.recede){ climb.recedeN = (climb.recedeN || 0) + F.perm; climb.recedeGap = F.recede; climb.recedeT = climb.elapsed + F.recede; }   // DEATH F7：這兩行之後一行一行退掉
   if (F.eclipse){ climb.sunEclT = climb.elapsed; sunEclipseRoll(true); }
   waterfall(F.t + wfSub(F.sub), { bgcolor: DT ? '#5a0a16' : '#9a5a08', timeout:5000 }); sfxEv('warn', 'warning');
   sunApply();
@@ -12075,9 +12076,27 @@ function sunApply(){                                                     // 這�
   climb.sunMods = m;
   sunResize();
 }
+// 永久行退掉一行：拿掉最底下那條整行都是永久格（10）的列，上面整片往下掉一格
+function permRecede(){
+  const g = grid();
+  for (let y = H - 1; y >= 0; y--){
+    let all = true; for (let x = 0; x < W; x++) if (g[y * W + x] !== 10){ all = false; break; }
+    if (!all) continue;
+    g.copyWithin(W, 0, y * W); g.fill(0, 0, W);
+    climb.permanent = Math.max(0, climb.permanent - 1);
+    if (active){ const dn = { ...active, y: active.y + 1 }; if (fits(dn)) active = dn; else if (!fits(active)){ const up = { ...active, y: active.y - 1 }; if (fits(up)) active = up; } }   // 方塊跟著整片一起往下，相對位置不變
+    boardKick(0, 2 * optN('oShake') / 100, true); draw(); return true;
+  }
+  return false;
+}
 function sunTick(){
   if (!climb || climb.over || !chalOn()) return;
   const F = sunCur();
+  if (climb.recedeN > 0 && !climb.permQ && climb.elapsed >= climb.recedeT){   // 進 F7 後每 20 秒退一行（離開 F7 也繼續退完）
+    if (permRecede()){ climb.recedeN--; say(climb.recedeN ? 'THE ICE CRACKS · A PERMANENT LINE SINKS AWAY' : 'THE ICE MELTS · THE LAST LINE SINKS AWAY'); sfxEv('garbage', 'garbagerise', .6); }
+    else climb.recedeN = 0;
+    climb.recedeT = climb.elapsed + (climb.recedeGap || 20000);
+  }
   deathTick();
   // DEMO（La bot 代打）：試煉打 60 秒還沒過就跳過，免得測試卡在 F5（代打本來就不計戰績）
   if (climb.demo && DEMO && climb.dTrial && climb.dTrialT0 && climb.elapsed - climb.dTrialT0 > 60000){ say('LA BOT GAVE UP · TRIAL SKIPPED (DEMO ONLY)'); qcBot('this trial is too hard for me, skipping it (demo only)'); deathTrialDone(); }
