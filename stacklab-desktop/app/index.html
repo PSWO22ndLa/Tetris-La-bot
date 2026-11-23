@@ -5219,8 +5219,15 @@ function mutBlock(){
   buildMut();
   const q = [];
   for (let b = 0; b < 2; b++){ const s = PIECE_ORDER.slice(); for (let i = s.length - 1; i > 0; i--){ const j = (rnd() * (i + 1)) | 0; [s[i], s[j]] = [s[j], s[i]]; } q.push(...s); }
-  const fl = sunHas('mut') ? 8 : floorOf(climb.alt).n, pool = Object.keys(MUT_SRC).filter(k => +k.slice(1) <= fl).map(k => MUT[k]);   // DEATH F3：F1–F8 的突變塊
-  for (let i = 0; i < 3; i++) q.splice((rnd() * (q.length + 1)) | 0, 0, pool[(rnd() * pool.length) | 0]);
+  // DEATH F3：照這層爬的進度，突變塊 1→5 顆（每 14 顆）、可用的組從 F1 一路開到 F8；F11 抽到時直接全開
+  let fl = floorOf(climb.alt).n, nm = 3;
+  if (sunHas('mut')){
+    const F = sunCur(), f0 = floorOf(climb.alt), f1 = FLOORS[f0.n];
+    const t = F.eclipse || !f1 ? 1 : Math.max(0, Math.min(1, (climb.alt - f0.m) / (f1.m - f0.m)));
+    fl = 1 + Math.round(t * 7); nm = 1 + Math.round(t * 4);
+  }
+  const pool = Object.keys(MUT_SRC).filter(k => +k.slice(1) <= fl).map(k => MUT[k]);
+  for (let i = 0; i < nm; i++) q.splice((rnd() * (q.length + 1)) | 0, 0, pool[(rnd() * pool.length) | 0]);
   return q;
 }
 const polySet = () => !climb || climb.kind !== 'qp' ? null
@@ -12020,7 +12027,7 @@ const SUN_FLOORS = {
 const DEATH_FLOORS = {
   1:  { t:'THE CANDLE FLICKERS…',      sub:'pieces repeat: 50% chance the next piece is the same as the last one', rep:true },
   2:  { t:'THE WORLD TURNS OVER…',      sub:'inverted controls: left ↔ right, CW ↔ CCW, soft drop ↔ hard drop', inv:true },
-  3:  { t:'FLESH TWISTS…',              sub:'mutated pieces from floors 1–8', mut:true },
+  3:  { t:'FLESH TWISTS…',              sub:'mutated pieces creep in: from 1 to 5 in every 14 pieces, and from floor 1 sets up to floor 8 sets as you climb', mut:true },
   4:  { t:'NOTHING STAYS STILL…',       sub:'all-spin rules · double-hole garbage', mods:['allspin', 'doublehole'] },
   5:  { t:'THE TRIALS OF THE DEAD…',    sub:'5 trials at 450 · 500 · 550 · 600 · 650m, easiest to hardest · you cannot pass one before finishing it · +2 permanent lines', trials:true, perm:2 },
   6:  { t:'TIME SLOWS TO A CRAWL…',     sub:'every line clear is delayed (loaded dice)', cdelay:true },
