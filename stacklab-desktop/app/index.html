@@ -6598,10 +6598,12 @@ const windSplit = (amt, alt, vol) => {                                   // 回�
 // Windup 警告（tetris.wiki：單次收到 ≥8 行時出現 alert）：盤面上方閃爍的紅色三角驚嘆號，持續到整波拆段都進場
 // 收垃圾警示（照 ZenithClicker：module/texture.lua 的 windup 圖、scene/tower.lua 的顏色與動畫、game.lua 的升級節奏；ZC 照 TETR.IO 做的）
 // 八角星框（16 點、內外半徑 42/54.9、線寬 10，128px 畫布）＋ ceil(等級/2) 根「!」；等級 1→最終等級每 0.25 秒跳一級，跳的瞬間放大再縮回 0.8
-const WIND_CLR = ['#F5BE3F','#ED7F2E','#E74322','#E63676','#E83AD5','#9E2DF6','#002FF5','#4295F8','#79FA52','#C6FC4F','#FFFFFF'];   // 第 11 級（自創，≥44 行）：白
+const WIND_CLR = ['#F5BE3F','#ED7F2E','#E74322','#E63676','#E83AD5','#9E2DF6','#002FF5','#4295F8','#79FA52','#C6FC4F','#FFFFFF', '#D4142E','#8C0A1E','#EADFC9'];   // 第 11 級（自創，≥44 行）：白；12–14（本站鐮刀級）：血紅、暗紅、骨白
 const WIND_TW = [12, 12, 12, 11, 9, 8], WIND_TD = [0, 20, 16, 14, 12, 10.5];
 // 等級：每 4 行一級（4–7 黃、8–11 橘、12–15 紅…，⚠️ 行數對照是照 namu.wiki 的「黃 4–7、橘 8–11、紅 12–15」往上推的）
-const windLv = n => Math.max(1, Math.min(11, Math.floor(n / 4)));
+// 本站鐮刀級：12（≥48 行）一把、13（≥52）兩把、14（≥56）三把；DEATH 才會出現，其他 mod 要爬過 10000m
+const windScy = () => !!(climb && (hasModRaw('death') || climb.alt >= 10000));
+const windLv = n => Math.max(1, Math.min(windScy() ? 14 : 11, Math.floor(n / 4)));
 function windupShow(lines, Hd){
   if ((!climb && !Hd) || lines < 8) return;                                   // wiki：單次攻擊 ≥ 8 行才會 Windup
   Hd = Hd || climb;                                                  // Hd：誰的盤面（你＝climb；Duo 隊友／TL 對手＝那個 bot 物件）
@@ -6670,8 +6672,13 @@ function drawWindupAlert(Hd, bx, by, bc, c2){
     X.globalAlpha = w.alpha; X.strokeStyle = WIND_CLR[w.lv - 1]; drawWindupStar(X, 64, 10);
     const wa = r / (42 * Math.pow(.5, 4.2)); if (wa > 0){ X.globalAlpha = wa * w.alpha; X.strokeStyle = '#fff'; drawWindupStar(X, 64, 10); }
     X.rotate(-r);
-    const n = Math.ceil(w.lv / 2), tw = WIND_TW[n - 1], td = WIND_TD[n - 1], len = 60;
     X.globalAlpha = w.alpha; X.fillStyle = '#fff';
+    if (w.lv >= 12){                                                  // 鐮刀級：星框裡畫 1–3 把鐮刀（取代驚嘆號）
+      const m = w.lv - 11, sz = [58, 42, 31][m - 1], gap = sz * .92;
+      for (let q = -(m - 1) / 2; q <= (m - 1) / 2 + 1e-6; q++) scythePath(X, q * gap + sz * .24, sz * .55, sz);
+      X.restore(); continue;
+    }
+    const n = Math.ceil(w.lv / 2), tw = WIND_TW[n - 1], td = WIND_TD[n - 1], len = 60;
     for (let q = -(n - 1) / 2; q <= (n - 1) / 2 + 1e-6; q++){
       const x = -tw / 2 + q * td;
       X.fillRect(x, -len / 2, tw, len - tw * 1.6); X.fillRect(x, len / 2 - tw, tw, tw);
