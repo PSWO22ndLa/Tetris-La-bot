@@ -5117,11 +5117,11 @@ function sfxEv(id, ...names){
 }
 const ZENITH_NOTES = ['c', 'b', 'a', 'fsharp', 'e', 'a', 'ahalfsharp', 'e', 'e', 'a'];   // 官方 tetrio.js 升樓音表（索引＝樓層−2）
 // 官方 tetris 鎖定音（tetrio.js 的 clear 流程）：
-//   消 ≥4 行 → 有 B2B 在身上 clearbtb、否則 clearquad；不是 quad 的「完整」spin → clearspin；其他（含 mini spin）→ clearline
-//   完整 spin 不管有沒有消行都放 spinend；沒消行時 combo > 3（本站 combo ≥ 3）才放 combobreak
+//   消 ≥4 行 → 有 B2B 在身上 clearbtb、否則 clearquad；不是 quad 的 spin → clearspin；其他 → clearline
+//   spin 不管有沒有消行都放 spinend。官方 r = fm.IsSpin()＝flags 有 ROTATION_SPIN，mini 也會設這個旗標（ROTATION_SPIN|ROTATION_MINI），所以 mini 也算；沒消行時 combo > 3（本站 combo ≥ 3）才放 combobreak
 //   btb_break 只有 b2bchaining 且 btbpower ≥ 2 斷掉時；combo_n：combopower（combo 中最大攻擊）≥ 7 改放 combo_n_power，音量 1.75（這下攻擊 ≥7 → 2.2）
 function lockSfx(cleared, spin, difficult, prevCombo, prevB2b, pc, nowCombo){
-  const full = !!(spin && !spin.mini);
+  const full = !!spin;                                                  // 官方：mini 也算（IsSpin 只看 ROTATION_SPIN 旗標）
   if (full) sfxEv('spinend', 'spinend');
   if (!cleared){ if (prevCombo >= 3) sfxEv('combobreak', 'combobreak'); return; }
   if (pc) sfxEv('allclear', 'allclear');
@@ -10327,7 +10327,7 @@ function rotate(dir){                       // 1 順時針 / 3 逆時針 / 2 為
     }
     active = a; lastWasRotation = true; lastKick = ki;                         // ki 4＝官方 kick index 3（第 4 個踢）→ 官方 IsTSpin 把 Mini 升成正式
     if (pTrack){ pTrack.rotN++; pTrack.dirs |= dir === 1 ? 1 : dir === 2 ? 2 : 4; } duoPrEv('rot', 1);
-    if (!sfxQuiet){ if (detectSpin(a)) sfxEv('spin', 'spin', 'rotate'); else sfxEv('rotate', 'rotate'); }          // 轉進 spin 位置有專屬音
+    if (!sfxQuiet){ sfxEv('rotate', 'rotate'); if (detectSpin(a)) sfxEv('spin', 'spin'); }          // 官方 _InternalRotate：一律放 rotate，轉進 spin 位置（含 mini）再多疊一個 spin
     lockBump(true);
     dcdAfterRotate();
     if (rec && rec.mode === 'step') recCapture();
