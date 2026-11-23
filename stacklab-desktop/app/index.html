@@ -4723,7 +4723,7 @@ const zmUrl = (f, b = 0) => ZC_BASES[b] + 'music/' + f + '.ogg';
 // 大廳換 mod（聲部音量變）→ 背景重混一條新的，在同一個播放位置交叉淡入。記憶體 ≈ 一條混音（約 30MB）＋解碼中的一個聲部。
 const ZM_SR = 32000, ZMC = new Map();
 // F10 用官方曲（Dr Ocelot：Divine Confirmation／False God）：ZC 的 F10 是 petrtech 的同人曲。music/f10.mp3、f10-rev.mp3 只留 0–252 秒（前奏＋一次循環，循環 140→250.4 秒），音量壓到跟其他樓層一致
-const ZM_OWN = { 'f10':'mp3', 'f10-rev':'mp3', 'f10-rev-up':'mp3', 'f10-rev-dn':'mp3' };                   // F10 官方曲只放在自己網站的 music/（ZC 沒有）
+const ZM_OWN = { 'f10':'mp3', 'f10-rev':'mp3', 'f10-rev-up':'mp3', 'f10-rev-dn':'mp3', 'f10-up5':'mp3', 'f10-rev-dn9':'mp3' };                   // F10 官方曲只放在自己網站的 music/（ZC 沒有）
 // 使用者 repo 的 music/ 直接放官方完整版（實際檔名是括號版，放第一個）（360 秒、原始音量），沒改名：f10.mp3 找不到就試這些原檔名；完整版在解碼後裁到 252 秒、音量 ×0.31（-10dB，跟其他樓層一致）
 const ZM_FULL = {
   'f10': ['Divine Confirmation - Zenith Tower (TETR.IO Quick Play 2 Soundtrack) - Dr Ocelot', 'Divine Confirmation - Zenith Tower TETR.IO Quick Play 2 Soundtrack - Dr Ocelot',
@@ -4737,8 +4737,8 @@ function zmFetch(file){
       ZMC.delete(file); throw new Error('music ' + file); }
     try { const r = await fetch('music/' + file + '.' + (ZM_OWN[file] || 'ogg')); if (r.ok) return await r.arrayBuffer(); } catch(e){}   // 先抓同網站的 music/（Vercel 上傳的），抓不到才用 jsDelivr
     for (const n of ZM_FULL[file] || []){ try { const r = await fetch('music/' + encodeURIComponent(n) + '.mp3'); if (r.ok) return await r.arrayBuffer(); } catch(e){} }
-    if (ZM_OWN[file] && !/-(up|dn)$/.test(file)) throw new Error('music ' + file);
-    if (/-(up|dn)$/.test(file)){ ZMC.delete(file); return zmFetch(file.replace(/-(up|dn)$/, '')); }   // 轉調版沒上傳 → 退回原調
+    if (ZM_OWN[file] && !/-(up|dn)\d?$/.test(file)) throw new Error('music ' + file);
+    if (/-(up|dn)\d?$/.test(file)){ ZMC.delete(file); return zmFetch(file.replace(/-(up|dn)\d?$/, '')); }   // 轉調版沒上傳 → 退回原調
     for (let b = 0; b < ZC_BASES.length; b++){ try { const r = await fetch(zmUrl(file, b)); if (r.ok) return await r.arrayBuffer(); } catch(e){} }
     ZMC.delete(file); throw new Error('music ' + file);
   })());
@@ -4911,7 +4911,7 @@ function zmStop(quick){
 const qpRevMusic = () => [...(climb && climb.kind === 'qp' ? climb.mods : pickedMods)].some(id => MODS.find(m => m.id === id)?.rev);
 const qpHas = id => (climb && climb.kind === 'qp' ? climb.mods : pickedMods).has(id);
 // 本站：FLIPSIDE 音樂升 1 個半音、ABYSS 降 1 個半音（music/ 裡的 *-up／*-dn 檔，速度不變；沒上傳就用原調）
-const zmBase = k => String(k || '').replace(/-(up|dn)$/, '');   // FLIPSIDE／ABYSS 轉調版的 key 帶 -up／-dn：開頭／結尾／循環點照原曲（轉調檔時間軸對齊原曲，0ms 偏移）
+const zmBase = k => String(k || '').replace(/-(up|dn)\d?$/, '');   // FLIPSIDE／ABYSS 轉調版的 key 帶 -up／-dn：開頭／結尾／循環點照原曲（轉調檔時間軸對齊原曲，0ms 偏移）
 const ZM_TONED = new Set(['f0-rev', 'f0-expert', 'f1', 'f1ex', 'f1rev', 'f2-rev', 'f3-rev', 'f4-rev', 'f5-rev', 'f6-rev', 'f7-rev', 'f8-rev', 'f9-rev', 'f10-rev', 'tera-rev']);
 const zmTone = () => qpHas('abyss') ? '-dn' : qpHas('flipside') ? '-up' : '';
 const zmT = f => { const t = zmTone(); return t && ZM_TONED.has(f) ? f + t : f; };
@@ -4928,12 +4928,16 @@ function zmLobby(){
 function zmFloor(n){
   if (LOCAL_P && climb && climb.race && climb.race.cmp){ const b = climb.race.bots[0]; if (b) n = Math.max(n, floorOf(b.v || 0).n); }   // RIVALS（QP）：音樂跟兩人裡比較高的那層
   n = zFl(n);                                                            // THE OBSERVATORY 沒有自己的曲 → 延續 F9；頂樓放官方 F10 曲
-  const rev = qpRevMusic(), ex = qpHas('expert') || qpHas('tyrant'), ch = chalOn();
-  // 本站 CHALLENGE（THE SUN／DEATH）：F1 三軌全疊（主軌＋f1ex＋f1rev）；F2 升 1 個半音（music/f2-up、f2-rev-up）
-  const chT = f => ch && !zmTone() && /^f2(-rev)?$/.test(f) ? f + '-up' : zmT(f);
+  const rev = qpRevMusic(), ex = qpHas('expert') || qpHas('tyrant'), dth = chalOn() && hasModRaw('death'), ch = chalOn() && !dth;
+  // 本站 THE SUN：F1 三軌全疊（主軌＋f1ex＋f1rev）；F2 起升／降交替、每兩層多半音（+1 −1 +2 −2 … F10 +5）
+  // 本站 DEATH：F1 原調，之後每層多降半音（F2 −1 … F10 −9）。檔名 -upN／-dnN（N＝半音數，1 省略）
+  const CH_TONE = { f2:'-up', f3:'-dn', f4:'-up2', f5:'-dn2', f6:'-up3', f7:'-dn3', f8:'-up4', f9:'-dn4', f10:'-up5' };
+  const chT = f => { if (zmTone()) return zmT(f); const m = /^f(\d+)-rev$/.exec(f);
+    if (dth && m && +m[1] >= 2) return f + '-dn' + (+m[1] > 2 ? +m[1] - 1 : '');
+    return ch && CH_TONE[f] ? f + CH_TONE[f] : zmT(f); };
   if (n <= 1) zmPlay('f1' + zmTone() + (ch ? 'c' : ''), [{ file:zmT('f1'), vol:1 }, { file:zmT('f1ex'), vol:ex || ch ? 1 : 0 }, { file:zmT('f1rev'), vol:rev || ch ? 1 : 0 }], 'f1',
     rev ? ZM_TITLE.f1r : ex ? ZM_TITLE.f1ex : ZM_TITLE.f1);
-  else { const k = 'f' + Math.min(10, n), f = chT(k + (rev ? '-rev' : '')); zmPlay(k + (rev ? 'r' : '') + (f.endsWith('-up') ? '-up' : zmTone()), [{ file: f, vol:1 }], k, ZM_TITLE[k + (rev ? 'r' : '')]); }
+  else { const k = 'f' + Math.min(10, n), f = chT(k + (rev ? '-rev' : '')); zmPlay(k + (rev ? 'r' : '') + ((f.match(/-(up|dn)\d?$/) || [])[0] || zmTone()), [{ file: f, vol:1 }], k, ZM_TITLE[k + (rev ? 'r' : '')]); }
   if (n < 10) zmFetch(chT('f' + (n + 1) + (rev ? '-rev' : ''))).catch(() => {});      // 先把下一層的檔案抓好（壓縮檔，1–3MB）
 }
 const zmHyper = () => { const rev = qpRevMusic(); zmPlay((rev ? 'terar' : 'tera') + zmTone(), [{ file: zmT(rev ? 'tera-rev' : 'tera'), vol:1 }], rev ? 'terar' : 'tera', ZM_TITLE[rev ? 'terar' : 'tera']); };
