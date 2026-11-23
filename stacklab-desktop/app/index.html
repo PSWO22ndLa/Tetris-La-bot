@@ -6598,7 +6598,7 @@ const windSplit = (amt, alt, vol) => {                                   // 回�
 // Windup 警告（tetris.wiki：單次收到 ≥8 行時出現 alert）：盤面上方閃爍的紅色三角驚嘆號，持續到整波拆段都進場
 // 收垃圾警示（照 ZenithClicker：module/texture.lua 的 windup 圖、scene/tower.lua 的顏色與動畫、game.lua 的升級節奏；ZC 照 TETR.IO 做的）
 // 八角星框（16 點、內外半徑 42/54.9、線寬 10，128px 畫布）＋ ceil(等級/2) 根「!」；等級 1→最終等級每 0.25 秒跳一級，跳的瞬間放大再縮回 0.8
-const WIND_CLR = ['#F5BE3F','#ED7F2E','#E74322','#E63676','#E83AD5','#9E2DF6','#002FF5','#4295F8','#79FA52','#C6FC4F','#FFFFFF', '#D4142E','#8C0A1E','#EADFC9'];   // 第 11 級（自創，≥44 行）：白；12–14（本站鐮刀級）：血紅、暗紅、骨白
+const WIND_CLR = ['#F5BE3F','#ED7F2E','#E74322','#E63676','#E83AD5','#9E2DF6','#002FF5','#4295F8','#79FA52','#C6FC4F','#FFFFFF', '#D4142E','#8C0A1E','#000000'];   // 第 11 級（自創，≥44 行）：白；12–14（本站鐮刀級）：血紅、暗紅、黑（外圍紅光）
 const WIND_TW = [12, 12, 12, 11, 9, 8], WIND_TD = [0, 20, 16, 14, 12, 10.5];
 // 等級：每 4 行一級（4–7 黃、8–11 橘、12–15 紅…，⚠️ 行數對照是照 namu.wiki 的「黃 4–7、橘 8–11、紅 12–15」往上推的）
 // 本站鐮刀級：12（≥48 行）一把、13（≥52）兩把、14（≥56）三把；DEATH 才會出現，其他 mod 要爬過 10000m
@@ -6669,7 +6669,9 @@ function drawWindupAlert(Hd, bx, by, bc, c2){
     const k = Math.max(.8, Math.min(1, .8 + (w.bump - .15) / (.25 - .15) * .2)) * w.alpha;   // clampInterpolate(.25→1, .15→.8)
     const r = w.time >= 1 && w.time <= w.total - .5 ? 42 * Math.pow(.5 - w.time % .5, 4.2) : 0;   // 每 0.5 秒抖一下
     X.save(); X.translate(cx0, cy0); X.rotate(r); X.scale(k * u, k * u);   // 固定在同一位置（實機錄影：盤面正中、頂端下 3 格）
-    X.globalAlpha = w.alpha; X.strokeStyle = WIND_CLR[w.lv - 1]; drawWindupStar(X, 64, 10);
+    X.globalAlpha = w.alpha; X.strokeStyle = WIND_CLR[w.lv - 1];
+    if (w.lv >= 14){ X.shadowColor = '#ff1a3a'; X.shadowBlur = c0 * .5 * w.alpha; drawWindupStar(X, 64, 10); X.shadowBlur = 0; }   // 黑星：外圍紅光才看得到
+    else drawWindupStar(X, 64, 10);
     const wa = r / (42 * Math.pow(.5, 4.2)); if (wa > 0){ X.globalAlpha = wa * w.alpha; X.strokeStyle = '#fff'; drawWindupStar(X, 64, 10); }
     X.rotate(-r);
     X.globalAlpha = w.alpha; X.fillStyle = '#fff';
