@@ -13737,8 +13737,8 @@ function addAlt(d, passive){
   const lo = climb.rvOn ? Math.min(FLOORS[cur.n - 1].m, FLOORS[3].m) : FLOORS[cur.n - 1].m;   // REQUIEM F5：復活任務超時會掉，最低到 F4 的地板
   climb.alt = deathGate(Math.max(lo, climb.alt + d));   // DEATH F5：關卡沒過就卡在關卡高度   // 進了新樓層就掉不回前一層（Tyrant 往下掉最多停在這層的地板）
   const nf = floorOf(climb.alt).n;
-  for (let n = cur.n + 1; n <= nf; n++){ if (n > (climb.maxF || 1)){ climb.maxF = n; enterFloor(FLOORS[n - 1]); } else { sunApply(); say(`BACK ON FLOOR ${n}`); } }   // 掉下去再爬回來：不重放進樓層（永久行不會再加一次）
-  if (nf < cur.n){ sunApply(); say(`YOU FALL TO FLOOR ${nf}`); sfxEv('warn', 'warning'); }
+  for (let n = cur.n + 1; n <= nf; n++){ if (n > (climb.maxF || 1)){ climb.maxF = n; enterFloor(FLOORS[n - 1]); } else floorAgain(FLOORS[n - 1], false); }   // 掉下去再爬回來：不重放進樓層的詛咒（永久行不會再加一次）
+  if (nf < cur.n) floorAgain(FLOORS[nf - 1], true);
 }
 // 官方 AwardLines：送出後離下一層剩 0–2m → 額外 +3m 推過去
 function lineBonus(s){ const nx = FLOORS.find(f => climb.alt < f.m); if (nx){ const g = nx.m - climb.alt - s - (climb.bonusRem || 0); if (g >= 0 && g <= 2) s += 3; } return s; }
@@ -13746,6 +13746,15 @@ function lineBonus(s){ const nx = FLOORS.find(f => climb.alt < f.m); if (nx){ co
 function giveBonus(d, ally){ if (!climb || !(d > 0)) return 0; climb.bonusRem = (climb.bonusRem || 0) + d; if (!ally) altGain(d); return d; }
 function bonusDrain(){ const r = climb.bonusRem || 0; if (!(r > 0)) return; const e = r <= .05 ? r : Math.min(10, .1 * r); climb.bonusRem = r - e; addAlt(e); }
 function passGate(){}                            // 舊的「消一行才能進樓層」規則拿掉（官方沒有）
+// 掉回下一層／再爬回來（REQUIEM F5）：照樣跳樓層名稱、換那一層的音樂；掉回 F4 → F5 的試煉全部重來
+function floorAgain(f, down){
+  sunApply();
+  climb.floorToast = { n: f.n, name: f.name, t: performance.now() };
+  if (!climb.hyper) zmFloor(f.n);
+  say(`${down ? 'YOU FALL TO' : 'BACK ON'} FLOOR ${f.n} · ${f.name}`);
+  if (down){ sfxEv('warn', 'warning');
+    if (climb.rvOn){ climb.dTrial = null; climb.dIdx = 0; climb.dTrialT0 = 0; climb.rvDrain = false; waterfall('YOU FELL.' + wfSub('the trials begin again from the first one'), { bgcolor:'#2a0610', timeout:3000 }); } }
+}
 function enterFloor(nx){
   if (!nx) return;
   climb.splits[nx.n] = climb.elapsed;          // HYPERSPEED 分段計時
