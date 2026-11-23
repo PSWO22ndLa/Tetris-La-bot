@@ -4351,7 +4351,7 @@ function rankBadge(r, cls = ''){
   if (!tioImgOn()) return `<i class="rbadge ${cls}" data-rank="${r[0]}">${r}</i>`;
   return `<i class="rbadge rkimg ${cls}" data-rank="${r[0]}"><img src="${rankIconUrl(r)}" alt="" onerror="this.parentNode.classList.remove('rkimg');this.remove()">${r}</i>`;
 }
-const FX_NAMES = ['beam', 'beams/beam', 'bigbox', 'box', 'chip', 'chirp', 'dust', 'fbox', 'fire', 'particle', 'smoke', 'star', 'flake'];
+const FX_NAMES = ['beam', 'beams/beam', 'bigbox', 'box', 'chip', 'chirp', 'dust', 'fbox', 'fire', 'particle', 'smoke', 'star', 'flake', 'exhaust'];
 const FX_IMG = {};
 function fxImg(n){
   if (!FX_IMG[n]){ const i = new Image(); i.onload = () => { i.ok = true; }; i.onerror = () => { i.bad = true; };
@@ -4410,16 +4410,8 @@ function bgpAdd(tex, n, mk){
   for (let i = 0, m = Math.floor(cnt) + (Math.random() < cnt % 1 ? 1 : 0); i < m && BGP.length < 700; i++) BGP.push({ img: fxImg(tex), life: 0, ...mk(r.width, r.height, u) });
   if (!bgpRAF){ bgpLast = 0; bgpRAF = requestAnimationFrame(bgpStep); }
 }
-function bgSplash(o = {}, danger){
-  const { amt = 30, direction: d = [0, 360], speed: sp = [0, 100] } = o, D = Array.isArray(d) ? d : [d, d];
-  bgpAdd('bigbox', amt, (w, h, u) => { const a = fxR(D[0], D[1]) * Math.PI / 180, v = fxR(sp[0], sp[1]) * u;      // 方向：0＝上、90＝右、180＝下
-    return { x: Math.random() * w, y: Math.random() * h, vx: Math.sin(a) * v, vy: -Math.cos(a) * v, max: danger ? fxR(100, 1000) : fxR(2000, 5000), a0: fxR(.02, .15), am: true, sc: 1.8 * fxR(.02, danger ? .3 : .2) * u, tint: danger ? '#FF2200' : null, wrap: true }; });
-}
-function bgCircle(o = {}){
-  const { radius = 10, color = null, amt = 100, speed = 150 } = o;
-  bgpAdd('particle', amt, (w, h, u) => { const a = Math.random() * Math.PI * 2, R = radius * 30 * u, v = fxR(0, speed) * u;
-    return { x: w / 2 + Math.cos(a) * R, y: h / 2 + Math.sin(a) * R, vx: Math.cos(a) * v, vy: Math.sin(a) * v, max: fxR(350, 3000), a0: fxR(.02, .4), sc: 1.8 * fxR(.02, .25) * u, tint: color }; });
-}
+function bgSplash(o = {}, danger){ elPlay(danger ? 'bgsplashdanger' : 'bgsplash', o); }
+function bgCircle(o = {}){ elPlay('bgcircle', { ...o, ...(o.color != null ? { color: opHexN(o.color) } : {}), ...(o.radius != null ? { radius: o.radius } : {}) }); }
 function bgpStep(t){
   const dt = bgpLast ? Math.min(50, t - bgpLast) : 16; bgpLast = t;
   const c = bgpCanvas(); if (!c){ bgpRAF = 0; return; }
@@ -4441,22 +4433,11 @@ function bgpStep(t){
 let bgDeathT = 0;
 function bgDeath(){
   const now = performance.now(); if (now - bgDeathT < 600) return; bgDeathT = now;
-  bgSplash({ direction: 0, amt: 50 }, true); bgCircle({ color: '#FF2200', amt: 300, speed: 300 });
-  if (!opt('oDanger') || !['high', 'ultra'].includes(opt('oGraphics'))) return;
-  // death_flair：盤面外框上 100 顆 chirp（#FF88FF／#FF0000，壽命 .2–2 秒，速度 0–1000 → 0–200）＋100 顆白色 star（.2–1 秒，0–300 → 0–50），都往外
-  const top = H - VISIBLE, per = () => { const q = Math.random() * 2 * (W + VISIBLE); return q < W ? [q, top, 0, -1] : q < W + VISIBLE ? [W, top + q - W, 1, 0] : q < 2 * W + VISIBLE ? [q - W - VISIBLE, H, 0, 1] : [0, top + q - 2 * W - VISIBLE, -1, 0]; };
-  const sz = (n, e) => 1.8 * e * ((fxImg(n).width || 64) / 30);
-  for (let i = 0; i < 100; i++){ const [x, y, nx, ny] = per(), v = fxR(0, 1000) / 30; fxSpawn('chirp', x, y, { vx: nx * v, vy: ny * v, dk: .2, max: fxR(200, 2000), size: sz('chirp', fxR(.15, .5)), a: fxR(.7, 1), tint: Math.random() < .5 ? '#FF88FF' : '#FF0000' }); }
-  for (let i = 0; i < 100; i++){ const [x, y, nx, ny] = per(), v = fxR(0, 300) / 30; fxSpawn('star', x, y, { vx: nx * v, vy: ny * v, dk: .17, max: fxR(200, 1000), size: sz('star', fxR(.15, .5)), a: fxR(.7, 1) }); }
+  bgSplash({ direction: 0, amt: 50 }, true); bgCircle({ color: 0xff2200, amt: 300, speed: 300 });
+  if (opt('oDanger')) opBoardFx('death_flair');                       // 官方：siren 設定開著才有
 }
 // b2b_flair（官方：B2B 加成到第 3 級，btb_2 響的時候）：盤面左、右、底邊各一排橘黃星星（#FF8000／#FFFF80）往外飄
-function b2bFlair(){
-  if (!['high', 'ultra'].includes(opt('oGraphics'))) return;
-  const top = H - VISIBLE, sz = e => 1.8 * e * ((fxImg('star').width || 64) / 30);
-  const one = (x, y, ax, ay) => { const a = Math.random() * Math.PI * 2, v = fxR(0, 150) / 30; fxSpawn('star', x, y, { vx: Math.cos(a) * v + ax, vy: Math.sin(a) * v + ay, dk: .33, max: fxR(200, 1000), size: sz(fxR(.15, .3)), a: fxR(.7, 1), tint: Math.random() < .5 ? '#FF8000' : '#FFFF80' }); };
-  for (let i = 0; i < 5 * VISIBLE; i++){ one(0, fxR(top, H), -2, 0); one(W, fxR(top, H), 2, 0); }
-  for (let i = 0; i < 5 * W; i++) one(fxR(0, W), H, 0, 2);
-}
+function b2bFlair(){ opBoardFx('b2b_flair'); }
 // confetti（官方：TL 勝利 15 條、色相 30–60；刷新個人紀錄只有 ULTRA 才有）：從畫面下方兩個角落拋上來再落下的彩帶
 const CONF = [];
 function confetti(count = 15, hue = [30, 60]){
@@ -4487,21 +4468,14 @@ function fireTick(dt){
   if (!climb.fire) return;
   const f = dt * 60 / 1000;
   if (climb.fireGrace > 0) climb.fireGrace = Math.max(0, climb.fireGrace - f); else climb.fire = Math.max(0, climb.fire - 5 / 60 * f);
-  if (climb.fire >= 500 && opt('oFireMeter')){ climb.fireAcc = (climb.fireAcc || 0) + dt * .045; while (climb.fireAcc >= 1){ climb.fireAcc--; fireFx(false); } }
+  if (climb.fire >= 500 && opt('oFireMeter')) fireFx(false);
 }
-function fireFx(flair){
-  const top = H - VISIBLE, tint = () => Math.random() < .5 ? '#ff6600' : '#ffff80';
-  if (flair){ for (let i = 0; i < 70; i++) fxSpawn('fire', fxR(0, W), fxR(top + 4, H), { vx: fxR(-2, 2), vy: fxR(-5, -1), max: fxR(400, 1400), size: fxR(.5, 1.4), grow: .4, vr: fxR(-3, 3), tint: tint() }); return; }
-  const side = Math.random(), sp = { max: fxR(300, 1500), size: fxR(.35, 1.1), grow: .3, vr: fxR(-3, 3), tint: tint() };
-  if (side < .38) fxSpawn(Math.random() < .5 ? 'fire' : 'particle', 0, fxR(top + 2, H), { ...sp, vx: fxR(-1.6, -.4), vy: fxR(-2.5, -.5) });
-  else if (side < .76) fxSpawn(Math.random() < .5 ? 'fire' : 'particle', W, fxR(top + 2, H), { ...sp, vx: fxR(.4, 1.6), vy: fxR(-2.5, -.5) });
-  else fxSpawn(Math.random() < .5 ? 'fire' : 'particle', fxR(0, W), H, { ...sp, vx: fxR(-.5, .5), vy: fxR(.2, 1.2) });
-}
+function fireFx(flair){ opBoardFx(flair ? 'fire_flair' : 'fire_burn'); }   // 官方：跨過 500 放 fire_flair；≥500 時每幀 fire_burn（continuefire）
 // 官方 spike（1 秒內累計 ≥10）：spike_flair（盤面上 100 顆白色星星）＋flashwave（ultra 畫質的 ShockwaveFilter，強度 1+min(spike−10, 22.5)/2.5）
 const SHOCK = [];
 function spikeFx(spike){
   const top = H - VISIBLE;
-  for (let i = 0; i < 40; i++) fxSpawn('star', fxR(0, W), fxR(top, H), { vx: fxR(-4, 4), vy: fxR(-4, 4), max: fxR(500, 1500), size: fxR(.35, .8), vr: fxR(-4, 4) });
+  opBoardFxC('spike_flair'); void top;
   const s = optN('oFlash') / 100; if (!s || uiDetail() < 2 || !fxOn()) return;
   const n = 1 + Math.min(spike - 10, 22.5) / 2.5, xy = (climb && climb.lastLockXY) || [W / 2, H - 4];
   SHOCK.push({ x: xy[0], y: xy[1], t0: performance.now(), n, s });
@@ -4526,41 +4500,287 @@ function fxTinted(img, col){
   x.drawImage(img, 0, 0); x.globalCompositeOperation = 'multiply'; x.fillStyle = col; x.fillRect(0, 0, c.width, c.height);
   x.globalCompositeOperation = 'destination-in'; x.drawImage(img, 0, 0); FX_TINT.set(k, c); return c;
 }
+/* ==== 官方粒子系統（tetrio.js d.ParticleManager／d.Particle／El.register 原樣移植）====
+   參數解析（ParseSimpleParticleOptions／ParseProgression／SplitTints）、每幀更新順序（壽命→α→大小→xy 速度→角度→速度＋方向→flurry→flicker→色調→wrap）都照官方
+   座標：#stage 內的 CSS px（官方是整個視窗）；Ss(n)＝n×（盤面一格 px／30）、Fs(n)＝n×（一格 px／92）；速度是 px／秒，跟官方一樣不隨縮放
+   圖層：B＝盤面後面（官方 Bl／Sl），F＝盤面前面（官方 Ll／zl／Tl／Il） */
+const OP = { B: [], F: [], sp: new Set(), raf: 0, last: 0, cv: {} };
+const opRnd = a => a[0] + Math.random() * (a[1] - a[0]);
+function opProg(v, R){                                                // R＝已解析的粒子（官方 ParseProgression 第二個參數，用它的 lifetime）
+  const life = R && R.lifetime || 1;
+  if (v === undefined) return { s: 0, i: 0 };
+  if (typeof v === 'number') return { s: v, i: 0 };
+  if (Array.isArray(v)) return { s: opRnd(v), i: 0 };
+  let s = 0; if (v.from !== undefined) s = typeof v.from === 'number' ? v.from : opRnd(v.from); else if (v.start !== undefined) s = typeof v.start === 'number' ? v.start : opRnd(v.start);
+  let i = 0; if (v.inc !== undefined) i = typeof v.inc === 'number' ? v.inc : opRnd(v.inc);
+  else if (v.to !== undefined) i = ((typeof v.to === 'number' ? v.to : opRnd(v.to)) - s) / (60 * life);
+  return { s, i };
+}
+function opTints(e){
+  const R = c => c >> 16, G = c => c >> 8 & 255, B = c => c & 255;
+  if (e === undefined) return { r: 255, g: 255, b: 255 };
+  if (typeof e === 'number') return { r: R(e), g: G(e), b: B(e) };
+  if (Array.isArray(e)) return { r: [R(e[0]), R(e[1])], g: [G(e[0]), G(e[1])], b: [B(e[0]), B(e[1])] };
+  const f = Array.isArray(e.from) ? e.from : Array.isArray(e.start) ? e.start : e.from ?? e.start;
+  const fr = Array.isArray(f) ? [R(f[0]), R(f[1])] : R(f), fg = Array.isArray(f) ? [G(f[0]), G(f[1])] : G(f), fb = Array.isArray(f) ? [B(f[0]), B(f[1])] : B(f);
+  if (e.to !== undefined){ const t = e.to; return Array.isArray(t) ? { r: { from: fr, to: [R(t[0]), R(t[1])] }, g: { from: fg, to: [G(t[0]), G(t[1])] }, b: { from: fb, to: [B(t[0]), B(t[1])] } } : { r: { from: fr, to: R(t) }, g: { from: fg, to: G(t) }, b: { from: fb, to: B(t) } }; }
+  if (e.inc !== undefined){ const t = e.inc; return Array.isArray(t) ? { r: { from: fr, inc: [R(t[0]), R(t[1])] }, g: { from: fg, inc: [G(t[0]), G(t[1])] }, b: { from: fb, inc: [B(t[0]), B(t[1])] } } : { r: { from: fr, inc: R(t) }, g: { from: fg, inc: G(t) }, b: { from: fb, inc: B(t) } }; }
+  return { r: 255, g: 255, b: 255 };
+}
+const OP_KEYS = ['alpha', 'alphamultiplier', 'scale', 'scalemultiplier', 'angle', 'xspeed', 'yspeed', 'anglespeed', 'direction', 'speed', 'flurryfrequency', 'flurryamplitude', 'xflurry', 'yflurry', 'flickerfrequency', 'flickeramplitude'];
+const OP_DEF = { alpha: 1, scale: 1, scalemultiplier: 1, alphamultiplier: 1 };
+function opParse(e){
+  const r = { x: 0, y: 0, lifetime: 1, add: false, wrap: false };
+  for (const k of ['x', 'y', 'lifetime']) if (Array.isArray(e[k])) r[k] = opRnd(e[k]); else if (e[k] !== undefined) r[k] = e[k];
+  r.texture = Array.isArray(e.texture) ? e.texture[(Math.random() * e.texture.length) | 0] : e.texture;
+  r.add = e.blendmode === 'add'; r.wrap = !!e.wrap;
+  for (const k of OP_KEYS) r[k] = opProg(e[k] ?? OP_DEF[k], r);
+  const t = opTints(e.tint); r.tint = { r: opProg(t.r, r), g: opProg(t.g, r), b: opProg(t.b, r) };
+  if (e.angleParaxial) r.angle.s += 90 * Math.floor(4 * Math.random());
+  return r;
+}
+function opLayer(L){ return L === 'B' ? OP.B : OP.F; }
+function opOne(L, e){
+  const arr = opLayer(L); if (arr.length >= 2048) return;
+  const o = opParse(e), img = fxImg(o.texture.replace(/^\/res\/particles\//, '').replace(/\.png$/, ''));
+  if (img.bad) return;
+  arr.push({ img, o, x: o.x, y: o.y, life: 0, tot: o.lifetime, add: o.add, wrap: o.wrap,
+    ta: o.alpha.s, am: o.alphamultiplier.s, alpha: o.alpha.s * Math.min(1, o.alphamultiplier.s),
+    ts: o.scale.s, sm: o.scalemultiplier.s, scale: o.scale.s * Math.min(1, o.scalemultiplier.s),
+    xs: o.xspeed.s, ys: o.yspeed.s, xf: o.xflurry.s, yf: o.yflurry.s, ang: o.angle.s, as: o.anglespeed.s, dir: o.direction.s, spd: o.speed.s,
+    ff: o.flurryfrequency.s, fa: o.flurryamplitude.s, kf: o.flickerfrequency.s, ka: o.flickeramplitude.s,
+    tr: o.tint.r.s, tg: o.tint.g.s, tb: o.tint.b.s,
+    dA: o.alpha.i || o.alphamultiplier.i || o.flickeramplitude.i || o.flickeramplitude.s, dS: o.scale.i || o.scalemultiplier.i,
+    hXY: o.xspeed.s || o.yspeed.s || o.xspeed.i || o.yspeed.i || o.xflurry.s || o.yflurry.s || o.xflurry.i || o.yflurry.i,
+    dAng: o.angle.i || o.anglespeed.i || o.anglespeed.s, hSp: o.speed.i || o.speed.s, dT: o.tint.r.i || o.tint.g.i || o.tint.b.i });
+  opRun();
+}
+// spawnBurst：形狀 point／rectangle／box（只在外框）／line／disk（實心圓）／circle（圓周）；directionOverride／angleOverride＝從中心往外的角度＋偏移
+function opBurst(L, p, t){
+  let n = t.amount; if (n < 1) n = Math.random() <= n ? 1 : 0; if (!n) return;
+  if (t.shape === 'disc') t.shape = 'disk';
+  if (t.radius !== undefined){ t.width = t.height = 2 * t.radius; }
+  const th = t.thickness || 0;
+  for (let s = 0; s < n; s++){
+    let x = t.x, y = t.y;
+    if (t.shape === 'rectangle'){ x += (Math.random() - .5) * t.width; y += (Math.random() - .5) * t.height; }
+    else if (t.shape === 'box'){ const h = Math.random() < .5; x += (h ? (Math.random() - .5 < 0 ? -.5 : .5) : Math.random() - .5) * t.width + (Math.random() - .5) * th; y += (!h ? (Math.random() - .5 < 0 ? -.5 : .5) : Math.random() - .5) * t.height + (Math.random() - .5) * th; }
+    else if (t.shape === 'line'){ const q = Math.random(); x += q * (t.linePointB[0] - t.linePointA[0]) + t.linePointA[0] + (Math.random() - .5) * th; y += q * (t.linePointB[1] - t.linePointA[1]) + t.linePointA[1] + (Math.random() - .5) * th; }
+    else if (t.shape === 'disk'){ const a = Math.PI * 2 * Math.random(); x += Math.random() * (t.width / 2) * Math.sin(a); y += Math.random() * (t.height / 2) * Math.cos(a); }
+    else if (t.shape === 'circle'){ const a = Math.PI * 2 * Math.random(); x += (t.width / 2 + (Math.random() - .5) * th) * Math.sin(a); y += (t.height / 2 + (Math.random() - .5) * th) * Math.cos(a); }
+    const e = { ...p, x, y };
+    if (t.directionOverride !== undefined) e.direction = Math.atan2(y - t.y, x - t.x) * 180 / Math.PI + t.directionOverride + 90;
+    if (t.angleOverride !== undefined) e.angle = Math.atan2(y - t.y, x - t.x) * 180 / Math.PI + t.angleOverride + 90;
+    opOne(L, e);
+  }
+}
+// createSpawner：每幀放 amount/60 顆，lifetime 秒（-1＝一直放直到 destroy）
+function opSpawner(L, p, t){ const s = { L, p, t, amt: t.amount / 60, life: 0, tot: t.lifetime, dead: false, destroy(){ this.dead = true; } }; OP.sp.add(s); opRun(); return s; }
+function opTick(P, e){
+  P.life += e / 60; if (P.life >= P.tot) return false;
+  const o = P.o;
+  if (P.dA){ P.ta += o.alpha.i * e; P.am += o.alphamultiplier.i * e; let a = P.ta * Math.min(1, P.am); if (P.ka) a = Math.max(0, Math.min(1, P.ta + Math.sin(P.life * P.kf) * P.ka)); P.alpha = a; }
+  if (P.dS){ P.ts += o.scale.i * e; P.sm += o.scalemultiplier.i * e; let s = P.ts; if (P.sm < 1) s *= P.sm; P.scale = s; }
+  if (P.hXY){ P.xs += o.xspeed.i * e; P.ys += o.yspeed.i * e; P.xf += o.xflurry.i * e; P.yf += o.yflurry.i * e;
+    P.x += (P.xs + (2 * Math.random() - 1) * P.xf) / 60 * e; P.y += (P.ys + (2 * Math.random() - 1) * P.yf) / 60 * e; }
+  if (P.dAng){ P.ang += o.angle.i * e; P.as += o.anglespeed.i * e; P.ang += P.as / 60 * e; }
+  P.spd += o.speed.i * e; P.dir += o.direction.i * e;
+  if (P.hSp){ let d = P.dir; if (P.fa) d += Math.sin(P.life * P.ff) * P.fa; const t = d * -Math.PI / 180; P.x += Math.sin(Math.PI + t) * (P.spd / 60) * e; P.y += Math.cos(Math.PI + t) * (P.spd / 60) * e; }
+  P.ff += o.flurryfrequency.i * e; P.fa += o.flurryamplitude.i * e; P.kf += o.flickerfrequency.i * e; P.ka += o.flickeramplitude.i * e;
+  if (P.dT){ P.tr += o.tint.r.i * e; P.tg += o.tint.g.i * e; P.tb += o.tint.b.i * e; }
+  return true;
+}
+function opCanvas(L){
+  const st = document.getElementById('stage'); if (!st) return null;
+  const id = L === 'B' ? 'opbg' : 'opfx'; let c = document.getElementById(id);
+  if (!c){ c = document.createElement('canvas'); c.id = id; c.setAttribute('aria-hidden', 'true'); c.style.cssText = `position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:${L === 'B' ? 0 : 2}`;
+    if (L === 'B'){ const q = document.getElementById('cv'); st.insertBefore(c, q); } else st.appendChild(c); }
+  return c;
+}
+const opHex = (r, g, b) => '#' + [r, g, b].map(v => Math.min(255, Math.max(0, Math.round(v / 8) * 8)).toString(16).padStart(2, '0')).join('');
+function opDraw(L, arr){
+  const c = opCanvas(L); if (!c) return;
+  const r = c.getBoundingClientRect(), dpr = Math.min(2, window.devicePixelRatio || 1), w = Math.round(r.width * dpr), h = Math.round(r.height * dpr);
+  if (c.width !== w || c.height !== h){ c.width = w; c.height = h; }
+  const X = c.getContext('2d'); X.setTransform(1, 0, 0, 1, 0, 0); X.clearRect(0, 0, w, h);
+  X.setTransform(dpr, 0, 0, dpr, 0, 0);
+  for (const P of arr){
+    if (!P.img.ok || P.alpha <= 0.002 || P.scale <= 0) continue;
+    if (P.wrap){ const m = Math.max(P.img.width, P.img.height) * P.scale * 1.5, W2 = r.width, H2 = r.height;
+      if (P.x > W2 + m) P.x -= W2 + 2 * m; if (P.x < -m) P.x += W2 + 2 * m; if (P.y > H2 + m) P.y -= H2 + 2 * m; if (P.y < -m) P.y += H2 + 2 * m; }
+    const white = P.tr >= 250 && P.tg >= 250 && P.tb >= 250, src = white ? P.img : fxTinted(P.img, opHex(P.tr, P.tg, P.tb));
+    const sw = P.img.width * P.scale, sh = P.img.height * P.scale;
+    X.globalAlpha = Math.min(1, P.alpha); X.globalCompositeOperation = P.add ? 'lighter' : 'source-over';
+    if (P.ang){ X.save(); X.translate(P.x, P.y); X.rotate(P.ang * Math.PI / 180); X.drawImage(src, -sw / 2, -sh / 2, sw, sh); X.restore(); }
+    else X.drawImage(src, P.x - sw / 2, P.y - sh / 2, sw, sh);
+  }
+  X.globalAlpha = 1; X.globalCompositeOperation = 'source-over';
+  if (L === 'F' && OP_BEAMS.length) opBeamDraw(X);
+}
+function opRun(){ if (!OP.raf){ OP.last = 0; OP.raf = requestAnimationFrame(opStep); } }
+function opStep(t){
+  let e = OP.last ? Math.min(6, (t - OP.last) / (1000 / 60)) : 1; OP.last = t; if (e <= 1.03 && e >= .97) e = 1;
+  if (mode !== 'sim'){ OP.B.length = 0; OP.F.length = 0; OP.sp.clear(); opAmb = null; }
+  for (const s of OP.sp){ if (s.dead){ OP.sp.delete(s); continue; }
+    if (s.tot !== -1){ s.life += e / 60; if (s.life >= s.tot){ OP.sp.delete(s); continue; } }
+    const t2 = typeof s.t.at === 'function' ? { ...s.t, ...s.t.at() } : s.t; opBurst(s.L, s.p, { ...t2, amount: s.amt * e }); }
+  opBeamTick();
+  for (const arr of [OP.B, OP.F]){ let j = 0; for (let i = 0; i < arr.length; i++){ const P = arr[i]; if (opTick(P, e)) arr[j++] = P; } arr.length = j; }
+  opDraw('B', OP.B); opDraw('F', OP.F);
+  OP.raf = OP.B.length || OP.F.length || OP.sp.size || OP_BEAMS.length ? requestAnimationFrame(opStep) : 0;
+  if (!OP.raf){ for (const L of ['B', 'F']){ const c = document.getElementById(L === 'B' ? 'opbg' : 'opfx'); if (c) c.getContext('2d').clearRect(0, 0, c.width, c.height); } }
+}
+// 盤面座標（格；y＝含隱藏列的列號）→ #stage 內 px
+function opXY(bx, by){
+  const st = document.getElementById('stage'); if (!st || !cv._cssW) return null;
+  const sr = st.getBoundingClientRect(), cr = cv.getBoundingClientRect(), k = cr.width / cv._cssW;
+  return { x: cr.left - sr.left + (GUTL() * cell + bx * cell) * k, y: cr.top - sr.top + (by - VIEW_TOP()) * cell * k, c: cell * k };
+}
+const opP = () => (optN('oParticles') / 100) || .6;                                   // 官方 video.particles（預設 .6）
+const opGfx = () => opt('oGraphics') || 'high';
+const opOn = () => fxOn() && tioImgOn() && mode === 'sim';
+// El.utils：freq（數量 × particle count）、scale（大小：Ss(1.8)×e ÷ clamp(particles+.4, .75, 2)）
+function opU(){ const b = opXY(0, 0), us = (b ? b.c : cell) / 30; return { us, Ss: n => n * us, Fs: n => n * us * 30 / 92, freq: n => n * opP(), scale: n => 1.8 * us * n / Math.max(.75, Math.min(2, opP() + .4)), C: 30 * us }; }
+const EL = {};
+function elPlay(name, o = {}){
+  const d = EL[name]; if (!d || !opOn()) return;
+  if (!(d.g || ['medium', 'high', 'ultra']).includes(opGfx())) return;
+  d.play(o, opU());
+}
+const HI = () => ['high', 'ultra'].includes(opGfx());
+const ADD = 'add';
+EL.garbage_beam_impact = { play: ({ x = 0, y = 0, color: s = 0xffffff, intensity: i = 1 }, U) => {
+  opBurst('F', { texture: 'beam', tint: s, lifetime: [.05, .1], alpha: { from: [.4 + i / 20 * .4, .5 + i / 20 * .5], to: 0 }, speed: [1600, 2400], blendmode: ADD, scale: [U.scale(.1 + i / 20 * .2), .15 + i / 20 * .35] }, { x, y, amount: U.freq(10), shape: 'circle', radius: 1, directionOverride: 0, angleOverride: 0 });
+  opBurst('F', { texture: 'fire', tint: s, lifetime: [.2, .3], alpha: { from: [.3, .5], to: 0 }, alphamultiplier: { from: 1, to: 0 }, angle: [0, 360], anglespeed: [-720, 720], direction: [0, 360], speed: [0, 80], blendmode: ADD, scale: [U.scale(.3 + i / 20 * .8), .6 + i / 20 * 1] }, { x, y, amount: 5, shape: 'point' }); } };
+const opStageWH = () => { const st = document.getElementById('stage'); const r = st ? st.getBoundingClientRect() : { width: innerWidth, height: innerHeight }; return [r.width, r.height]; };
+EL.bgsplash = { g: ['high', 'ultra'], play: ({ amt = 30, direction = [0, 360], speed = [0, 100] }, U) => { const [w, h] = opStageWH();
+  opBurst('B', { texture: 'bigbox', tint: 0xffffff, lifetime: [2, 5], alpha: { from: [.02, .15], to: 0 }, alphamultiplier: { from: 0, to: 2 }, speed: { from: speed, to: 0 }, direction, scale: [U.scale(.02), U.scale(.2)], wrap: true }, { shape: 'rectangle', x: w / 2, y: h / 2, width: w, height: h, amount: U.freq(amt) }); } };
+EL.bgsplashdanger = { g: ['high', 'ultra'], play: ({ amt = 30, direction = [0, 360], speed = [0, 100] }, U) => { const [w, h] = opStageWH();
+  opBurst('B', { texture: 'bigbox', tint: 0xff2200, lifetime: [.1, 1], alpha: { from: [.02, .15], to: 0 }, alphamultiplier: { from: 0, to: 2 }, speed: { from: speed, to: 0 }, direction, scale: [U.scale(.02), U.scale(.3)], wrap: true }, { shape: 'rectangle', x: w / 2, y: h / 2, width: w, height: h, amount: U.freq(amt) }); } };
+EL.bgcircle = { g: ['high', 'ultra'], play: ({ radius, color = 0xffffff, amt = 100, speed = 150 }, U) => { const [w, h] = opStageWH();
+  opBurst('B', { texture: 'particle', tint: color, lifetime: [.35, 3], alpha: { from: [.02, .4], to: 0 }, speed: { from: [0, speed], to: 0 }, scale: [U.scale(.02), U.scale(.25)] }, { shape: 'circle', x: w / 2, y: h / 2, radius: radius !== undefined ? U.Ss(radius) : U.Ss(10 * 30), amount: U.freq(amt), directionOverride: 0 }); } };
+EL.harddrop_trail = { g: ['high', 'ultra'], play: ({ x = 0, y = 0, color = 0xffffff }, U) => {
+  opBurst('F', { texture: 'star', tint: color, lifetime: [.2, 1], alpha: { from: [.3, .8], to: 0 }, speed: { from: [150, 450], to: [-100, 100] }, direction: [-2, 2], xflurry: [0, 50], blendmode: ADD, scale: [U.scale(.08), U.scale(.2)] }, { x, y, amount: U.freq(.25), shape: 'rectangle', width: U.C, height: U.C }); } };
+EL.harddrop_edge = { g: ['high', 'ultra'], play: ({ x = 0, y = 0 }, U) => {
+  opBurst('F', { texture: 'star', tint: 0xffffff, lifetime: [.1, .5], alpha: { from: [.5, 1], to: 0 }, speed: { from: [0, 150], to: [0, 50] }, yspeed: { from: 0, to: 50 }, direction: [-45, 45], blendmode: ADD, scale: [U.scale(.1), U.scale(.3)] }, { x, y, amount: U.freq(5), shape: 'rectangle', width: U.C, height: 0 }); } };
+EL.line_burst = { play: ({ x = 0, y = 0, s = 1, color = 0xffffff, bright = false }, U) => { const p = opP();
+  if (p >= .15) opBurst('F', { texture: 'fbox', tint: color, lifetime: [.1 + .3 * Math.min(1, .8 * p), .1 + .6 * Math.min(1, .8 * p)], alpha: bright ? { from: 1, to: 0 } : { from: Math.max(.1, Math.min(1, .6 * p)), to: 0 }, speed: { from: [0, 80], to: [0, 30] }, direction: [0, 360], anglespeed: [-20, 20], blendmode: ADD, scale: { from: U.Fs(s), to: [U.Fs(s), U.Fs(1.4 * s)] }, yspeed: { start: [0, -100], inc: [5, 12] } }, { x, y, amount: 1, shape: 'point' });
+  if (HI()) opBurst('F', { texture: 'chip', tint: color, lifetime: [.2, 1], alpha: { from: [.7, 1], to: 0 }, speed: { from: [50, 300], to: [0, 50] }, direction: [0, 360], blendmode: ADD, scale: [U.scale(.1), U.scale(.25)], anglespeed: { from: [-720, 720], to: [-360, 360] }, flickerfrequency: { from: [20, 100], to: [10, 20] }, flickeramplitude: { from: [0, .5], to: [0, .1] }, xspeed: [-500, 500], yspeed: { start: [-500, 50], inc: [15, 40] } }, { x, y, amount: U.freq(bright ? 5 : 1.65), shape: 'rectangle', width: U.C * s, height: U.C * s }); } };
+EL.mino_dust = { play: ({ x = 0, y = 0, s = 1, color = 0xffffff }, U) => {
+  opBurst('F', { texture: 'dust', tint: 0x444444, lifetime: [.3, 1], alpha: { from: 1, to: 0 }, speed: { from: [0, 50], to: [0, 20] }, direction: [0, 360], anglespeed: [-20, 20], scale: { from: U.Fs(1.5 * s), to: [U.Fs(2.5 * s), U.Fs(3.5 * s)] }, yspeed: { start: 0, inc: [1, -5] } }, { x, y, amount: 1, shape: 'point' });
+  opBurst('F', { texture: 'dust', tint: color, lifetime: [.3, 1], alpha: { from: .8, to: 0 }, speed: { from: [0, 50], to: [0, 20] }, direction: [0, 360], anglespeed: [-20, 20], scale: { from: U.Fs(1.5 * s), to: [U.Fs(1.5 * s), U.Fs(2.5 * s)] }, yspeed: { start: 0, inc: [0, -5] } }, { x, y, amount: 1, shape: 'point' });
+  if (HI()) opBurst('F', { texture: 'star', tint: color, lifetime: [.2, 1], alpha: { from: [.7, 1], to: 0 }, speed: { from: [50, 150], to: [0, 50] }, direction: [0, 360], blendmode: ADD, scale: [U.scale(.15), U.scale(.3)], flickerfrequency: { from: [20, 100], to: [10, 20] }, flickeramplitude: { from: [0, .5], to: [0, .1] }, yspeed: { start: 0, inc: [-3, -10] } }, { x, y, amount: U.freq(1), shape: 'rectangle', width: U.C * s, height: U.C * s }); } };
+const opStar = U => ({ texture: 'star', lifetime: [.2, 1], alpha: { from: [.7, 1], to: 0 }, speed: { from: [0, 150], to: [0, 50] }, direction: [0, 360], blendmode: ADD, scale: [U.scale(.15), U.scale(.3)], flickerfrequency: { from: [20, 100], to: [10, 20] }, flickeramplitude: { from: [0, .5], to: [0, .1] } });
+// 盤面三邊（左、右、底）各一條線：w／h 是格數
+function opEdges(L, p, x, y, w, h, U, kSide, kBot, sp){
+  opBurst(L, { ...p, ...(sp ? { xspeed: -sp } : {}) }, { x, y, amount: U.freq(kSide * h), shape: 'line', linePointA: [0, 0], linePointB: [0, U.C * h] });
+  opBurst(L, { ...p, ...(sp ? { xspeed: sp } : {}) }, { x, y, amount: U.freq(kSide * h), shape: 'line', linePointA: [U.C * w, 0], linePointB: [U.C * w, U.C * h] });
+  opBurst(L, { ...p, ...(sp ? { yspeed: sp } : {}) }, { x, y, amount: U.freq(kBot * w), shape: 'line', linePointA: [0, U.C * h], linePointB: [U.C * w, U.C * h] });
+}
+EL.b2b_flair = { g: ['high', 'ultra'], play: ({ x = 0, y = 0, w = 10, h = 20, tint = [0xff8000, 0xffff80] }, U) => opEdges('F', { ...opStar(U), tint }, x, y, w, h, U, 5, 5, 60) };
+EL.spike_flair = { g: ['high', 'ultra'], play: ({ x = 0, y = 0, w = 10, h = 20 }, U) => {
+  opBurst('F', { texture: 'star', tint: 0xffffff, lifetime: [.5, 1.5], alpha: { from: [.6, .8], to: 0 }, speed: { from: [0, 150], to: [0, 50] }, direction: [0, 360], blendmode: ADD, scale: [U.scale(.1), U.scale(.25)], flickerfrequency: { from: [10, 50], to: [10, 20] }, flickeramplitude: { from: [0, .6], to: [0, .3] }, flurryfrequency: { from: [5, 30], to: [2, 10] }, flurryamplitude: { from: [-130, 130], to: [-30, 30] } }, { x, y, amount: U.freq(100), shape: 'rectangle', width: U.C * w, height: U.C * h }); } };
+EL.danger_flair = { g: ['high', 'ultra'], play: ({ x = 0, y = 0, w = 10, h = 20 }, U) => {
+  opBurst('F', { texture: 'particle', tint: [0xff0000, 0xff6600], lifetime: [.5, 1.5], alpha: { from: [.6, .8], to: 0 }, speed: { from: [0, 150], to: [0, 50] }, direction: [0, 360], blendmode: ADD, scale: [U.scale(.05), U.scale(.1)], flickerfrequency: { from: [10, 50], to: [10, 20] }, flickeramplitude: { from: [0, .6], to: [0, .3] }, flurryfrequency: { from: [5, 30], to: [2, 10] }, flurryamplitude: { from: [-130, 130], to: [-30, 30] }, yspeed: { from: 0, to: [-25, -200] } }, { x, y, amount: U.freq(100), shape: 'rectangle', width: U.C * w, height: U.C * h });
+  opBurst('F', { texture: 'smoke', tint: 0x330000, lifetime: [1, 2], alpha: { from: 1, to: 0 }, speed: { from: [0, 20], to: 0 }, direction: [0, 360], blendmode: ADD, anglespeed: [-20, 20], scale: { from: U.Fs(1.5), to: [U.Fs(2.5), U.Fs(3.5)] } }, { x, y, amount: U.freq(w), shape: 'line', linePointA: [U.C * w / -2, U.C * h / -2], linePointB: [U.C * w / 2, U.C * h / -2] }); } };
+EL.danger_smoke = { play: ({ x = 0, y = 0, w = 0, h = 0 }, U) => {
+  const a = { texture: 'smoke', tint: [0x330000, 0x222200], lifetime: [.6, 1], alpha: { from: 1, to: 0 }, speed: { from: [200, 300], to: 0 }, anglespeed: [-20, 20], scale: { from: U.Fs(.4), to: [U.Fs(2.5), U.Fs(4.5)] } };
+  const r = { texture: 'smoke', tint: { from: [0xffff00, 0xffffff], to: [0xff0000, 0xff4400] }, lifetime: [.4, .6], alpha: { from: 1, to: 0 }, speed: { from: [200, 300], to: 0 }, blendmode: ADD, anglespeed: [-20, 20], scale: { from: U.Fs(.4), to: [U.Fs(1.5), U.Fs(3.5)] } };
+  for (const [px, py, d] of [[x, y, [-60, -30]], [x + w, y, [30, 60]], [x, y + h, [210, 240]], [x + w, y + h, [120, 150]]]){
+    opBurst('B', { ...a, direction: d }, { x: px, y: py, amount: U.freq(1), shape: 'point' }); opBurst('F', { ...r, direction: d }, { x: px, y: py, amount: U.freq(1), shape: 'point' }); } } };
+EL.death_flair = { g: ['high', 'ultra'], play: ({ x = 0, y = 0, w = 10, h = 20 }, U) => {
+  opBurst('F', { texture: 'chirp', tint: [0xff88ff, 0xff0000], lifetime: [.2, 2], alpha: { from: [.7, 1], to: 0 }, speed: { from: [0, 1000], to: [0, 200] }, blendmode: ADD, scale: [U.scale(.15), U.scale(.5)], flickerfrequency: { from: [20, 100], to: [10, 20] }, flickeramplitude: { from: [0, .5], to: [0, .1] } }, { x, y, amount: U.freq(100), shape: 'box', width: U.C * w, height: U.C * h, directionOverride: 0, angleOverride: 0 });
+  opBurst('F', { texture: 'star', tint: 0xffffff, lifetime: [.2, 1], alpha: { from: [.7, 1], to: 0 }, speed: { from: [0, 300], to: [0, 50] }, blendmode: ADD, scale: [U.scale(.15), U.scale(.5)], flickerfrequency: { from: [20, 100], to: [10, 20] }, flickeramplitude: { from: [0, .5], to: [0, .1] } }, { x, y, amount: U.freq(100), shape: 'box', width: U.C * w, height: U.C * h, directionOverride: 0 }); } };
+const opFire = U => ({ texture: 'particle', tint: [0xff6600, 0xffff80], lifetime: [.2, 3], alpha: { from: [.7, 1], to: 0 }, alphamultiplier: { from: 0, to: 2 }, speed: { from: [0, 75], to: [0, 25] }, direction: [0, 360], blendmode: ADD });
+EL.fire_flair = { g: ['high', 'ultra'], play: ({ x = 0, y = 0, w = 10, h = 20 }, U) => opEdges('F', { ...opFire(U), scale: [U.scale(.3), U.scale(.9)] }, x, y, w, h, U, 5, 5, 20) };
+EL.fire_burn = { g: ['high', 'ultra'], play: ({ x = 0, y = 0, w = 10, h = 20 }, U) => {
+  opEdges('F', { ...opFire(U), scale: [U.scale(.05), U.scale(.2)] }, x, y, w, h, U, .05, .05, 20);
+  opBurst('B', { texture: 'fire', tint: [0xff6600, 0xffff80], lifetime: [.2, 3], alpha: { from: [.4, .9], to: 0 }, alphamultiplier: { from: 0, to: 3 }, speed: { from: [0, 75], to: [0, 25] }, direction: [0, 360], blendmode: ADD, scale: [U.scale(.3), U.scale(2.5)], flurryfrequency: { from: [5, 30], to: [2, 10] }, flurryamplitude: { from: [-130, 130], to: [-30, 30] }, yspeed: { from: [100, -50], to: [-100, -300] }, angle: [0, 360], anglespeed: [-200, 200] }, { x: x + U.C * w / 2, y: y + U.C * h / 2, amount: U.freq(w * h / 200), shape: 'rectangle', width: U.C * w, height: U.C * h }); } };
+EL.waterfall = { g: ['high', 'ultra'], play: ({ x = 0, y = 0, w = 0, color = 0xffffff }) => {
+  const o = { texture: 'star', tint: color, lifetime: 1, alpha: { from: 1, to: 0 }, y };
+  opOne('F', { ...o, x: x - w / 2 - 16, direction: -90, scale: .8, speed: { from: 100, to: 0 } }); opOne('F', { ...o, x: x + w / 2 + 16, direction: 90, scale: .8, speed: { from: 100, to: 0 } });
+  opOne('F', { ...o, x: x - w / 2 - 48, direction: -90, scale: .6, speed: { from: 150, to: 0 } }); opOne('F', { ...o, x: x + w / 2 + 48, direction: 90, scale: .6, speed: { from: 150, to: 0 } }); } };
+// 官方 zenith_rank（每幀；r＝盤面縮放 CS，這裡 1）：推進器往下噴 exhaust；第 2 級起左右翅膀也噴
+EL.zenith_rank = { play: ({ x = 0, y = 0, power: s = 0, color = 0xffffff, dT = 1, k = 1, back = false }, U) => {
+  const F = n => n * k;
+  if (back){ if (opGfx() === 'medium') return;
+    return opBurst('B', { texture: 'exhaust', tint: color, lifetime: .3, alpha: { from: [.3 * s, .5 * s], to: 0 }, alphamultiplier: { from: 0, to: 10 }, speed: { from: [900, 1000], to: [600, 700] }, angle: [-180, 180], direction: [170, 190], blendmode: ADD, scale: [U.scale(1.4), U.scale(1.8)] }, { x, y, amount: U.freq(1.2 * dT), shape: 'line', linePointA: [F(-152 - 150 * Math.min(2, s)), F(258)], linePointB: [F(152 + 150 * Math.min(2, s)), F(258)] }); }
+  const c = { texture: 'exhaust', tint: color, lifetime: .2, alpha: [.09 + .1 * s, .18 + .18 * s], alphamultiplier: { from: 0, to: 10 }, speed: [500 + 100 * s, 600 + 100 * s], angle: [-20, 20], direction: [170, 190], blendmode: ADD, scale: [U.scale(.5), U.scale(.7)] };
+  opBurst('F', { ...c, angle: [-40, 5], direction: [140, 185] }, { x, y, amount: U.freq((s >= 1 ? 1 + .2 * s : 0) * dT), shape: 'line', linePointA: [F(-412), F(161)], linePointB: [F(-172), F(161)] });
+  opBurst('F', c, { x, y, amount: U.freq((1 + .4 * s) * dT), shape: 'line', linePointA: [F(-152), F(238)], linePointB: [F(152), F(238)] });
+  opBurst('F', { ...c, angle: [-5, 40], direction: [175, 220] }, { x, y, amount: U.freq((s >= 1 ? 1 + .2 * s : 0) * dT), shape: 'line', linePointA: [F(172), F(161)], linePointB: [F(412), F(161)] }); } };
+// 官方 zenith_speedrun（HYPERSPEED 中每幀）：背景從上方往下掉的光束
+EL.zenith_speedrun = { g: ['high', 'ultra'], play: ({ dT = 1 }, U) => { const [w] = opStageWH();
+  opBurst('B', { texture: 'beam', tint: 0xffffff, lifetime: 2, alpha: [.05, .2], yspeed: [U.Ss(2000), U.Ss(5000)], scale: [U.scale(.3), U.scale(.8)] }, { shape: 'rectangle', x: w / 2, y: U.Ss(-200), width: w, height: 0, amount: U.freq(1.5 * dT) }); } };
+// 官方 Xl：一直在背景飄的 bigbox＋particle（畫質 HIGH／ULTRA）
+let opAmb = null;
+function opAmbient(on){
+  if (opAmb){ opAmb.forEach(s => s.destroy()); opAmb = null; }
+  if (!on || !opOn() || !HI()) return;
+  const U = opU(), [w, h] = opStageWH(), R = { shape: 'rectangle', x: w / 2, y: h / 2, width: w, height: h, lifetime: -1 };
+  opAmb = [opSpawner('B', { texture: 'bigbox', tint: 0xffffff, lifetime: [1, 30], alpha: { from: [.02, .15], to: 0 }, alphamultiplier: { from: 0, to: 2 }, speed: { from: [0, 45], to: [0, 20] }, direction: [0, 360], scale: [U.scale(.02), U.scale(.3)], wrap: true }, { ...R, amount: U.freq(3.5) }),
+    opSpawner('B', { texture: 'particle', tint: 0xffffff, lifetime: [1, 30], alpha: { from: [.05, .5], to: 0 }, alphamultiplier: { from: 0, to: 2 }, speed: { from: [0, 60], to: [0, 30] }, direction: [0, 360], scale: [U.scale(.02), U.scale(.25)], wrap: true }, { ...R, amount: U.freq(10) })];
+}
+// 盤面（可見部分）左上角＋格數，給 El 用
+function opBoardRect(){ const a = opXY(0, H - VISIBLE); return a ? { x: a.x, y: a.y, w: W, h: VISIBLE, c: a.c } : null; }
+const opHexN = c => typeof c === 'number' ? c : parseInt(String(c || '#ffffff').replace('#', '').slice(0, 6).padEnd(6, 'f'), 16);
+// 官方 ExplodeLine：每消一行，背景往左右各 5 顆 bgsplash，這一行每格放 line_burst（顏色＝那格方塊）
+function opExplodeLine(y, vals){
+  elPlay('bgsplash', { direction: 90, amt: 5 }); elPlay('bgsplash', { direction: 270, amt: 5 });
+  if (opGfx() === 'low' || opGfx() === 'minimal') return;
+  for (let x = 0; x < W; x++){ const p = opXY(x + .5, y + .5); if (!p) return; elPlay('line_burst', { x: p.x, y: p.y, s: 1, color: opHexN(COLORS[Math.min(COLORS.length - 1, vals[x] || 0)]) }); }
+}
+// 官方硬降：bgsplash 往下 5 顆；方塊底下有東西的格放 harddrop_edge（格子底邊）；每格放 harddrop_trail（落點）
+function opHardDrop(cellsAt, col){
+  elPlay('bgsplash', { direction: 180, amt: 5 });
+  if (opGfx() === 'low' || opGfx() === 'minimal') return;
+  const g = grid(), occ = (x, y) => y >= H || x < 0 || x >= W || !!g[y * W + x];
+  for (const [x, y] of cellsAt){ if (!occ(x, y + 1)) continue; const p = opXY(x + .5, y + 1); if (p) elPlay('harddrop_edge', { x: p.x, y: p.y, color: col }); }
+  for (const [x, y] of cellsAt){ const p = opXY(x + .5, y + .5); if (p) elPlay('harddrop_trail', { x: p.x, y: p.y, color: col }); }
+}
+function opBoardFx(name, extra = {}){ const b = opBoardRect(); if (b) elPlay(name, { x: b.x, y: b.y, w: b.w, h: b.h, ...extra }); }
+function opBoardFxC(name, extra = {}){ const b = opBoardRect(); if (b) elPlay(name, { x: b.x + b.c * b.w / 2, y: b.y + b.c * b.h / 2, w: b.w, h: b.h, ...extra }); }
+// 官方垃圾光束（Ul.create type garbage）：從盤面上方 10 格處畫一條彎曲光束到盤面裡隨機一點，前端帶星星，打到時放 garbage_beam_impact
+// ⚠️ 光束本體官方是 SimpleRope 貼 beams/beam.png，這裡用同色加亮的漸細線條畫（形狀、時間、顏色照官方）
+const OP_BEAMS = [];
+function opGarbageBeam(amt){
+  if (!opOn() || opGfx() === 'minimal') return;
+  const b = opBoardRect(); if (!b) return;
+  const cx = b.x + b.c * b.w / 2, cy = b.y + b.c * b.h / 2;
+  const A = [cx, b.y - b.c * 10], B = [cx + (Math.random() - .5) * b.c * b.w / 2, cy + (Math.random() - .5) * b.c * b.h / 2];   // 官方：來源不明時從盤面正上方 10 格；落點＝盤面中心 ±半個盤面
+  const [sw, sh] = opStageWH(), M = [(A[0] + B[0]) / 2 + (Math.random() - .5) * (B[0] - A[0]) + (Math.random() - .5) * sw / 10, (A[1] + B[1]) / 2 + (Math.random() - .5) * (B[1] - A[1]) + (Math.random() - .5) * sh / 10];
+  const r = Math.max(1, Math.min(20, amt)), hue = Math.random() * 360, col = hslHex(hue, 100, 50), dur = 20 / 60;
+  const lead = HI() ? opSpawner('F', { texture: 'star', tint: col, lifetime: [.4, .7], alpha: { from: 1, to: 0 }, speed: { from: [0, 100 + r / 20 * 300], to: 0 }, anglespeed: { from: [0, 400 + r / 20 * 1600], to: 0 }, direction: [0, 360], angle: [0, 360], blendmode: ADD, scale: [opU().scale(.2 + r / 20 * .2), .3 + r / 20 * .2] }, { x: A[0], y: A[1], amount: opU().freq(10 + r / 20 * 60), shape: 'point', lifetime: -1 }) : null;
+  OP_BEAMS.push({ A, B, M, t0: performance.now(), dur, col, r, lead, hit: false });
+  opRun();
+}
+function hslHex(h, s, l){ s /= 100; l /= 100; const a = s * Math.min(l, 1 - l), f = n => { const k = (n + h / 30) % 12; return Math.round(255 * (l - a * Math.max(-1, Math.min(k - 3, 9 - k, 1)))); }; return f(0) << 16 | f(8) << 8 | f(4); }
+const opBez = (P, t) => { const m = 1 - t; return [m * m * P.A[0] + 2 * m * t * P.M[0] + t * t * P.B[0], m * m * P.A[1] + 2 * m * t * P.M[1] + t * t * P.B[1]]; };
+function opBeamTick(){
+  if (mode !== 'sim'){ OP_BEAMS.forEach(b => b.lead && b.lead.destroy()); OP_BEAMS.length = 0; return; }
+  const now = performance.now();
+  for (let i = OP_BEAMS.length - 1; i >= 0; i--){ const b = OP_BEAMS[i], k = (now - b.t0) / 1000 / b.dur;
+    const head = opBez(b, Math.min(1, k)); if (b.lead){ b.lead.t.x = head[0]; b.lead.t.y = head[1]; }
+    if (k >= 1 && !b.hit){ b.hit = true; elPlay('garbage_beam_impact', { x: b.B[0], y: b.B[1], color: b.col, intensity: b.r }); if (b.lead) b.lead.destroy(); }
+    if (k >= 1.6) OP_BEAMS.splice(i, 1); }
+}
+function opBeamDraw(X){
+  const now = performance.now();
+  for (const b of OP_BEAMS){ const k = (now - b.t0) / 1000 / b.dur, h = Math.min(1, k), tl = Math.max(0, Math.min(1, k) - .55 - Math.max(0, k - 1)), col = '#' + b.col.toString(16).padStart(6, '0');
+    if (h <= tl) continue;
+    X.save(); X.globalCompositeOperation = 'lighter'; X.lineCap = 'round'; X.strokeStyle = col; X.shadowColor = col; X.shadowBlur = 12;
+    const N = 14; for (let j = 0; j < N; j++){ const t0 = tl + (h - tl) * j / N, t1 = tl + (h - tl) * (j + 1) / N, p0 = opBez(b, t0), p1 = opBez(b, t1), f = (j + 1) / N;
+      X.globalAlpha = .9 * f * Math.max(0, 1 - Math.max(0, k - 1) / .6); X.lineWidth = (2 + 10 * (.5 + b.r / 20)) * f; X.beginPath(); X.moveTo(p0[0], p0[1]); X.lineTo(p1[0], p1[1]); X.stroke(); }
+    X.restore(); }
+}
+
 // 官方 DestroyBoard：每個方塊格都放一次 mino_dust（high／ultra 畫質）：一顆 #444444 的 dust（不透明 1→0）＋一顆方塊顏色的 dust（.8→0），
 //   壽命 .3–1 秒、往四面八方 0–50 px/s 慢慢變慢、邊飄邊放大、轉動 ±20°/s
 function fxBoardDust(){
+  if (!HI()) return;                                                    // 官方：只有 high／ultra
   const g = grid();
-  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++){ const v = g[y * W + x]; if (!v) continue;
-    const col = COLORS[Math.min(COLORS.length - 1, v)] || '#8d97a3';
-    for (const [tint, a, s1] of [['#444444', 1, 3], [col, .8, 2.5]]){
-      const ang = Math.random() * Math.PI * 2, sp = fxR(0, 50) / Math.max(8, cell);
-      fxSpawn('dust', x + .5, y + .5, { vx: Math.cos(ang) * sp, vy: Math.sin(ang) * sp, g: fxR(-5, 1) / Math.max(8, cell), max: fxR(300, 1000), size: 1.5 / 1.6, grow: fxR(s1 / 1.5 - 1, s1 / 1.5 - .3), vr: fxR(-.35, .35), add: false, a, tint });
-    } }
-}
-// 消行：每行噴 particle；四消加 box、spin 加 star、PC 加 bigbox＋直立光柱；combo 加 chirp
-function fxClear(ys, o){
-  for (const y of ys){
-    bgSplash({ direction: 90, amt: 5 }); bgSplash({ direction: 270, amt: 5 });   // 官方 ExplodeLine
-    for (let i = 0; i < 12; i++) fxSpawn('particle', fxR(0, W), y + .5, { vx: fxR(-4, 4), vy: fxR(-8, -2), g: 14, max: fxR(450, 800), size: fxR(.5, .9) });
-    if (o.quad) for (let i = 0; i < 5; i++) fxSpawn('box', fxR(0, W), y + .5, { vx: fxR(-3, 3), vy: fxR(-6, -2), g: 10, max: fxR(600, 900), size: fxR(.7, 1.1), vr: fxR(-6, 6) });
-    if (o.spin) for (let i = 0; i < 6; i++) fxSpawn('star', fxR(0, W), y + .5, { vx: fxR(-3, 3), vy: fxR(-7, -2), g: 8, max: fxR(600, 1000), size: fxR(.6, 1), vr: fxR(-8, 8) });
-  }
-  const cy = ys.length ? ys.reduce((a, b) => a + b, 0) / ys.length + .5 : H - 4;
-  if (o.pc){
-    for (let i = 0; i < 10; i++) fxSpawn('bigbox', W / 2, cy, { vx: fxR(-6, 6), vy: fxR(-9, -3), g: 6, max: fxR(900, 1300), size: fxR(1.4, 2.4), vr: fxR(-4, 4) });
-    for (let x = 0; x < W; x++) fxSpawn('beams/beam', x + .5, H - VISIBLE / 2, { max: 700, size: .9, len: VISIBLE });
-  }
-  if (o.combo >= 2) for (let i = 0; i < Math.min(8, o.combo); i++) fxSpawn('chirp', fxR(0, W), cy, { vx: fxR(-2, 2), vy: fxR(-5, -2), max: 600, size: .6 });
-}
-// 硬降：每欄一道 beam 從起點拉到落點，落點揚起 dust
-function fxHardDrop(cells, dist){
-  if (!dist) return;
-  const cols = {};
-  for (const [x, y] of cells) cols[x] = Math.max(cols[x] ?? -1, y);
-  for (const [x, yb] of Object.entries(cols)){
-    fxSpawn('beam', +x + .5, yb + .5 - dist / 2, { max: 260, size: .9, len: dist + 1, a: .7 });
-    for (let i = 0; i < 2; i++) fxSpawn('dust', +x + .5, yb + 1, { vx: fxR(-2.5, 2.5), vy: fxR(-1.5, -.3), max: fxR(350, 550), size: fxR(.6, 1), add: false, a: .8 });
-  }
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++){ const v = g[y * W + x]; if (!v) continue; const p = opXY(x + .5, y + .5); if (!p) return;
+    elPlay('mino_dust', { x: p.x, y: p.y, s: 1, color: opHexN(COLORS[Math.min(COLORS.length - 1, v)] || '#8d97a3') }); }
 }
 
 /* ================= BGM =================
@@ -6435,7 +6655,17 @@ function drawThrusterAtlas(y0, cx, X = ctx, CS = cell, S = climb){
   }
   X.restore();
   drawZenithPips(cx + 455 * k, top + 70 * k, r, Math.max(2, CS * .13), X, CS, S);
+  if (X === ctx && S === climb && CS === cell) opZenithFx(S, cx, top - 75 * k, k);
   void hyper;
+}
+// 官方 zenithrank 每幀：zenith_rank（推進器噴氣，power＝(rank−1)/7×(1＋3×glow)）；HYPERSPEED 時背景 zenith_speedrun
+function opZenithFx(S, cx, y0, k){
+  if (!opOn()) return;
+  const now = performance.now(), dT = Math.min(6, (now - (S.opZT || now)) / (1000 / 60)) || 1; S.opZT = now;
+  const p = opXY(cx / cell, y0 / cell); if (!p) return;
+  const sk = p.c / cell, i = Math.round(S.zrS ?? S.csp), sc = zrScy(S, i), C = sc ? ZR_SCY[sc] : zrColors(i);
+  elPlay('zenith_rank', { x: p.x, y: p.y, power: (i - 1) / 7 * (1 + 3 * (S.zrGlow || 0)), color: C.c[0] << 16 | C.c[1] << 8 | C.c[2], dT, k: k * sk });
+  if (S.hyper) elPlay('zenith_speedrun', { dT });
 }
 // 換樓層時盤面上方浮出樓層名
 
@@ -6492,15 +6722,13 @@ function sirenTick(dt){
   S.panic = true;
   if (!S.alert && i <= top0 - 1 && p){ S.alert = true; S.alertT = performance.now(); sfxEv('alert', 'damage_alert'); }
   if (active){ const gh = ghostOf(active), lo = gh && cellsOf(gh).every(([, y]) => y < top0);   // 官方 HyperTopoutWarning：這顆放下去會 lock out → hyperalert 一次
-    if (lo && !S.hyperW){ S.hyperW = true; sfxEv('hyperw', 'hyperalert'); } else if (!lo) S.hyperW = false; }
+    if (lo && !S.hyperW){ S.hyperW = true; sfxEv('hyperw', 'hyperalert'); } else if (!lo) S.hyperW = false;
+    if (lo){ const b = opBoardRect(); if (b) elPlay('danger_smoke', { x: b.x, y: b.y, w: b.c * b.w, h: b.c * b.h }); } }   // 官方：放不下時每幀從盤面四角噴煙
   S.it += dt / (1000 / 60); const iv = Math.max(50, 100 - 15 * (top0 + 2 - i));
   if (S.it >= iv){ S.it -= iv; sfxEv('warning', 'warning'); dangerFlair(); bgSplash({ direction: 0, amt: top0 + 6 - i }, true); }
 }
 // 官方 danger_flair：每響一次 siren，盤面上冒一把紅橘色小光點（往上飄，閃爍）
-function dangerFlair(){
-  const top0 = H - VISIBLE;
-  for (let i = 0; i < 28; i++) fxSpawn('particle', fxR(0, W), fxR(top0, H), { vx: fxR(-3, 3), vy: fxR(-6, -.5), max: fxR(500, 1500), size: fxR(.25, .5), tint: Math.random() < .5 ? '#ff0000' : '#ff9900' });
-}
+function dangerFlair(){ if (opt('oDanger') !== false) opBoardFxC('danger_flair'); }
 // 官方 WarningSiren 的三個元件（board.png 上的小圖；沒載到官方圖就用線條代替）：
 //   skyline (98,2,9,73)：快頂到（panicking）而且有 lock out 的模式才有（40L／BLITZ／TL 是 nolockout，沒有）；盤面頂端一條，高 300px＝3.26 格，α .5–.75 亂閃
 //   garbagedangericon (2,118,92,92)：等著進場的垃圾會把你頂死時，盤面左緣中間的警告圖示；5 秒內 0 → 4 格 → 2 → 4 → 2 → 4 → 2 格，之後停在 2 格
@@ -9240,6 +9468,7 @@ function drawFrame(){
   ctx.clearRect(0,0,totalW,totalH);
   ctx.translate(gut, -VT * cell);
 
+  if (mode === 'sim' && !opAmb && HI() && uiDetail() >= 2 && opOn()) opAmbient(true);   // 官方 Xl：背景一直飄的 bigbox／particle（手機 UI DETAIL 低時不開，整個畫面每幀重畫）
   dangerNow = isDanger();
   const meFall = climb && climb.kind === 'league' && climb.tlGone && climb.tlGone.who === 'me' ? tlFallXf(0) : null;
   ctx.save();
@@ -10498,12 +10727,12 @@ function lockPiece(){
     g[y*W+x] = k;
     if (y >= H - VISIBLE) lockedOut = false;
   }
-  let garbRows = 0; const clearedYs = [];
+  let garbRows = 0; const clearedYs = [], clearedVals = [];
   for (let y=0; y<H; y++){
     let full = true, hasG = false, stuck = false;
     for (let x=0; x<W; x++){ const v = g[y*W+x]; if (!v) full = false; if (isGarb(v)) hasG = true; if (v === 9 || v === 10) stuck = true; }
     if (full && hasG) garbRows++;
-    if (full && !stuck) clearedYs.push(y);                 // particle 用：真的會被消掉的行
+    if (full && !stuck){ clearedYs.push(y); clearedVals.push(g.slice(y * W, y * W + W)); }   // particle 用：真的會被消掉的行（連同每格顏色）
   }
   const r = clearRows(g);
   frames[fi] = r.board;
@@ -10538,7 +10767,7 @@ function lockPiece(){
   if (b2b > prevB2b && r.cleared) bgCircle();                              // 官方：B2B 每延續一次放一圈 bgcircle
   if (spin && opt('oSpinBoard') && fxOn() && cv.animate){ const d = (spin.dir || (Math.random() < .5 ? -1 : 1)) * (spin.mini ? .8 : 1.6);   // 官方 SPIN BOARD：spin 時盤面晃一下（幅度 ⚠️ 推估）
     try { cv.animate([{ transform:'rotate(0deg)' }, { transform:`rotate(${d}deg)` }, { transform:'rotate(0deg)' }], { duration: 240, easing:'ease-out' }); } catch(e){} }
-  if (clearedYs.length) fxClear(clearedYs, { quad: r.cleared >= 4, spin: !!spin, pc: isPC, combo });
+  clearedYs.forEach((y, i) => opExplodeLine(y, clearedVals[i]));        // 官方 RemoveLinesFromStack → ExplodeLine（每行）
   if (lockedOut) push('Lock out', '#ef4b4b', 'sm');
   lastClear = parts.join(' · ');
   // All-Spin 系列（Magician／Warlock）：上一個動作的文字一直留著（實機 wiki：Action text persists），方便看下一步會不會重複
@@ -10705,8 +10934,8 @@ function hardDrop(){
   if (handling().noAcc && performance.now() < SAFELOCK_UNTIL) return;   // 官方 safelock：方塊「自己鎖定」後 7 幀內硬降無效（硬降鎖的不算；按著不放也不擋下一顆）
   let cells = 0;
   while (move(0,1)) cells++;
-  sfxEv('harddrop', 'harddrop'); bgSplash({ direction: 180, amt: 5 });   // 官方 Harddrop
-  fxHardDrop(cellsOf(active), cells);
+  sfxEv('harddrop', 'harddrop');
+  opHardDrop(cellsOf(active), opHexN(COLORS[pkC(active.type)]));        // 官方 Harddrop：bgsplash 往下＋harddrop_edge＋harddrop_trail
   dropPoints(2 * cells);                         // BLITZ：硬降每格 2 分
   finesseCheck();
   lockPiece();
@@ -13350,7 +13579,6 @@ function endClimb(reason){
   const rivalsQp = LOCAL_P && climb.kind === 'qp' && climb.race && climb.race.cmp && !(climb.race.bots[0] && climb.race.bots[0].dead != null);
   if (ZM.key && !rivalsQp) zmStop();
   else if (rivalsQp && climb.hyper){ climb.hyper = false; const b = climb.race.bots[0], f = Math.max(floorOf(climb.alt || 0).n, floorOf((b && b.v) || 0).n); climb.race.musF = f; zmFloor(f); }   // 自己死了 hyperspeed 也沒了 → 回到兩人較高那層
-  for (let i = 0; i < 14; i++) fxSpawn('smoke', fxR(0, W), H - VISIBLE + fxR(0, 6), { vx: fxR(-1, 1), vy: fxR(-2, -.5), max: fxR(1000, 1600), size: fxR(1.5, 3), grow: 1, add: false, a: .7 });
   climb.over = true; active = null;
   say(`${climb.alt.toFixed(1)}m · F${floorOf(climb.alt).n} · ${reason}`);
   // 結算要的「這局之前」的 PB，先記下來再寫戰績
@@ -13387,7 +13615,7 @@ function enterFloor(nx){
   sunEnter(nx.n); if (nx.n >= 11 && hasModRaw('sun')) sunUnlockNow(); if (nx.n === TOP_F) sunReached();   // 任何組合到 F10 的時間（ZC 的 speedrun）
   climb.floorToast = { n: nx.n, name: nx.name, t: performance.now() };
   if (!climb.hyper) zmFloor(nx.n);
-  for (let i = 0; i < 12; i++) fxSpawn('fbox', fxR(0, W), H - fxR(0, 3), { vy: fxR(-12, -6), max: fxR(700, 1000), size: fxR(.6, 1), vr: fxR(-3, 3) });
+  if (nx.n > 1) opBoardFxC('spike_flair');                              // 官方：換樓層（F2 起）放 spike_flair
   // 官方 tetrio.js：升樓音照樓層 [_,_,c,b,a,f#,e,a,a#,e,e]（逆位 F7＝g）；speedrun（HYPERSPEED）中不放 levelup，改放 split_cleared／split_missed
   if (climb.hyper){ const pb = hsPB(), ok = !(pb && pb[nx.n]) || climb.elapsed <= pb[nx.n]; ok ? sfxEv('splitpb', 'zenith_split_cleared') : sfxEv('splitmiss', 'zenith_split_missed'); }   // 官方 speedrun：升樓不放 levelup，改放 split_cleared（沒 PB 或比 PB 快）／split_missed
   // 每層不同音。實機錄影（使用者提供）比對波形：進 F2＝C、F6＝E、F7＝A、F8＝A#、F9＝E、F10＝E → 用的是「上一層」那格（索引 n−2）
@@ -13486,7 +13714,7 @@ function climbReceive(lines, plan, fresh = true, quiet = false){
     return raw;
   }
   climb.pending.push({ lines:n, t:performance.now(), fresh, plan: plan.slice(0, n) });
-  sfxEv('garbin', 'garbage_in_' + sizeTag(n), 0.8);
+  sfxEv('garbin', 'garbage_in_' + sizeTag(n), 0.8); opGarbageBeam(n);     // 官方 IncomingAttack：垃圾光束
   return raw;
 }
 // ── 模擬 KO：不模擬對手，累積送出 40～49 行攻擊就算 KO 一個。wiki：KO 算 15 行的高度（Tyrant 是 8），但不算 Climb Speed 進度
@@ -13855,7 +14083,7 @@ function climbInsert(lines, wound, fresh, plan){
   boardKick(0, Math.min(10, 2 + lines) * optN('oShake') / 100, true); climb.smashT = performance.now();
   const nowT = performance.now();
   if (!climb.starting && nowT - (climb.riseT || 0) > 600){ sfxEv('garbage', 'garbagerise', 0.8);
-    for (let i = 0; i < 8; i++) fxSpawn('chip', fxR(0, W), H - .5, { vx: fxR(-3, 3), vy: fxR(-6, -2), g: 14, max: 500, size: fxR(.4, .7), vr: fxR(-8, 8), add: false }); }   // 同一批連續長上來只響第一次
+  }   // 同一批連續長上來只響第一次
   climb.riseT = nowT;
   const g = grid();
   for (let n=0; n<lines; n++){
@@ -14150,7 +14378,7 @@ function climbOnLock(res){
       const m = /^(BACKFIRE|UNCLEAR) ([\d.]+)X$/.exec(ruleOf('garbage') || '');
       const n = m ? Math.floor((sentRes ? sentRes.out : atk) * +m[2]) : 0;          // 官方 UpdateGarbageOffense：抵銷後真的送出的量，0.5X／2X 向下取整，< 1 不算
       if (n > 0){ if (m[1] === 'BACKFIRE'){                                                         // 官方 AddPendingGarbage：整包同一個洞（新抽一欄）、沒有 windup、不套 QP 的倍率
-          climb.pending.push({ lines: n, t: performance.now(), fresh: true, plan: Array(n).fill(false) }); sfxEv('garbin', 'garbage_in_' + sizeTag(n), 0.8); }
+          climb.pending.push({ lines: n, t: performance.now(), fresh: true, plan: Array(n).fill(false) }); sfxEv('garbin', 'garbage_in_' + sizeTag(n), 0.8); opGarbageBeam(n); }
         else climbInsert(n, false, true); }
     }
     // All-Spin：連續兩次相同動作長 Wound 行
@@ -14270,7 +14498,7 @@ function leagueTick(dt){
     climb.windup.wait -= dt;
     if (climb.windup.wait <= 0){
       climb.windup.stage = (climb.windup.stage || 0) + 1;
-      climb.pending.push({ lines: climb.windup.parts.shift(), t: performance.now(), fresh:true });
+      { const wl0 = climb.windup.parts.shift(); climb.pending.push({ lines: wl0, t: performance.now(), fresh:true }); opGarbageBeam(wl0); }
       climb.windup = climb.windup.parts.length ? { parts: climb.windup.parts, wait:500, stage: climb.windup.stage } : null;
     }
   }
@@ -14518,7 +14746,7 @@ function climbTick(dt){
     if (climb.windup.wait <= 0){
       climb.windup.stage = (climb.windup.stage || 0) + 1;
       const wl = climb.windup.parts.shift(), wp = climb.windup.plans ? climb.windup.plans.shift() : null;
-      climb.pending.push({ lines: wl, t: performance.now(), fresh:true, plan: wp || holePlan(wl) });
+      climb.pending.push({ lines: wl, t: performance.now(), fresh:true, plan: wp || holePlan(wl) }); opGarbageBeam(wl);
       const nx = climb.wq.length ? climb.wq.shift() : null;
       climb.windup = climb.windup.parts.length ? { parts: climb.windup.parts, plans: climb.windup.plans, wait:500, stage: climb.windup.stage }
                    : nx ? (Array.isArray(nx) ? { parts: nx, wait:2500 } : { ...nx, wait:2500 }) : null;   // 官方：最後一份後 90 幀才輪到下一個 Windup，再 60 幀進第一份
@@ -14552,7 +14780,7 @@ function climbTick(dt){
   const hn = CLIMB_CFG.hyperNeed[f.n];
   if (!climb.hyper && hyperOK(climb.mods) && hn && climb.csp >= hn && !(C && !C.hyper)){   // 官方：完全沒開 mod 才有 HYPERSPEED；本站：全逆位（含 FLIPSIDE／ABYSS）也可以
     climb.hyper = climb.hyperEver = true; say('HYPERSPEED!!!'); zmHyper();   // 官方 _PlaySpeedrunStart：只放 zenith_speedrun_start（hyperalert 是「方塊放不下」的極限警告）
-    for (let i = 0; i < 24; i++) fxSpawn('fire', fxR(0, W), H - fxR(0, 2), { vy: fxR(-10, -4), vx: fxR(-1, 1), max: fxR(700, 1100), size: fxR(1, 1.6), grow: .5 }); sfxEv('srstart', 'zenith_speedrun_start'); }
+    sfxEv('srstart', 'zenith_speedrun_start'); }
   if (climb.hyper && climb.csp < 7){ climb.hyper = false; say('HYPERSPEED LOST'); { const run = climb; zmOutroThen(() => { if (climb === run && climb.kind === 'qp' && !climb.over && !climb.hyper && mode === 'sim') zmFloor(floorOf(climb.alt).n); }, floorOf(climb.alt).n); } }
   if (hasMod('tyrant')){
     const TF = CLIMB_CFG.tyrantFatigue;
@@ -14581,6 +14809,8 @@ function waterfall(msg, o = {}){
   const it = document.createElement('div'); it.className = 'waterfall_item'; it.style.setProperty('--bgc', o.bgcolor || '#888888'); it.style.setProperty('--timeout', (o.timeout || 5000) / 1000 + 's');
   it.style.color = o.fgcolor || '#FFFFFF'; const p = document.createElement('p'); p.innerHTML = msg; it.appendChild(p); box.prepend(it);
   setTimeout(() => { it.classList.add('despawning'); setTimeout(() => it.remove(), 500); }, o.timeout || 5000);
+  requestAnimationFrame(() => { const st = document.getElementById('stage'); if (!st) return; const a = p.getBoundingClientRect(), b = st.getBoundingClientRect();   // 官方：通知旁邊左右各兩顆星往外滑
+    elPlay('waterfall', { x: a.left - b.left + a.width / 2, y: a.top - b.top + 1.3 * a.height, w: a.width, color: opHexN(o.bgcolor || '#888888') }); });
   return it;
 }
 const wfSub = t => `<br><span style="font-size:.8em">${t}</span>`;
