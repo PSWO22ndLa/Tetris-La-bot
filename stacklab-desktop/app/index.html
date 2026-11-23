@@ -4774,6 +4774,18 @@ function opBeamDraw(X){
     X.restore(); }
 }
 
+// 官方 lineclear_are＞0 的消行（LOADED DICE、DEATH 的消行延遲層）：消掉的行先留在畫面上，
+//   每格在 (are÷1.5)×(|方塊 x−這欄|÷寬)×(0.8–1.2) 幀後消失並放一顆白色 bright line_burst（從方塊位置往兩邊散開），
+//   延遲結束時整個盤面塌下來（are_collapse：放 collapse 音）
+function clrAnimStart(pre, ys, pc, ms){
+  const run = climb, are = ms / (1000 / 60), s = are / 1.5, px = pc.reduce((a, c) => a + c[0], 0) / Math.max(1, pc.length);
+  const A = run.clrAnim = { disp: pre, after: frames[fi], t0: performance.now(), ms };
+  for (const y of ys) for (let x = 0; x < W; x++){
+    const a = s * (Math.abs(px - x) / W) * (.8 + .4 * Math.random()), f = Math.max(1, Math.min(are, Math.ceil(a)));
+    setTimeout(() => { if (run.clrAnim !== A) return; A.disp[y * W + x] = 0; const p = opXY(x + .5, y + .5); if (p) elPlay('line_burst', { x: p.x, y: p.y, s: 1, color: 0xffffff, bright: true }); draw(); }, f * 1000 / 60);
+  }
+  setTimeout(() => { if (run.clrAnim !== A) return; run.clrAnim = null; if (!run.over && A.after === frames[fi]) sfxEv('collapse', 'collapse'); draw(); }, ms);
+}
 // 官方 DestroyBoard：每個方塊格都放一次 mino_dust（high／ultra 畫質）：一顆 #444444 的 dust（不透明 1→0）＋一顆方塊顏色的 dust（.8→0），
 //   壽命 .3–1 秒、往四面八方 0–50 px/s 慢慢變慢、邊飄邊放大、轉動 ±20°/s
 function fxBoardDust(){
@@ -5277,7 +5289,7 @@ const SFX_EVENTS = [
   ['superlobby', 'ROYALE SUPER LOBBY', ['cutin_superlobby']], ['warp', 'ZEN LEVEL COMPLETE', ['warp']],
   // 垃圾
   ['garbout', 'SEND GARBAGE', ['garbage_out_medium']], ['offset', 'CANCEL GARBAGE', ['offset']], ['counter', 'CANCEL + SEND', ['counter']],
-  ['garbin', 'GARBAGE INCOMING', ['garbage_in_medium']], ['alert', 'GARBAGE WILL TOP YOU OUT', ['damage_alert']], ['warning', 'DANGER SIREN', ['warning']],
+  ['garbin', 'GARBAGE INCOMING', ['garbage_in_medium']], ['collapse', 'LINE COLLAPSE (CLEAR DELAY)', ['collapse']], ['alert', 'GARBAGE WILL TOP YOU OUT', ['damage_alert']], ['warning', 'DANGER SIREN', ['warning']],
   ['windup', 'WINDUP STAGE 1–4', ['garbagewindup_2']], ['damage', 'GARBAGE ENTERS', ['damage_medium']], ['garbage', 'GARBAGE ROW RISES', ['garbagerise']],
   ['wound', 'WOUND LINE', ['wound']],
   // QUICK PLAY
@@ -9474,7 +9486,8 @@ function drawFrame(){
   ctx.save();
   if (meFall && meFall.k > 0){ const py = H * cell; ctx.translate(0, py + meFall.dy); ctx.rotate(meFall.rot); ctx.translate(0, -py); dangerNow = true; }
   if (meFall && meFall.k > 1.2) ctx.globalAlpha = 0;
-  const shown = exileView(showPreview ? clearRows(grid()).board : grid());
+  const CA = climb && climb.clrAnim && climb.clrAnim.after === grid() ? climb.clrAnim : null;
+  const shown = exileView(CA ? CA.disp : showPreview ? clearRows(grid()).board : grid());
   const skinned = boardSkinOn(), gen = genBoard(), genT = gen && genUnder(ctx);
   if (skinned){ drawSkinUnder(); genGrid(ctx); }
   renderBoard(ctx, shown, { scale:cell, grid:showGrid && !((gen || skinned) && genTex('gGrid')), buffer: mode !== 'sim', noBufGrid: mode === 'sim', transparent:skinned || genT, keepUnder:skinned || genT, frame:!skinned && !gen,   // 遊戲中照實機：盤面上方（出生區）不畫格線、不畫虛線
@@ -10734,6 +10747,7 @@ function lockPiece(){
     if (full && hasG) garbRows++;
     if (full && !stuck){ clearedYs.push(y); clearedVals.push(g.slice(y * W, y * W + W)); }   // particle 用：真的會被消掉的行（連同每格顏色）
   }
+  const preG = clearedYs.length ? g.slice() : null;
   const r = clearRows(g);
   frames[fi] = r.board;
   active = null;
@@ -10768,6 +10782,7 @@ function lockPiece(){
   if (spin && opt('oSpinBoard') && fxOn() && cv.animate){ const d = (spin.dir || (Math.random() < .5 ? -1 : 1)) * (spin.mini ? .8 : 1.6);   // 官方 SPIN BOARD：spin 時盤面晃一下（幅度 ⚠️ 推估）
     try { cv.animate([{ transform:'rotate(0deg)' }, { transform:`rotate(${d}deg)` }, { transform:'rotate(0deg)' }], { duration: 240, easing:'ease-out' }); } catch(e){} }
   clearedYs.forEach((y, i) => opExplodeLine(y, clearedVals[i]));        // 官方 RemoveLinesFromStack → ExplodeLine（每行）
+  if (climb && !climb.over && (hasMod('dice') || sunHas('cdelay')) && clearedYs.length) clrAnimStart(preG, clearedYs, lockInfo.cells, isAb('dice') ? 3000 : isFs('dice') ? 2000 : 1150);
   if (lockedOut) push('Lock out', '#ef4b4b', 'sm');
   lastClear = parts.join(' · ');
   // All-Spin 系列（Magician／Warlock）：上一個動作的文字一直留著（實機 wiki：Action text persists），方便看下一步會不會重複
