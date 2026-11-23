@@ -6273,6 +6273,10 @@ const ZRC = { 1:[0,0,0, 0,0,0, 255,255,255], 2:[228,57,33, 255,107,37, 255,107,3
   14:[176,125,255, 120,80,255, 232,214,255],     // 本站：紫晶
   15:[110,215,255, 40,150,255, 210,245,255] };   // 本站：冰藍；16＝彩虹（下面算）
 const ZR_TOP = 16;
+// 本站：鐮刀階（CSP 上限之上再 3 階）：DEATH 一定開；其他 mod 要爬到 10000m 以上才會開（翅膀換成血紅／暗紅／骨白）
+const ZR_SCY = { 1:{ l:[214,24,48], c:[255,70,90], t:[255,190,198] }, 2:{ l:[128,6,24], c:[230,24,56], t:[255,150,160] }, 3:{ l:[236,226,210], c:[255,36,60], t:[255,255,255] } };
+const cspScy = () => climb && climb.kind === 'qp' && !climb.hearts && (hasModRaw('death') || climb.alt >= 10000) ? 3 : 0;
+const zrScy = (S, r) => S && S.cspBase && r > S.cspBase ? Math.min(3, (r | 0) - S.cspBase) : 0;
 const ZR_GEO = { 1:[85,75,830,60,10,10,2], 2:[443,142,114,58,10,90,2], '3L':[360,142,110,41,150,90,3], '3R':[530,142,110,41,280,90,3], '4L':[239,95,129,69,410,90,4], '4R':[633,95,129,69,560,90,4],
   '5L':[176,95,84,35,720,90,5], '5C':[448,190,105,52,10,170,5], '5R':[741,95,84,35,830,90,5], '6LA':[37,95,137,12,140,180,6], '6RA':[826,95,137,12,300,180,6], '6LB':[328,171,148,60,130,210,6], '6RB':[525,171,148,60,300,210,6],
   '7LA':[138,114,210,50,710,150,7], '7RA':[652,114,210,50,470,180,7], '7LB':[378,195,62,26,10,240,7], '7RB':[561,195,62,26,10,290,7], '8L':[209,27,94,41,890,220,8], '8R':[698,27,94,41,770,280,8],
@@ -6303,7 +6307,8 @@ function drawZenithWings(cx, top, prog, r, X = ctx, CS = cell, S = climb){
   const k = W * CS / ZR_SPAN, im = TIO_X.zrank;
   const now = performance.now(), dtf = Math.min(10, ((now - (S.zrLast || now)) / (1000 / 60))); S.zrLast = now;
   S.zrS = S.zrS == null ? r : r + (S.zrS - r) * Math.pow(.9, dtf);                         // 官方：rank 平滑
-  const sm = S.zrS, i = Math.round(sm), C = zrColors(i), Cn = zrColors(i + 1), tf = now / (1000 / 60);
+  const sm = S.zrS, i = Math.round(sm), sc = zrScy(S, i), sn = zrScy(S, i + 1), tf = now / (1000 / 60);
+  const C = sc ? ZR_SCY[sc] : zrColors(i), Cn = sn ? ZR_SCY[sn] : zrColors(i + 1);
   const since = ((S.elapsed || 0) - (S.lockUntil || 0)) / (1000 / 60);
   const aAct = Math.max(.3, Math.min(1, 1 - .005 * since));
   S.zrGlow = Math.max(0, (S.zrGlow || 0) - dtf / 60, Math.min(1, .6 * (S.bonusRem || 0)));
@@ -6323,7 +6328,21 @@ function drawZenithWings(cx, top, prog, r, X = ctx, CS = cell, S = climb){
   return k;
 }
 // 右側階級記號：點＝1、短槓＝5、11 階以上一條長槓（wiki 表的 Right 欄）
+// 鐮刀：刀柄＋彎刀（往左彎），sz＝高度
+function scythePath(X, px, py, sz){
+  X.beginPath(); X.moveTo(px - sz * .06, py); X.lineTo(px + sz * .22, py - sz); X.lineTo(px + sz * .3, py - sz * .97); X.lineTo(px + sz * .04, py + sz * .02); X.closePath(); X.fill();
+  X.beginPath(); X.moveTo(px + sz * .26, py - sz * .98);
+  X.quadraticCurveTo(px - sz * .25, py - sz * 1.18, px - sz * .78, py - sz * .55);
+  X.quadraticCurveTo(px - sz * .3, py - sz * .86, px + sz * .2, py - sz * .78); X.closePath(); X.fill();
+}
 function drawZenithPips(x, y, r, u, X = ctx, CS = cell, S = climb){
+  const sc = zrScy(S, r);
+  if (sc){                                                            // 鐮刀階：上限那一階的記號照畫，前面多 1–3 把鐮刀
+    drawZenithPips(x, y, S.cspBase, u, X, CS, { ...S, cspBase: 0 });
+    const C = ZR_SCY[sc], col = zrCss(C.l); X.save(); X.fillStyle = col; X.shadowColor = zrCss(C.c); X.shadowBlur = u * 2.5;
+    for (let j = 0; j < sc; j++) scythePath(X, x - u * (1.2 + j * 3.9), y + u * 5.6, u * 4.2);   // 長槓下面、往左排
+    X.restore(); return;
+  }
   const n = (r | 0) - 1, col = zrCss(zrColors(r).l), C2 = r >= 12 ? zrCss(zrColors(r).c) : col;
   X.save(); X.fillStyle = col; X.shadowColor = col; X.shadowBlur = u * 1.5;
   if (r >= 11){ X.fillRect(x - u * 9, y - u * .7, u * 9, u * 1.4);                        // 11：一條長槓；本站 12–16：長槓上面再加 1–5 個點
@@ -6352,8 +6371,9 @@ function drawThruster(X = ctx, CS = cell, S = climb){
   const bands = Math.max(1, Math.min(4, 1 + Math.floor(r / 2.5)));
   const half = Math.min(maxHalf, cx * (0.62 + 0.06 * Math.min(r, 10)));
   const t = Math.max(3, CS * 0.2), gap = t + Math.max(1, CS * 0.06);
-  const tan = hyper ? '#fff3b8' : r >= 8 ? '#e7a8ff' : '#d3b08f';
-  const edge = hyper ? '#ffd35a' : rankClr(r);
+  const scN = zrScy(S, r);
+  const tan = hyper ? '#fff3b8' : scN ? zrCss(ZR_SCY[scN].l) : r >= 8 ? '#e7a8ff' : '#d3b08f';
+  const edge = hyper ? '#ffd35a' : scN ? zrCss(ZR_SCY[scN].c) : rankClr(r);
   X.save();
   // 背後光暈：hyperspeed 時金色、平時淡色
   const gl = X.createRadialGradient(cx, wy + CS * .6, 0, cx, wy + CS * .6, half * .55);
@@ -6391,6 +6411,8 @@ function drawThruster(X = ctx, CS = cell, S = climb){
   X.font = `700 ${small}px ${CANVAS_FONT}`; X.textAlign = 'right'; X.textBaseline = 'middle'; X.lineWidth = 3;
   const ty = wy + bands * gap + CS * 0.55;
   X.strokeText('CSP ' + r, W * CS, ty); X.fillStyle = edge; X.fillText('CSP ' + r, W * CS, ty);
+  if (scN){ const tw = X.measureText('CSP ' + r).width; X.fillStyle = tan; X.shadowColor = edge; X.shadowBlur = small * .6;
+    for (let j = 0; j < scN; j++) scythePath(X, W * CS - tw - small * (.9 + j * 1.05), ty + small * .5, small * 1.1); X.shadowBlur = 0; }
   X.restore();
 }
 function drawThrusterAtlas(y0, cx, X = ctx, CS = cell, S = climb){
@@ -13380,7 +13402,8 @@ function cspDecay(dt){
   const fr = dt / (1000 / 60), t0 = climb.csp;
   if (climb.lockUntil == null){ climb.lockUntil = 0; climb.spFat = 0; }   // 升速鎖定計數；不可和 8 分鐘疲勞時間表 climb.fatigue 共用（會每幀重播 +2 perm）
   if (climb.elapsed >= climb.lockUntil) climb.prog -= ((isExpert() || climb.hearts) ? 5 : 3) * (t0 * t0 + t0) / 3600 * fr;
-  const maxR = climb.hearts ? 4 : cspCap();   // CSP 上限 11＋擴建層數                              // Bleeding Hearts：速度上限 4（wiki）
+  climb.cspBase = climb.hearts ? 0 : cspCap();
+  const maxR = climb.hearts ? 4 : cspCap() + cspScy();   // CSP 上限 11＋擴建層數；鐮刀階再 +3                              // Bleeding Hearts：速度上限 4（wiki）
   if (climb.csp >= maxR) climb.prog = Math.min(climb.prog, 4 * climb.csp - .05);
   if (climb.prog < 0){
     if (climb.csp <= 1) climb.prog = 0;
@@ -13388,6 +13411,7 @@ function cspDecay(dt){
       sfxEv('downspeed', 'zenith_downspeed_' + speedNote(), .4 + .6 * Math.min(1, bgmVol())); }
   } else if (climb.prog >= 4 * climb.csp){
     climb.prog -= 4 * climb.csp; climb.lastPromote = true; climb.lockUntil = climb.elapsed + Math.max(1000, 1000 * (5 - climb.spFat)); climb.spFat++; climb.csp++;
+    { const sc = zrScy(climb, climb.csp); if (sc && sc > (climb.scyMax || 0)){ climb.scyMax = sc; say(['', 'THE FIRST SCYTHE', 'THE SECOND SCYTHE', 'THE THIRD SCYTHE'][sc]); } }
     sfxEv('upspeed', 'zenith_upspeed_' + speedNote(), .4 + .6 * Math.min(1, bgmVol()));
   }
   if (climb.lastPromote && climb.prog >= 2 * (climb.csp - 1)) climb.spFat = 0;
