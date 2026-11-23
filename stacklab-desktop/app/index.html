@@ -8288,8 +8288,8 @@ const qpMaxFloor = () => { try { const q = loadProfile().qp || {}; return Math.m
 const modDist = b => { try { return ((loadProfile().qp || {}).modDist || {})[b] || 0; } catch(e){ return 0; } };
 // 看 bot 爬到頂（自己盤面的 La bot 示範）也算解鎖；觀戰不算
 function sunUnlockNow(){ try { const p = loadProfile(); p.qp = p.qp || {}; if (p.qp.sunUnlock) return; p.qp.sunUnlock = true; saveProfile(p); waterfall('CHALLENGE MOD UNLOCKED' + wfSub('the sun has risen · the sun card is now available'), { bgcolor:'#c88a14', timeout:5000 }); if (typeof renderModSel === 'function' && screen === 'modsel') renderModSel(); } catch(e){} }
-const cardLocked = c => c && c.base === 'sun' && !sunUnlocked();   // 本站：其他 mod 都不用解鎖；THE SUN 要爬到頂樓（F11）過一次
-function sunUnlocked(){ try { const q = loadProfile().qp || {}; return !!q.sunUnlock || Math.max(q.maxFloor || 1, q.bestFloor || 1, q.exFloor || 1) >= 11; } catch(e){ return false; } }   // 本站：mod 跟逆位 mod 都不用解鎖（原本要爬到 MOD_FLOOR 那層）
+const cardLocked = c => c && c.base === 'sun' && !sunUnlocked();   // 本站：所有 mod 都不用解鎖（THE SUN 也是）
+function sunUnlocked(){ return true; }   // 本站：THE SUN（挑戰 mod）跟 DEATH 也不用解鎖了（原本要爬到 F11 過一次）
 const cardReversable = c => true;                                           // 本站：逆位 mod 不用先精通（30000M），直接可以玩
 const ZM_BASE = () => location.protocol.startsWith('http') ? '/tio/res/zenith-mods/' : 'https://tetr.io/res/zenith-mods/';
 const zmImg = (id, file) => (typeof TIO_X !== 'undefined' && TIO_X[id] && TIO_X[id].src) || (tioImgOn() ? ZM_BASE() + file + '.png' : null);
