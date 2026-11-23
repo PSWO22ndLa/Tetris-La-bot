@@ -8858,16 +8858,16 @@ function duoKoTag(cx, cy, text, bw){
 // 實機：隊友倒下時，活著那個人的盤面上方用小小的橘紅字寫「目前的任務」
 function drawTaskHint(x0, y0, bw, tasks){
   const t = prCur(tasks); if (!t) return;
-  const fs = Math.max(8, bw * .045), words = t.text.toUpperCase().split(' '), lines = [''];
+  const fs = Math.max(11, Math.min(bw * .072, cell * .72)), words = t.text.toUpperCase().split(' '), lines = [''];   // 本站：字放大（原本 0.045×盤寬，手機上看不清楚）＋黑邊
   ctx.save(); ctx.font = `700 ${fs}px ${CANVAS_FONT}`;
-  for (const wd of words){ const tl = (lines[lines.length - 1] + ' ' + wd).trim(); if (ctx.measureText(tl).width > bw * .62 && lines[lines.length - 1]) lines.push(wd); else lines[lines.length - 1] = tl; }
-  ctx.fillStyle = '#ff5a34'; ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+  for (const wd of words){ const tl = (lines[lines.length - 1] + ' ' + wd).trim(); if (ctx.measureText(tl).width > bw * .74 && lines[lines.length - 1]) lines.push(wd); else lines[lines.length - 1] = tl; }
+  ctx.fillStyle = '#ff5a34'; ctx.textAlign = 'left'; ctx.textBaseline = 'top'; ctx.strokeStyle = 'rgba(0,0,0,.8)'; ctx.lineWidth = fs * .22; ctx.lineJoin = 'round';
   const lw = Math.max(...lines.map(l => ctx.measureText(l).width)), prog = t.need > 1 ? `${Math.min(t.got, t.need)}/${t.need}` : '';
   ctx.font = `800 ${fs * 1.9}px ${CANVAS_FONT}`; const pw = prog ? ctx.measureText(prog).width + fs : 0;
   const lx = x0 + (bw - lw - pw) / 2;
-  if (prog){ ctx.textBaseline = 'middle'; ctx.fillText(prog, lx + lw + fs, y0 + fs * .8 + lines.length * fs * .55); ctx.textBaseline = 'top'; }   // 實機：進度數字放大、放在任務文字右邊
+  if (prog){ ctx.textBaseline = 'middle'; ctx.strokeText(prog, lx + lw + fs, y0 + fs * .8 + lines.length * fs * .55); ctx.fillText(prog, lx + lw + fs, y0 + fs * .8 + lines.length * fs * .55); ctx.textBaseline = 'top'; }   // 實機：進度數字放大、放在任務文字右邊
   ctx.font = `700 ${fs}px ${CANVAS_FONT}`;
-  lines.forEach((l, i) => ctx.fillText(l, lx, y0 + fs * .8 + i * fs * 1.1));
+  lines.forEach((l, i) => { ctx.strokeText(l, lx, y0 + fs * .8 + i * fs * 1.1); ctx.fillText(l, lx, y0 + fs * .8 + i * fs * 1.1); });
   // 倒下那一刻：大大的紅色 REVIVE!（約 1.5 秒淡出）
   const kt = tasks.koT; if (kt && performance.now() - kt < 1600){ const a = 1 - (performance.now() - kt) / 1600;
     ctx.globalAlpha = Math.min(1, a * 1.5); ctx.fillStyle = '#ff3b30'; ctx.font = `800 ${bw * .14}px ${CANVAS_FONT}`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
@@ -12063,8 +12063,8 @@ const DEATH_FLOORS = {
   7:  { t:'THE GROUND FREEZES OVER…',   sub:'permafrost handling · +2 permanent lines that slowly sink away (one every 20 seconds)', slip:true, perm:2, recede:20000 },
   8:  { t:'THE ABYSS WIDENS…',          sub:'the board slowly grows to 15 wide and stays that way · no shadow · 1 next · DAS fixed at 20 frames', widen:true, noghost:true, next1:true, das20:true },
   9:  { t:'THE SCYTHE IS RAISED…',      sub:'clear a line at least every 8 seconds, or 2 garbage lines rise', scythe:true },
-  10: { t:'MIDNIGHT.',                  sub:'receive 3× garbage on this floor · +5 permanent lines', gmul:3, perm:5 },
-  11: { t:'THE END.',                   sub:'receive 2× garbage · a new curse of death every 20 seconds', gmul:2, eclipse:true },
+  10: { t:'MIDNIGHT.',                  sub:'receive 3× garbage on this floor · from now on +2 permanent lines every minute · every task you complete breaks one', gmul:3 },
+  11: { t:'THE END.',                   sub:'receive 2× garbage · a new curse of death every 20 seconds · +2 permanent lines every minute, tasks still break them', gmul:2, eclipse:true },
 };
 const DEATH_ECLIPSE = [['rep', 'PIECES REPEAT'], ['inv', 'YOUR CONTROLS ARE INVERTED'], ['mut', 'MUTATED PIECES'], ['cdelay', 'LINE CLEARS ARE DELAYED'], ['slip', 'THE GROUND FREEZES'], ['noghost', 'NO SHADOW · 1 NEXT'], ['scythe', 'CLEAR A LINE EVERY 8 SECONDS']];
 const chalOn = () => !!(climb && (hasModRaw('sun') || hasModRaw('death')));
@@ -12166,13 +12166,30 @@ function deathTrialDone(){
   waterfall(i + 1 >= D_CP.length ? 'THE DEAD LET YOU PASS' : `TRIAL ${i + 1} PASSED`, { bgcolor:'#2a0610', timeout:2500 });
   addAlt(0.02, false);                                                 // 解開之後馬上往上推一點（最後一關推進 F6）
 }
-function deathPrEv(k, n){ if (climb && climb.dTrial && prEv(climb.dTrial, k, n)) deathTrialDone(); }
+// F10 以上的任務：C／B 級隨機（F5 試煉那一套），做完一個就打碎一條永久行（還在排隊的先取消）
+const dTaskOn = () => !!(climb && !climb.over && hasModRaw('death') && floorOf(climb.alt).n >= 10);
+function deathTaskNew(){
+  const noHold = hasMod('nohold') || hasMod('ascetic');
+  const pool = DUO_PROMPTS.filter(p => (p.t === 'C' || p.t === 'B') && !p.off && !p.heartsOnly && !(noHold && p.noHold) && !/O-Spin/i.test(p.text) && (!climb.dTaskLast || p.text !== climb.dTaskLast));
+  const d = pool[(Math.random() * pool.length) | 0]; if (!d) return;
+  climb.dTaskLast = d.text; climb.dTask = [{ def: d, tier: d.t, text: d.text, need: d.need, got: 0, st: {} }];
+}
+function deathTaskDone(){
+  climb.dTask = null; climb.dTaskNext = climb.elapsed + 800;
+  let broke = false;
+  if (climb.permQ > 0){ climb.permQ--; climb.permanent = Math.max(0, climb.permanent - 1); broke = true; }
+  else broke = permRecede();
+  waterfall(broke ? 'TASK DONE · A PERMANENT LINE BREAKS' : 'TASK DONE', { bgcolor:'#2a0610', timeout:1800 });
+  sfxEv('garbage', 'garbagerise', .6);
+}
+function deathPrEv(k, n){ if (climb && climb.dTrial && prEv(climb.dTrial, k, n)) deathTrialDone(); if (climb && climb.dTask && prEv(climb.dTask, k, n)) deathTaskDone(); }
 function deathProgress(res){
-  if (!climb || !climb.dTrial || !res.type) return;
+  if (!climb || !(climb.dTrial || climb.dTask) || !res.type) return;
   const P = pTrack || {};
   const e = { type: res.type, rot: res.rot, x: res.x, cells: res.cells, n: res.cleared || 0, spin: res.spin || null, combo: res.combo, b2b: res.b2b, pc: !!res.pc,
     garb: res.garb || 0, color: !!res.color, upper: !!res.upper, rotN: P.rotN || 0, dirs: P.dirs || 0, moved: !!P.moved, held: !!P.held, holdT: res.holdT || null, sd: !!P.sd, das: !!P.das };
-  if (prLock(climb.dTrial, e)) deathTrialDone();
+  if (climb.dTrial && prLock(climb.dTrial, e)) deathTrialDone();
+  if (climb.dTask && prLock(climb.dTask, e)) deathTaskDone();
 }
 // F8：盤面一欄一欄變寬到 15（左右輪流），出了這層也不會變回來
 function deathWiden(){
@@ -12196,6 +12213,12 @@ function deathTick(){
   if (!hasModRaw('death')) return;
   const now = climb.elapsed, dt = Math.max(0, Math.min(100, now - (climb.dT || now))); climb.dT = now;
   if (climb.dTrial && prTick(climb.dTrial, dt, duoMyBoard())) deathTrialDone();
+  if (dTaskOn()){                                                       // F10 以上：每分鐘 +2 永久行；一直有一個任務，做完一個消一行
+    if (climb.dPermT == null) climb.dPermT = now + 60000;
+    if (now >= climb.dPermT){ climb.dPermT += 60000; climb.permanent += 2; climbInsert(2, 'perm'); sfxEv('warn', 'warning'); say('MIDNIGHT TOLLS · +2 PERMANENT LINES'); }
+    if (!climb.dTask && now >= (climb.dTaskNext || 0)) deathTaskNew();
+    if (climb.dTask && prTick(climb.dTask, dt, duoMyBoard())) deathTaskDone();
+  }
   if (sunHas('scythe') && !climb.cd && now - (climb.dLastClr ?? now) >= 8000){        // F9：8 秒沒消行 → 2 行垃圾直接長上來
     climb.dLastClr = now; climbInsert(2, false, true); sfxEv('warn', 'warning'); say('THE SCYTHE FALLS · +2 LINES');
   }
@@ -12203,6 +12226,14 @@ function deathTick(){
 function drawDeathHud(){
   if (!climb || climb.over || !hasModRaw('death')) return;
   if (climb.dTrial) drawTaskHint(0, (H - VISIBLE) * cell, W * cell, climb.dTrial);
+  const dOn = dTaskOn() && climb.dPermT != null;
+  if (climb.dTask) drawTaskHint(0, (H - VISIBLE) * cell + (dOn ? cell * .55 : 0), W * cell, climb.dTask);
+  if (dOn){                                                            // 下一次 +2 永久行的倒數（盤面最上面，任務字的上方）
+    const left = Math.max(0, climb.dPermT - climb.elapsed), sec = Math.ceil(left / 1000);
+    ctx.save(); ctx.font = `800 ${cell * .52}px ${CANVAS_FONT}`; ctx.textAlign = 'center'; ctx.textBaseline = 'top'; ctx.lineWidth = cell * .12; ctx.lineJoin = 'round';
+    const tx = `+2 PERMANENT IN ${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, '0')}`, ty = (H - VISIBLE) * cell + cell * .2;
+    ctx.strokeStyle = 'rgba(0,0,0,.75)'; ctx.strokeText(tx, W * cell / 2, ty); ctx.fillStyle = left < 10000 ? '#ff4a5a' : '#e8c8cc'; ctx.fillText(tx, W * cell / 2, ty); ctx.restore();
+  }
   if (sunHas('scythe')){
     const left = Math.max(0, 8000 - (climb.elapsed - (climb.dLastClr ?? climb.elapsed))), f = left / 8000, y = (H - VISIBLE) * cell - cell * .35;
     ctx.save(); ctx.fillStyle = 'rgba(0,0,0,.55)'; ctx.fillRect(0, y, W * cell, cell * .22);
@@ -16271,8 +16302,8 @@ function demoTick(dt){
     const o = { bd, hold: holdType || null, q: [active.type, ...queue], bag: [], b2b, combo, noBook: (climb.pieces || 0) > 0, pend: climbPending() };
     o.rules = demoRules([o.hold, ...o.q]);
     let top0 = 0; while (top0 < BOT_H && !bd.subarray(top0 * W, top0 * W + W).some(v => v)) top0++;
-    o.goal = climb.dTrial && top0 >= 11 ? duoGoal(climb.dTrial) : null;   // DEATH F5 的試煉：跟 Duo 復活任務同一套任務模式；疊太高（剩不到 11 行空間）先求生
-    if (o.goal && !climb.dTrialT0) climb.dTrialT0 = climb.elapsed;
+    o.goal = (climb.dTrial || climb.dTask) && top0 >= 11 ? duoGoal(climb.dTrial || climb.dTask) : null;   // DEATH F5 的試煉：跟 Duo 復活任務同一套任務模式；疊太高（剩不到 11 行空間）先求生
+    if (o.goal && climb.dTrial && !climb.dTrialT0) climb.dTrialT0 = climb.elapsed;
     if (o.rules.noHold) o.hold = null;
     if (o.rules.poly) o.q = o.q.slice(0, Math.max(1, nextShown() + 1));   // 五連塊：只看得到的那幾顆（不要讓它用 7-bag 亂補）
     demoRequest(o, d => {
