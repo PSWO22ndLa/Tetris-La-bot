@@ -12033,13 +12033,16 @@ function secretGradeCheck(){
   notice(had ? 'SECRET GRADE · AGAIN!' : 'SECRET GRADE · ACHIEVEMENT UNLOCKED');
   sfxEv('pb', 'personalbest');
 }
+// 官方 Qt()／en()／nn()：右下角疊起來的通知（5 秒、點一下關掉）。錯誤＝en（#FF4200＋error 圖示）、成功＝nn（#6AFF3C＋ok 圖示）、其他＝白框沒圖示
+const NT_ERR = /CAN'?T|CANNOT|INVALID|MUST|NOT |ONLY|FULL|TOO |BLOCKED|FAILED|ALREADY|NO SOUND|NOTHING|LOST/;
+const NT_OK = /LOADED|SAVED|COPIED|IMPORTED|EXPORTED|ADDED|UNLOCKED|RESTORED|APPLIED|CONNECTED|JOINED|CREATED|ENABLED|REMOVED|CLEARED|DONE|YOU WIN/i;
+const NT_ICO = {                                                                   // 官方圖示抓不到（離線版／被擋）時的替代
+  error: 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><circle cx="16" cy="16" r="14" fill="none" stroke="#FF4200" stroke-width="3"/><path d="M10 10l12 12M22 10L10 22" stroke="#FF4200" stroke-width="3.4"/></svg>'),
+  ok: 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><circle cx="16" cy="16" r="14" fill="none" stroke="#6AFF3C" stroke-width="3"/><path d="M9 16.5l5 5 9-10" fill="none" stroke="#6AFF3C" stroke-width="3.4"/></svg>') };
 function notice(msg){
-  let t = document.getElementById('ntToast');                     // 跟升級提示分開，才不會互相蓋掉
-  if (!t){ t = document.createElement('div'); t.id = 'ntToast'; document.body.appendChild(t); }
-  t.innerHTML = `<b>${msg}</b>`; t.className = 'show';
-  // 錯誤類提示播 no，其他播 notify
-  if (/CAN'?T|CANNOT|INVALID|MUST|NOT |ONLY|FULL|TOO |BLOCKED|FAILED|ALREADY|NO SOUND|NOTHING/.test(msg)) sfxEv('no', 'no'); else sfxEv('notify', 'notify', 0.8);
-  clearTimeout(t._h); t._h = setTimeout(() => t.className = '', 2600);
+  const err = NT_ERR.test(msg), ok = !err && NT_OK.test(msg);
+  tioNotify(err ? { msg, color: '#FF4200', icon: TIO_RES() + 'icon/error.svg', iconFallback: NT_ICO.error } : ok ? { msg, color: '#6AFF3C', icon: TIO_RES() + 'icon/ok.svg', iconFallback: NT_ICO.ok } : { msg });
+  if (err) sfxEv('no', 'no'); else sfxEv('notify', 'notify', 0.8);
 }
 // wiki：每級 LEVEL UP!、每 10 級 BADGE UP!、每 100 級 PROMOTED!、每 500 級 DISTINGUISHED!
 function levelUpFx(from, to){
