@@ -10674,7 +10674,6 @@ function move(dx,dy){
 // 官方 ComputeKick：先把方塊照 additional_offsets 的差值挪過去試原位，再依序試踢牆表；kick 記第幾個踢（0 起算，原位＝沒踢）
 function rotate(dir){                       // 1 順時針 / 3 逆時針 / 2 為 180
   if (!active || (climb && climb.rp)) return false;
-  if (climb && !climb.over && sunHas('norot')){ const t = performance.now(); if (t - (climb.norotT || 0) > 500){ climb.norotT = t; sfxEv('no', 'no'); } return false; }   // REQUIEM F2：TALENTLESS，不能旋轉
   if (dir === 2 && climb && climb.custom && !climb.custom.r180) return false;
   cInput();
   const from = active.rot & 3, to = (from + dir) & 3, key = `${from}${to}`, T = active.type;
@@ -10871,6 +10870,8 @@ function lockPiece(){
     combo = -1;
   }
   lockSfx(r.cleared, spin, difficult, prevCombo, prevB2b, isPC, combo);
+  if (spin && climb && !climb.over && sunHas('nospin')){                  // REQUIEM F2：TALENTLESS——做出任何 spin（含 mini）直接冒 5 行垃圾
+    climbInsert(5, false, true); sfxEv('no', 'no'); push('TALENTLESS · +5', '#ff4a5a', 'sm'); }
   if (b2b > prevB2b && r.cleared) bgCircle();                              // 官方：B2B 每延續一次放一圈 bgcircle
   if (spin && opt('oSpinBoard') && fxOn() && cv.animate){ const d = (spin.dir || (Math.random() < .5 ? -1 : 1)) * (spin.mini ? .8 : 1.6);   // 官方 SPIN BOARD：spin 時盤面晃一下（幅度 ⚠️ 推估）
     try { cv.animate([{ transform:'rotate(0deg)' }, { transform:`rotate(${d}deg)` }, { transform:'rotate(0deg)' }], { duration: 240, easing:'ease-out' }); } catch(e){} }
@@ -12444,7 +12445,7 @@ const DEATH_FLOORS = {
 // DEATH 再逆位（REQUIEM＝DEATH 卡的 FLIPSIDE）：F1–F9 換一套詛咒；F10／F11 跟 DEATH 一樣。F7 的 20 寬、F8 的 25 高會一直留著
 const DEATH_RE_FLOORS = {
   1:  { t:'THE CANDLE GUTTERS…',        sub:'pieces repeat: 70% chance the next piece is the same as the last one', rep:true },
-  2:  { t:'TALENTLESS.',                sub:'rotation is forbidden on this floor', norot:true },
+  2:  { t:'TALENTLESS.',                sub:'spins are forbidden: any spin (minis too) instantly raises 5 garbage lines', nospin:true },
   3:  { t:'THE LINE IS LOST…',          sub:'no I pieces · inverted controls: left ↔ right, CW ↔ CCW, soft drop ↔ hard drop', noI:true, inv:true },
   4:  { t:'NOTHING LEFT TO LEAN ON…',   sub:'no T or I pieces · every garbage line has a 3-wide hole', noI:true, noT:true, tri:true },
   5:  { t:'THE TRIALS OF THE DAMNED…',  sub:'5 trials at 450 · 500 · 550 · 600 · 650m, easiest to hardest · you cannot pass one before finishing it · take longer than 30 seconds on a trial and you fall, a whole floor every 30 seconds, as far down as floor 4 · +2 permanent lines', trials:true, rv:true, perm:2 },
@@ -12458,7 +12459,7 @@ const DEATH_ECLIPSE = [['rep', 'PIECES REPEAT'], ['inv', 'YOUR CONTROLS ARE INVE
 const chalOn = () => !!(climb && (hasModRaw('sun') || hasModRaw('death')));
 const dRe = () => !!(climb && climb.mods.has('fs_death'));
 const chalTab = () => hasModRaw('death') ? (dRe() ? DEATH_RE_FLOORS : DEATH_FLOORS) : SUN_FLOORS;
-const DRE_ECLIPSE = [['rep', 'PIECES REPEAT (70%)'], ['norot', 'ROTATION IS FORBIDDEN'], ['noI', 'NO I PIECES'], ['inv', 'YOUR CONTROLS ARE INVERTED'], ['tri', 'TRIPLE-WIDE GARBAGE'], ['voidc', 'NORMAL CLEARS ARE VOID'], ['o50', 'HALF THE PIECES ARE O'], ['ff', 'TERMINAL VELOCITY · ALL-SPIN']];
+const DRE_ECLIPSE = [['rep', 'PIECES REPEAT (70%)'], ['nospin', 'ANY SPIN RAISES 5 GARBAGE'], ['noI', 'NO I PIECES'], ['inv', 'YOUR CONTROLS ARE INVERTED'], ['tri', 'TRIPLE-WIDE GARBAGE'], ['voidc', 'NORMAL CLEARS ARE VOID'], ['o50', 'HALF THE PIECES ARE O'], ['ff', 'TERMINAL VELOCITY · ALL-SPIN']];
 // F11 ECLIPSE：每 20 秒從前面的詛咒裡抽一個（不重複上一個）
 const SUN_ECLIPSE = [['nohold', 'HOLD IS FORBIDDEN'], ['messy', 'GARBAGE BECOMES MESSIER'], ['damn', 'DAMNATION GARBAGE'], ['invisible', 'YOUR BOARD TURNS INVISIBLE'], ['as', 'ALL-SPIN RULES, ONLY T-SPINS COUNT'], ['ugly', 'UGLY PIECES']];
 const sunCur = () => chalOn() ? (chalTab()[Math.min(11, floorOf(climb.alt).n)] || null) : null;   // F11 以上全部是 ECLIPSE
