@@ -16859,8 +16859,13 @@ function demoStop(why){
   if (climb && !climb.over){ say(`DEMO ${why} · RECORDS STAY OFF FOR THIS RUN`); }   // 已經代打過的這局還是不計戰績
 }
 // 你的盤面 → La bot 的 24 行盤面（上面補空行；超過 24 行就取最下面 24 行）
+const demoStuck = (g = grid()) => { let P = 0; while (P < H && g.subarray((H - 1 - P) * W, (H - P) * W).every(v => v === 9 || v === 10)) P++; return P; };
 function demoBoard(){
-  const g = grid(), off = BOT_H - H, bd = new Uint8Array(BOT_H * W);
+  const g = grid(), bd = new Uint8Array(BOT_H * W);
+  // 最底的 Wound（9）／永久行（10）是整排滿的、消不掉：La bot 的模擬會把它當成「現成的滿行」去消 → 一直重複同一種消行、Wound 越疊越高（MACABRE F3 回報）
+  // → 這幾行不給它看，盤面往下移；上面少的空間由 demoRules 的 hpad 補上
+  const P = demoStuck(g);
+  const off = BOT_H - (H - P);
   for (let y = 0; y < BOT_H; y++){ const py = y - off; if (py < 0 || py >= H) continue; for (let x = 0; x < W; x++){ const v = g[py * W + x]; if (v) bd[y * W + x] = isGarb(v) ? 8 : 1; } }
   return { bd, off };
 }
@@ -16900,7 +16905,7 @@ function demoSet(f, off, type){                                       // 把方�
 function demoRules(types){
   const C = climb || {};                                              // 選單／PAINT 裡的 demo 沒有 climb（手機回報 null.custom）
   const sx = {}; for (const t of types) if (t) sx[t] = (W === 10 && PIECE_ORDER.includes(t)) ? (t === 'O' ? 4 : 3) : Math.floor((W - (SHAPES[t].s || (t === 'I' ? 4 : t === 'O' ? 2 : 3))) / 2);
-  return { noHold: hasMod('nohold') || hasMod('ascetic') || !!(C.custom && !C.custom.holdq), hpad: Math.max(0, BOT_H - Math.min(H, VISIBLE)),
+  return { noHold: hasMod('nohold') || hasMod('ascetic') || !!(C.custom && !C.custom.holdq), hpad: Math.max(0, BOT_H - Math.min(H, VISIBLE)) + (climb ? demoStuck() : 0),
     allspin: isAllSpin(), dupe: !!(climb && chalOn() && sunHas('as')), voidPlain: hasMod('warlock'), warlock: hasMod('warlock'), pact: hasMod('warlock') && isFs('warlock'), la: C.lastAction || null, ls: C.lastSpinType || null, noB2B: hasMod('damnation'), poly: types.some(t => t && !PIECE_ORDER.includes(t)), sx };
 }
 // 盤面上有垃圾（在挖）時，bot 的速度比設定的 PPS 快 0.5～1
