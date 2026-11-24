@@ -16845,7 +16845,11 @@ function demoStart(md, pps){
   pps = Math.max(0.5, Math.min(20, pps));
   DEMO = { pps, sid: -1, plan: null, mode: md };
   qcBot(`watch me: ${M.name} at ${pps.toFixed(2)} PPS · press any game key to take over`);
-  if (M.kind === 'qp') startClimb('qp'); else startClimb('practice', { sub: M.sub });
+  let easy = 0;                                                      // QP 代打也吃 EASY 卡（CHARIOT 各階）＋挑戰 mod 要的全塔：跟 qpStart 同一套
+  if (M.kind === 'qp'){ const st = cardState(CHARIOT_CARD); if (st) easy = [0, 2, 3, 5, 10][st];
+    if ((pickedMods.has('sun') || pickedMods.has('death')) && towerExt < 5){ buildTower(5); renderModSel(); } }
+  if (M.kind === 'qp') startClimb('qp', easy ? { easy } : {}); else startClimb('practice', { sub: M.sub });
+  if (easy && climb) qcSys(`EASY MOD on: climb speed ×${easy}, this run is not recorded.`);
   if (climb) climb.demo = true; else { DEMO = null; return; }
   say(`DEMO · LA BOT PLAYS ${M.name} · ANY KEY TAKES OVER`);
 }
