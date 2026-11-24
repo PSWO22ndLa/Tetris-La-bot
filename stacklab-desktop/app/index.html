@@ -2606,7 +2606,11 @@ document.documentElement.classList.add('booting'); addEventListener('load', func
   .tbar .tlogo svg, .tbar .tlogo img{ height:100% !important; max-height:100% !important; width:auto !important; max-width:100% !important; }
   .tbar.oicon .tlogo{ top:14% !important; height:86% !important; }
   /* 主頁 7 條：畫面矮的時候整組等比例縮小，全部塞進標題列和底列之間，不用捲也不會被底列蓋住 */
-  @media (max-width:640px){ .tmenu.home .tbar{ font-size:max(6.2px, min(var(--ofs), calc((100dvh - 150px) / 54))) !important; } .tmenu.home{ padding-top:1em; padding-bottom:1em; } }
+  @media (max-width:640px){ .tmenu.home .tbar{ font-size:max(6.2px, min(max(var(--ofs), 3.5vw), calc((100dvh - 150px) / 54))) !important; }   /* 直式手機：--ofs 只有 ~9px（2.25vw），按鈕太小 → 改用 3.5vw，畫面不夠高時照樣整組縮 */
+  @media (max-width:640px) and (orientation:portrait){                                     /* 字變大後：圖示縮成長條高的 54%、圖示欄跟著縮，標題才放得下 */
+    .tmenu.home .tbar{ --lw:7.4em; column-gap:.8em; padding-right:1.4em !important; }
+    .tmenu.home .tbar .tlogo{ top:23% !important; height:54% !important; }
+    .tmenu.home .tbar > b{ font-size:2.25em !important; } .tmenu.home .tbar > small{ font-size:1.1em !important; } } .tmenu.home{ padding-top:1em; padding-bottom:1em; } }
   @media (min-width:641px){ .tmenu.home .tbar{ font-size:max(8px, min(var(--ofs), calc((100dvh - 170px) / 58))) !important; } }
   /* 長條往右推出畫面 6em（手機 2em）：右邊的人數／紀錄要往內縮，不然被切掉 */
   .tbar .tcount{ right:calc(var(--ofs) * 7) !important; } .tbar:has(.tcount:not(:empty)){ padding-right:17em !important; }
