@@ -2900,6 +2900,15 @@ document.documentElement.classList.add('booting'); addEventListener('load', func
   #localvs{ position:fixed; inset:0; z-index:9000; background:#07090e; color:#dfe6f0; font-family:var(--hunf); }
   #localvs.hidden{ display:none; }
   .lv-btns{ display:flex; gap:.5em; justify-content:center; margin-top:.6em; }
+  .netblk .net-room{ display:flex; align-items:center; gap:.6em; flex-wrap:wrap; margin:.4em 0; }
+  .netblk .net-room code{ font:700 1.6em var(--hunf, monospace); letter-spacing:.2em; color:#ffd84a; }
+  .netblk .net-ppl{ display:flex; flex-direction:column; gap:.25em; margin:.4em 0; } .netblk .net-ppl b.me{ color:#9fe6a0; } .netblk .net-ppl i{ opacity:.7; }
+  .netblk .net-row{ display:flex; gap:.5em; flex-wrap:wrap; align-items:center; margin-top:.5em; }
+  .netblk .net-in{ background:#0d1118; color:#e8ecf4; border:1px solid #3a4456; padding:.45em .6em; font:inherit; min-width:0; flex:1; }
+  .netblk .net-in.code{ flex:0 0 7em; text-transform:uppercase; letter-spacing:.2em; text-align:center; }
+  .netblk .net-go{ margin-top:.5em; font-size:1.5em !important; padding:.35em 1.2em !important; width:auto !important; flex:none !important; } .netblk .net-go[disabled]{ opacity:.45; cursor:default; }
+  .netblk .net-msg{ min-height:1.2em; color:#ffb36b; }
+
   #lvPlay{ position:absolute; inset:0; display:grid; grid-template-columns:1fr 1fr; }
   .lv-f{ position:relative; border-right:2px solid #1b2433; } .lv-f > b{ position:absolute; top:6px; right:12px; z-index:2; font:400 1.6em var(--hunf); color:#ffd84a; pointer-events:none; }
   .lv-f iframe{ width:100%; height:100%; border:0; display:block; pointer-events:none; background:#07090e; }
@@ -4881,6 +4890,7 @@ try { if (!localStorage.getItem('bp:volv2')){ const o = localStorage.getItem('bp
 const bgmVolRaw = () => { try { const v = localStorage.getItem('bp:bgmvol'); return v === null ? 100 : +v; } catch(e){ return 100; } };
 const bgmVol = () => Math.max(0, Math.min(1.5, bgmVolRaw() / 100));   // 官方 MUSIC 0–150%（線性），預設 100%
 const LOCAL_P = (() => { const m = /[?&]local=([12])/.exec(location.search), v = window.__LOCAL_P || (m ? +m[1] : 0); return v && window.parent !== window ? v : 0; })();   // 同一台電腦 2P：每位玩家是一個 iframe
+var NET = { sock: null, p: 0, opp: '', room: null, url: '', st: 'off', msg: '', chat: [] };   // ONLINE RIVALS（socket.io）
 const bgmOn = () => { if (LOCAL_P === 2) return false; try { return localStorage.getItem('bp:bgm') !== '0'; } catch(e){ return true; } };
 const musicOff = () => { try { return new Set(JSON.parse(localStorage.getItem('bp:musicoff') || '[]')); } catch(e){ return new Set(); } };
 const bgmPick = list => { const ok = list.filter(id => !BGM.bad.has(id)); if (!ok.length) return null;
@@ -5240,7 +5250,7 @@ function zmLobby(){
 // 樓層：F1 是同一首疊 f1ex／f1rev；其他樓逆位換 -rev 版
 function zmFloor(n){
   const n0 = n;
-  if (LOCAL_P && climb && climb.race && climb.race.cmp){ const b = climb.race.bots[0]; if (b) n = Math.max(n, floorOf(b.v || 0).n); }   // RIVALS（QP）：音樂跟兩人裡比較高的那層
+  if ((LOCAL_P || NET.p) && climb && climb.race && climb.race.cmp){ const b = climb.race.bots[0]; if (b) n = Math.max(n, floorOf(b.v || 0).n); }   // RIVALS（QP）：音樂跟兩人裡比較高的那層
   n = zFl(n);                                                            // THE OBSERVATORY 沒有自己的曲 → 延續 F9；頂樓放官方 F10 曲
   const rev = qpRevMusic(), ex = qpHas('expert') || qpHas('tyrant'), dth = chalOn() && hasModRaw('death'), dre = dth && dRe() && RQ_MUSIC, ch = chalOn() && !dth;
   // 本站 THE SUN：F1 三軌全疊（主軌＋f1ex＋f1rev）；F2 起升／降交替、每兩層多半音（+1 −1 +2 −2 … F10 +5）
@@ -13690,7 +13700,7 @@ function endClimb(reason){
   if (climb.smashT && performance.now() - climb.smashT < 120) sfxEv('smash', 'garbagesmash');   // 官方：垃圾頂上來把方塊擠死 → garbagesmash
   if (climb.kind === 'league' && climb.opp && climb.opp.remote){     // RIVALS TL：先停住，等外層判定（兩邊幾乎同時死時才不會兩邊都算輸）
     climb.over = true; active = null; sfxEv('topout', 'topout'); draw();
-    try { parent.postMessage({ t: 'ko', p: LOCAL_P, r: climb.me.score + climb.opp.score }, '*'); } catch(e){}
+    lvUp({ t: 'ko', p: LOCAL_P, r: climb.me.score + climb.opp.score });
     return; }
   if (climb.kind === 'league'){ roundEnd('opp'); return; }
   if (climb.race){ raceEnd(false, reason); return; }
@@ -13712,7 +13722,7 @@ function endClimb(reason){
   }
   sfxEv('topout', 'topout', 'gameover');
   // RIVALS（QP）：音樂只在 1P 那邊放，自己先死也不能停 → 繼續跟對手的樓層，等外層送 stop（兩人都打完）才停
-  const rivalsQp = LOCAL_P && climb.kind === 'qp' && climb.race && climb.race.cmp && !(climb.race.bots[0] && climb.race.bots[0].dead != null);
+  const rivalsQp = (LOCAL_P || NET.p) && climb.kind === 'qp' && climb.race && climb.race.cmp && !(climb.race.bots[0] && climb.race.bots[0].dead != null);
   if (ZM.key && !rivalsQp) zmStop();
   else if (rivalsQp && climb.hyper){ climb.hyper = false; const b = climb.race.bots[0], f = Math.max(floorOf(climb.alt || 0).n, floorOf((b && b.v) || 0).n); climb.race.musF = f; zmFloor(f); }   // 自己死了 hyperspeed 也沒了 → 回到兩人較高那層
   climb.over = true; active = null;
@@ -14214,7 +14224,7 @@ function climbSend(attack){
     if (cancelled > 0) duoPrEv('cancel', cancelled);
     if (cancelled > 0) cstreakAdd(cancelled);
   } else if (climb.kind === 'league' && out > 0 && climb.opp.remote){
-    try { parent.postMessage({ t: 'atk', p: LOCAL_P, n: out }, '*'); } catch(e){}
+    lvUp({ t: 'atk', p: LOCAL_P, n: out });
   } else if (climb.kind === 'league' && out > 0){
     climb.opp.pending.push({ lines: out, t: performance.now() });   // 打過去的垃圾也要等延遲才進場
     windupShow(out, climb.opp);                                      // ≥ 8 行：對手盤面上也出驚嘆號
@@ -14715,7 +14725,7 @@ function tlResults(){
   const me = climb.me, o = climb.opp, T = me.tot || { sent:0, garb:0, pieces:0, secs:1 }, U = me.otot || { sent:0, garb:0, pieces:0, secs:1 };
   // 官方 .leagueplayer_extra：白色粗體數字＋色字單位
   const st = t => { const s = Math.max(1, t.secs); return `<span>${(t.sent / s * 60).toFixed(2)}</span> APM · <span>${(t.pieces / s).toFixed(2)}</span> PPS · <span>${((t.sent + t.garb) * 100 / s).toFixed(2)}</span> VS`; };
-  const myName = climb.opts.lv ? LOCAL_P + "P" : tlEsc(loadProfile().name), opName = tlEsc(climb.opts.oppName || o.name || 'OPPONENT'), win = me.score > o.score;
+  const myName = climb.opts.lv && !NET.p ? LOCAL_P + "P" : tlEsc(loadProfile().name), opName = tlEsc(climb.opts.oppName || o.name || 'OPPONENT'), win = me.score > o.score;
   const L = TL_LAST, m = tlMyTR();
   const trNow = m.tr != null ? m.tr : null, d = L && L.placed && !L.justPlaced ? Math.round(L.d) : 0;
   const rk = m.r ? m.r.r : null, top = m.r && m.r.top != null ? m.r.top : null;
@@ -14773,14 +14783,14 @@ function roundEnd(winner){
   draw();
   me.otot = me.otot || { sent:0, garb:0, pieces:0, secs:0 };
   me.otot.sent += o.sent || 0; me.otot.garb += o.gclr || 0; me.otot.pieces += o.pieces || 0; me.otot.secs += secs;
-  const myName = climb.opts.lv ? LOCAL_P + "P" : tlEsc(loadProfile().name), opName = tlEsc(climb.opts.oppName || o.name || 'OPPONENT');
+  const myName = climb.opts.lv && !NET.p ? LOCAL_P + "P" : tlEsc(loadProfile().name), opName = tlEsc(climb.opts.oppName || o.name || 'OPPONENT');
   if (matchOver){
     // 實機（TL FT7 錄影）：最後一局頂死 → 盤面中間大大的黃綠色「GAME!」→ 輸的盤面消失 → 全畫面「VICTORY」（白字轉黃）→ TETRA LEAGUE / RESULTS 結算頁
     climb.tlGone = { who: won ? 'opp' : 'me', t: performance.now() + 200 };       // 實機：輸的盤面歪一邊、往下掉出畫面（框變紅），贏的盤面鏡頭稍微拉近
     { const t0 = performance.now(), me0 = climb, step = () => { if (climb !== me0 || performance.now() - t0 > 1800) return; draw(); requestAnimationFrame(step); }; requestAnimationFrame(step); }   // 局結束後遊戲迴圈停了：掉落動畫自己跑
     if (climb.opts.lv){                                                          // RIVALS TL：GAME! 之後交給外層的 RIVALS 結算
       const c0 = climb, st = { pcs: T.pieces, secs: T.secs, lines: T.lines || 0, sent: T.sent, garb: T.garb, score: me.score };
-      tlOv('<div class="game">GAME!</div>', 3000).then(() => { try { parent.postMessage({ t: 'done', p: LOCAL_P, done: true, secs: T.secs, v: me.score, s: st, d: c0 === climb ? lvDetail() : null }, '*'); } catch(e){} });
+      tlOv('<div class="game">GAME!</div>', 3000).then(() => { lvUp({ t: 'done', p: LOCAL_P, done: true, secs: T.secs, v: me.score, s: st, d: NET.p ? null : c0 === climb ? lvDetail() : null }); });
       return;
     }
     if (climb.opts.room){                                                        // 房間 1v1：官方不是 VICTORY／DEFEAT＋TL 結算，而是 WINNER! cut-in → RESULTS（victory 選單）
@@ -14807,7 +14817,7 @@ function roundEnd(winner){
   tlOv('<div class="game">FINISH!</div>', 1150);
   const keep = { me: me.score, opp: o.score, tot: me.tot, otot: me.otot };
   // 實機節奏（錄影）：頂死 → 1.2 秒比分滑入（scoreslide_in）→ 1.5 秒亮分數（showscore）→ 2.5 秒滑出（scoreslide_out）→ 倒數
-  const lvq = climb.opts.lv, sfxOk = !lvq || LOCAL_P === 1;                   // RIVALS TL：比分由外層在中間大字顯示一份；音效只放一次
+  const lvq = climb.opts.lv, sfxOk = !lvq || LOCAL_P === 1 || !!NET.p;                   // RIVALS TL：比分由外層在中間大字顯示一份；音效只放一次
   setTimeout(() => { if (sfxOk){ sfxEv('scorein', 'scoreslide_in'); setTimeout(() => sfxEv('showscore', 'showscore'), 1500); setTimeout(() => sfxEv('scoreout', 'scoreslide_out'), 3900); }
     (lvq ? new Promise(r => setTimeout(r, 4000)) : tlOv(tlScoreHtml(me.score, o.score, myName, opName, ft), 4000)).then(() => { if (climb && climb.kind === 'league' && !climb.rp) startClimb('league', { ...climb.opts, keepScore: keep }); }); }, 1200);
 }
@@ -14977,7 +14987,7 @@ function tlScoreSync(){
   const on = !!(climb && climb.kind === 'league' && climb.me && climb.opp);
   document.body.classList.toggle('tl', on); if (!on) return;
   const el = $('tlScore'); if (!el) return;
-  const hideS = !!climb.opts.lv; if (el.hidden !== hideS) el.hidden = hideS; if (hideS) return;
+  const hideS = !!climb.opts.lv && !NET.p; if (el.hidden !== hideS) el.hidden = hideS; if (hideS) return;
   const [nl, sl, , sr, nr] = el.children, me = String(climb.me.score), op = String(climb.opp.score);
   const myName = profName(), opName = (climb.opp.name || 'OPPONENT').toUpperCase();
   if (nl.textContent !== myName) nl.textContent = myName;
@@ -20809,7 +20819,7 @@ function raceTick(dt){
     R.feed.length = Math.min(R.feed.length, 4); }
   if (!R.cmp && R.kind !== '40l' && raceMine() >= raceGoalV(R)){ raceEnd(true); return; }   // 40L 由 sprintDone → finishSolo 處理
   if ((R.hudT += dt) > 200){ R.hudT = 0; raceHud(); }
-  if (R.local && (R.postT += dt) > 120){ R.postT = 0; try { parent.postMessage({ t: 'prog', p: LOCAL_P, v: raceMine(), s: lvStats() }, '*'); } catch(e){} }
+  if (R.local && (R.postT += dt) > 120){ R.postT = 0; lvUp({ t: 'prog', p: LOCAL_P, v: raceMine(), s: NET.p ? null : lvStats() }); }
 }
 const raceFmt = t => { const m = Math.floor(t / 60), x = t - m * 60; return `${m}:${String(Math.floor(x)).padStart(2, '0')}.${String(Math.floor((x % 1) * 1000)).padStart(3, '0')}`; };
 const raceVal = (R, v) => R.kind === '40l' ? `${Math.floor(v)}/${R.goal}` : R.cmp && R.kind === 'blitz' ? Math.floor(v).toLocaleString('en-US') : R.kind === 'blitz' ? Math.floor(v).toLocaleString('en-US') : `${v.toFixed(1)}m`;
@@ -20835,7 +20845,7 @@ function raceEnd(done, reason){
   if (R.local){                                                                   // 同一台電腦 2P：結果交給外層頁面判勝負
     sfxEv(done ? 'finish' : 'topout', done ? 'finish' : 'topout', 'gameover');
     clearMsg = { lines: [{ text: R.cmp ? (done ? 'TIME UP' : (reason || 'TOPPED OUT')) : done ? 'FINISHED' : (reason || 'TOPPED OUT'), color: done ? '#7dff9c' : '#ef4b4b', size: 'sm' }, { text: R.cmp ? raceVal(R, raceMine()) : raceFmt(secs), color: '#eef2f7', size: 'md' }, ...(R.cmp ? [{ text: 'WAITING FOR THE OTHER PLAYER…', color: '#9aa6c4', size: 'sm' }] : [])], t: performance.now(), keep: true };
-    try { parent.postMessage({ t: 'done', p: LOCAL_P, done: !!done, secs, v: raceMine(), s: lvStats(), d: lvDetail() }, '*'); } catch(e){}
+    lvUp({ t: 'done', p: LOCAL_P, done: !!done, secs, v: raceMine(), s: NET.p ? null : lvStats(), d: NET.p ? null : lvDetail() });
     raceHud(); draw(); return;
   }
   // 其他人快轉算完（最多再 15 分鐘）
@@ -20958,6 +20968,7 @@ function renderH2HPre(){
       ${k === 'league' ? `<div class="orow" title="Rounds a player has to win to take the match. Click: more · right-click: fewer"><label>first to</label><button class="ospin" id="h2hFt">FT${LV.goal.league}</button></div>` : ''}
     </div>
     <div class="oblk starter">${k === '40l' ? `<div class="omusic" id="spMusic" title="Click: next song · right-click: previous">${sName}</div>` : '<div class="omusic" style="visibility:hidden"></div>'}<button class="ostart" id="spStart">START</button></div>
+    ${netBlock()}
     <div class="oblk coll${LV.keysOpen ? '' : ' collapsed'}" id="h2hCtl"><h1 title="Set each player's keys">CONTROLS</h1><div class="obtr"><button class="obtn" id="h2hDef" title="Reset both players to the default keys.">DEFAULT</button></div>
       <p>click a key, then press the new one. backspace clears it.</p>
       <div class="h2h-keys">${keyCol(1)}${keyCol(2)}</div>
@@ -20990,9 +21001,76 @@ function renderH2HPre(){
   const ftb = $('h2hFt');
   if (ftb){ const stepF = d => { const L = LV_GOALS.league, i = Math.max(0, L.indexOf(LV.goal.league)); LV.goal.league = L[(i + d + L.length) % L.length]; lvSave(); sfxEv('menutap', 'menutap'); ftb.textContent = 'FT' + LV.goal.league; };
     ftb.onclick = () => stepF(1); ftb.oncontextmenu = e => { e.preventDefault(); stepF(-1); }; }
+  netBind();
   const mus = $('spMusic');
   if (mus){ const step = d => { const i = songs.findIndex(x => x[0] === o.song); const n = songs[(Math.max(0, i) + d + songs.length) % songs.length]; o.song = n[0]; soloOptSet('h2h', o); mus.textContent = n[1]; sfxEv('menutap', 'menutap'); };
     mus.onclick = () => step(1); mus.oncontextmenu = e => { e.preventDefault(); step(-1); }; }
+}
+
+/* ── ONLINE RIVALS：兩台電腦經過 socket.io 伺服器（server/server.ts）對打。伺服器只轉送＋當裁判，遊戲各自在自己的瀏覽器跑。
+   用的是同一台電腦 2P 那套訊息（lvInner／lvUp），所以 40L／BLITZ／QP／TL 的規則完全一樣；按鍵、手感、皮膚用各自的 CONFIG */
+const NET_URL_KEY = 'bp:netUrl';
+const netEsc = t => String(t ?? '').replace(/[&<>"']/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
+function netBlock(){
+  const R = NET.room, me = NET.sock && NET.sock.id, host = R && R.host === me, full = R && R.players.length >= 2;
+  const url = NET.url || store.get(NET_URL_KEY) || '';
+  const ppl = R ? R.players.map(p => `<b class="${p.id === me ? 'me' : ''}">${p.seat}P · ${netEsc(p.name)}${p.id === R.host ? ' ★' : ''}</b>`).join('') : '';
+  return `<div class="oblk netblk" id="netBlk"><h1 title="Play RIVALS against someone on another computer">ONLINE</h1>
+    <p>both players open this page and connect to the same server. the host's mode and settings are used; keys, handling and skin are your own CONFIG.</p>
+    ${R ? `<div class="net-room"><span>ROOM</span><code id="netCode">${netEsc(R.code)}</code><button class="obtn" id="netCopy">COPY</button><button class="obtn" id="netLeave">LEAVE</button></div>
+      <div class="net-ppl">${ppl}${full ? '' : '<i>waiting for an opponent… send them the room code</i>'}</div>
+      ${host ? `<button class="ostart net-go" id="netStart"${full && !R.playing ? '' : ' disabled'}>${R.playing ? 'PLAYING…' : 'START ONLINE'}</button>` : `<p class="net-wait">${R.playing ? 'playing…' : 'the host starts the game'}</p>`}`
+    : `<div class="orow"><label>server</label><input id="netUrl" class="net-in" placeholder="https://your-server.example" value="${netEsc(url)}" spellcheck="false"></div>
+      <div class="net-row"><button class="obtn" id="netCreate">CREATE ROOM</button><input id="netJoinCode" class="net-in code" maxlength="6" placeholder="CODE" spellcheck="false"><button class="obtn" id="netJoin">JOIN</button></div>`}
+    <p class="net-msg" id="netMsg">${netEsc(NET.msg)}</p></div>`;
+}
+function netBind(){
+  const v = id => $(id) && $(id).value.trim();
+  if ($('netCreate')) $('netCreate').onclick = () => netGo('create', v('netUrl'));
+  if ($('netJoin')) $('netJoin').onclick = () => netGo('join', v('netUrl'), (v('netJoinCode') || '').toUpperCase());
+  if ($('netJoinCode')) $('netJoinCode').onkeydown = e => { if (e.key === 'Enter') $('netJoin').click(); };
+  if ($('netLeave')) $('netLeave').onclick = () => { if (NET.sock) NET.sock.emit('leave'); NET.room = null; NET.msg = 'left the room'; lvRender(); };
+  if ($('netCopy')) $('netCopy').onclick = () => { try { navigator.clipboard.writeText(NET.room.code); netSay('room code copied'); } catch(e){} };
+  if ($('netStart')) $('netStart').onclick = () => { if (!NET.sock) return; sfxEv('menuconfirm', 'menuconfirm');
+    NET.sock.emit('start', { kind: LV.kind, goal: LV.kind === 'league' ? LV.goal.league : LV.goal['40l'], mods: [...pickedMods].filter(m => !['world', 'duo', 'sun', 'death', 'hearts'].includes(m) && !/_death$/.test(m)), song: LV.kind === '40l' ? soloOpt('h2h').song : undefined }); };
+}
+function netSay(t){ NET.msg = t; const el = $('netMsg'); if (el) el.textContent = t; }
+function netLoadLib(url){
+  return new Promise((ok, no) => {
+    if (window.io && window.io.__url === url) return ok();
+    const sc = document.createElement('script'); sc.src = url + '/socket.io/socket.io.js';            // 用伺服器自己附的 client（版本一定對得上）
+    sc.onload = () => { window.io && (window.io.__url = url); ok(); }; sc.onerror = () => no(new Error('CANNOT REACH THE SERVER')); document.head.appendChild(sc);
+  });
+}
+async function netConnect(url){
+  url = String(url || '').trim().replace(/\/+$/, ''); if (!/^https?:\/\//.test(url)) throw new Error('ENTER THE SERVER ADDRESS (https://…)');
+  if (NET.sock && NET.url === url && NET.sock.connected) return;
+  netSay('connecting…'); await netLoadLib(url);
+  if (NET.sock){ try { NET.sock.disconnect(); } catch(e){} }
+  NET.url = url; try { store.set(NET_URL_KEY, url); } catch(e){}
+  const sk = NET.sock = window.io(url, { transports: ['websocket', 'polling'], reconnectionAttempts: 5 });
+  sk.on('m', netMsg);
+  sk.on('disconnect', why => { if (NET.sock !== sk) return; const was = NET.p && climb && !climb.over; NET.room = null; NET.p = 0; netSay('disconnected (' + why + ')'); if (was) notice('ONLINE · CONNECTION LOST'); lvRender(); });
+  await new Promise((ok, no) => { const t = setTimeout(() => no(new Error('SERVER DID NOT ANSWER')), 8000); sk.once('connect', () => { clearTimeout(t); ok(); }); sk.once('connect_error', e => { clearTimeout(t); no(new Error('CANNOT CONNECT · ' + (e && e.message || ''))); }); });
+}
+async function netGo(what, url, code){
+  try {
+    await netConnect(url);
+    if (what === 'join' && !code) throw new Error('ENTER THE ROOM CODE');
+    const r = await new Promise(ok => NET.sock.emit(what, { name: loadProfile().name || 'PLAYER', code }, ok));
+    if (!r || !r.ok) throw new Error((r && r.err) || 'FAILED');
+    sfxEv('menuconfirm', 'menuconfirm'); netSay(what === 'create' ? 'room created · send the code to your opponent' : 'joined room ' + r.code);
+  } catch(e){ sfxEv('no', 'no'); netSay(String(e.message || e)); }
+}
+function netMsg(m){
+  if (!m || typeof m !== 'object') return;
+  if (m.t === 'room'){ NET.room = m; if (!m.playing && !(climb && !climb.over && NET.p)) lvRender(); return; }
+  if (m.t === 'closed'){ NET.room = null; netSay('the room was closed'); lvRender(); return; }
+  if (m.t === 'chat'){ notice(`${m.from}: ${m.text}`); return; }
+  if (m.t === 'start'){ NET.gen = (NET.gen || 0) + 1; NET.p = m.seat; NET.opp = String(m.opp || 'OPPONENT').toUpperCase(); netSay(''); }
+  lvInner(m);
+  if (m.t === 'stop'){ const sc = m.score ? ` · ${m.score[NET.p]} - ${m.score[3 - NET.p]}` : '';
+    notice(`ONLINE RIVALS · ${m.res === 'win' ? 'YOU WIN' : m.res === 'lose' ? 'YOU LOSE' : 'DRAW'} · ${m.why || ''}${sc}`); const g = NET.gen; setTimeout(() => { if (NET.gen === g) NET.p = 0; }, 8000); }   // 結束 8 秒後才放掉座位（結算訊息還會傳）；中間又開新局就不放
 }
 function lvOpen(){ lvLoad(); LV.st = 'setup'; LV.listen = null; openSoloPre('h2h'); }
 function lvClose(){ lvKill(); $('localvs').classList.add('hidden'); LV.st = 'off'; }
@@ -21150,48 +21228,49 @@ if (!LOCAL_P && 'getGamepads' in navigator){
   addEventListener('gamepadconnected', e => { notice('CONTROLLER CONNECTED · ' + String(e.gamepad.id || 'GAMEPAD').replace(/\s*\(.*$/, '').toUpperCase().slice(0, 40)); if (!GP.raf) GP.raf = requestAnimationFrame(gpTick); });
   addEventListener('gamepaddisconnected', e => { const w = GP.prev[e.gamepad.index]; if (w) for (const a of w) gpSend('keyup', gpCode(e.gamepad.index, a)); delete GP.prev[e.gamepad.index]; notice('CONTROLLER DISCONNECTED'); });
 }
-// ── 同一台電腦 2P（iframe 端）：外層送 start／opp／stop／quit
+// ── RIVALS 對局端：同一台電腦 2P 的 iframe（外層 postMessage）跟 ONLINE RIVALS（socket.io）共用這一套：start／opp／stop／atk／rnd／quit
+function lvUp(m){ if (NET.p && NET.sock) NET.sock.emit('m', m); else try { parent.postMessage(m, '*'); } catch(e){} }
+function lvInner(m){
+    if (m.t === 'tex' && LOCAL_P){
+    const T = m.tex || {};
+    try { if (T.skin && !window.__lvSkinSet){ const cfg = JSON.parse(T.skin); if (cfg && cfg.v === 3 && cfg.map) loadSkin(cfg); else applySkinFile(cfg.src); } } catch(e){}
+    let bd = false; for (const k of ['normal', 'rev']){ const v = T.board && T.board[k]; if (v && store.get(BOARD_SKIN_KEY[k]) !== v){ try { store.set(BOARD_SKIN_KEY[k], v); } catch(e){} bd = true; } }
+    if (bd) loadBoardSkin();
+    for (const [id, src] of Object.entries(T.extra || {})){ if (TIO_X[id]) continue; if (String(src).startsWith('FNT:')) { try { parseBMF(src.slice(4)); } catch(e){} } else useExtra(id, src); }
+    return;
+  }
+  if (m.t === 'start'){
+    if (m.keys) LOCAL_CUR = m.keys;
+    const H = m.hand; if (H){ try { $('arr').value = String(+(H.arr * LV_HF).toFixed(2)); $('das').value = String(+(H.das * LV_HF).toFixed(2)); $('dcd').value = String(+(H.dcd * LV_HF).toFixed(2));
+      $('sdfInf').checked = H.sdf >= 41; if (H.sdf < 41) $('sdf').value = String(H.sdf); syncConfigUI(); } catch(e){} }
+    const S = m.skin; if (S){ window.__lvSkinSet = true; try { if (S.none) loadSkin(null); else if (S.src) applySkinFile(S.src); else if (S.cfg){ const cfg = JSON.parse(S.cfg); if (cfg && cfg.v === 3 && cfg.map) loadSkin(cfg); else if (cfg && cfg.src) applySkinFile(cfg.src); } else loadSkin(null); } catch(e){} }
+    if (climb){ climb.over = true; active = null; climb = null; }
+    const cmp = m.kind !== '40l';                                                // 40L 是競速；BLITZ 比分數、QP 比高度（各自照原本規則打到結束）
+    const race = { kind: m.kind, goal: cmp ? 0 : m.goal, cmp, local: true, players: [{ name: NET.p ? NET.opp : LOCAL_P === 1 ? '2P' : '1P', remote: true, pps: 0, apm: 0 }] };
+    if (m.kind === 'league') startClimb('league', { lv: true, ft: Math.max(1, m.goal | 0), oppName: NET.p ? NET.opp : LOCAL_P === 1 ? '2P' : '1P', unranked: true, seed: m.seed });
+    else if (m.kind === 'zenith'){ pickedMods = new Set(m.mods || []); startClimb('qp', { race }); }
+    else startClimb('practice', { sub: m.kind, race, song: m.song });
+  } else if (m.t === 'opp'){
+    const R = climb && climb.race; const b = R && R.bots[0]; if (!b) return;
+    b.v = m.v; if (m.fin != null && b.fin == null) b.fin = m.fin; if (m.dead != null && b.dead == null) b.dead = m.dead; raceHud();
+    if (R.kind === 'zenith' && !climb.hyper){ const f = Math.max(floorOf(climb.alt || 0).n, floorOf(b.v || 0).n); if (f !== R.musF){ R.musF = f; zmFloor(f); } }   // 對手爬得比較高 → 換成他那層的音樂（你已經死了也一樣跟著）
+  } else if (m.t === 'stop'){
+    if (!climb) return; const win = m.res === 'win', draw0 = m.res === 'draw';
+    if (!NET.p) lvUp({ t: 'det', p: LOCAL_P, s: lvStats(), d: lvDetail() });
+    if (climb.kind === 'qp') try { zmStop(); } catch(e){}                                   // 兩個人都打完才停 QP 音樂
+    if (!climb.over){ climb.over = true; active = null; }
+    sfxEv(win ? 'victory' : 'topout', win ? 'victory' : 'topout', 'gameover');
+    clearMsg = { lines: [{ text: draw0 ? 'DRAW' : win ? 'YOU WIN' : 'YOU LOSE', color: draw0 ? '#eef2f7' : win ? '#f7d33e' : '#ef4b4b', size: 'lg' }], t: performance.now(), keep: true }; draw();
+  } else if (m.t === 'atk'){                                                  // TL：對面打過來的垃圾（照 TL 一樣走 20 幀延遲）
+    if (climb && climb.kind === 'league' && !climb.over && climb.opp){ climb.opp.sent = (climb.opp.sent || 0) + m.n; climbReceive(m.n); sfxEv('impact', 'impact'); }
+  } else if (m.t === 'rnd'){                                                  // TL：外層判定這局誰輸（兩邊同時死也只算先到的那個）
+    if (climb && climb.kind === 'league'){ if (m.seed) climb.opts.seed = m.seed; climb.over = false; roundEnd(m.loser === (LOCAL_P || NET.p) ? 'opp' : 'me'); }
+  } else if (m.t === 'quit'){ if (climb){ climb.over = true; active = null; } }
+  else if (m.t === 'key'){ try { document.body.dispatchEvent(new KeyboardEvent(m.type, { code: m.code, key: m.key, bubbles: true, cancelable: true })); } catch(err){} }
+  }
 if (LOCAL_P){
   document.body.classList.add('localp', 'localp' + LOCAL_P);
-  addEventListener('message', e => {
-    if (e.source !== window.parent) return; const m = e.data || {};
-    if (m.t === 'tex'){
-      const T = m.tex || {};
-      try { if (T.skin && !window.__lvSkinSet){ const cfg = JSON.parse(T.skin); if (cfg && cfg.v === 3 && cfg.map) loadSkin(cfg); else applySkinFile(cfg.src); } } catch(e){}
-      let bd = false; for (const k of ['normal', 'rev']){ const v = T.board && T.board[k]; if (v && store.get(BOARD_SKIN_KEY[k]) !== v){ try { store.set(BOARD_SKIN_KEY[k], v); } catch(e){} bd = true; } }
-      if (bd) loadBoardSkin();
-      for (const [id, src] of Object.entries(T.extra || {})){ if (TIO_X[id]) continue; if (String(src).startsWith('FNT:')) { try { parseBMF(src.slice(4)); } catch(e){} } else useExtra(id, src); }
-      return;
-    }
-    if (m.t === 'start'){
-      if (m.keys) LOCAL_CUR = m.keys;
-      const H = m.hand; if (H){ try { $('arr').value = String(+(H.arr * LV_HF).toFixed(2)); $('das').value = String(+(H.das * LV_HF).toFixed(2)); $('dcd').value = String(+(H.dcd * LV_HF).toFixed(2));
-        $('sdfInf').checked = H.sdf >= 41; if (H.sdf < 41) $('sdf').value = String(H.sdf); syncConfigUI(); } catch(e){} }
-      const S = m.skin; if (S){ window.__lvSkinSet = true; try { if (S.none) loadSkin(null); else if (S.src) applySkinFile(S.src); else if (S.cfg){ const cfg = JSON.parse(S.cfg); if (cfg && cfg.v === 3 && cfg.map) loadSkin(cfg); else if (cfg && cfg.src) applySkinFile(cfg.src); } else loadSkin(null); } catch(e){} }
-      if (climb){ climb.over = true; active = null; climb = null; }
-      const cmp = m.kind !== '40l';                                                // 40L 是競速；BLITZ 比分數、QP 比高度（各自照原本規則打到結束）
-      const race = { kind: m.kind, goal: cmp ? 0 : m.goal, cmp, local: true, players: [{ name: LOCAL_P === 1 ? '2P' : '1P', remote: true, pps: 0, apm: 0 }] };
-      if (m.kind === 'league') startClimb('league', { lv: true, ft: Math.max(1, m.goal | 0), oppName: LOCAL_P === 1 ? '2P' : '1P', unranked: true, seed: m.seed });
-      else if (m.kind === 'zenith'){ pickedMods = new Set(m.mods || []); startClimb('qp', { race }); }
-      else startClimb('practice', { sub: m.kind, race, song: m.song });
-    } else if (m.t === 'opp'){
-      const R = climb && climb.race; const b = R && R.bots[0]; if (!b) return;
-      b.v = m.v; if (m.fin != null && b.fin == null) b.fin = m.fin; if (m.dead != null && b.dead == null) b.dead = m.dead; raceHud();
-      if (R.kind === 'zenith' && !climb.hyper){ const f = Math.max(floorOf(climb.alt || 0).n, floorOf(b.v || 0).n); if (f !== R.musF){ R.musF = f; zmFloor(f); } }   // 對手爬得比較高 → 換成他那層的音樂（你已經死了也一樣跟著）
-    } else if (m.t === 'stop'){
-      if (!climb) return; const win = m.res === 'win', draw0 = m.res === 'draw';
-      try { window.parent.postMessage({ t: 'det', p: LOCAL_P, s: lvStats(), d: lvDetail() }, '*'); } catch(e){}
-      if (climb.kind === 'qp') try { zmStop(); } catch(e){}                                   // 兩個人都打完才停 QP 音樂
-      if (!climb.over){ climb.over = true; active = null; }
-      sfxEv(win ? 'victory' : 'topout', win ? 'victory' : 'topout', 'gameover');
-      clearMsg = { lines: [{ text: draw0 ? 'DRAW' : win ? 'YOU WIN' : 'YOU LOSE', color: draw0 ? '#eef2f7' : win ? '#f7d33e' : '#ef4b4b', size: 'lg' }], t: performance.now(), keep: true }; draw();
-    } else if (m.t === 'atk'){                                                  // TL：對面打過來的垃圾（照 TL 一樣走 20 幀延遲）
-      if (climb && climb.kind === 'league' && !climb.over && climb.opp){ climb.opp.sent = (climb.opp.sent || 0) + m.n; climbReceive(m.n); sfxEv('impact', 'impact'); }
-    } else if (m.t === 'rnd'){                                                  // TL：外層判定這局誰輸（兩邊同時死也只算先到的那個）
-      if (climb && climb.kind === 'league'){ if (m.seed) climb.opts.seed = m.seed; climb.over = false; roundEnd(m.loser === LOCAL_P ? 'opp' : 'me'); }
-    } else if (m.t === 'quit'){ if (climb){ climb.over = true; active = null; } }
-    else if (m.t === 'key'){ try { document.body.dispatchEvent(new KeyboardEvent(m.type, { code: m.code, key: m.key, bubbles: true, cancelable: true })); } catch(err){} }
-  });
+  addEventListener('message', e => { if (e.source !== window.parent) return; lvInner(e.data || {}); });
   setTimeout(() => { try { window.parent.postMessage({ t: 'ready', p: LOCAL_P }, '*'); } catch(e){} }, 0);
 }
 // ── ROYALE 引擎：每個對手照自己的 APM 出攻擊、隨機挑活著的人打（含你）；被打的行數扣他的「血」，歸零＝被那個人 KO
