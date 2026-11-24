@@ -5297,7 +5297,7 @@ function zmStop(quick){
 const qpRevMusic = () => [...(climb && climb.kind === 'qp' ? climb.mods : pickedMods)].some(id => MODS.find(m => m.id === id)?.rev);
 const qpHas = id => (climb && climb.kind === 'qp' ? climb.mods : pickedMods).has(id);
 // 本站：FLIPSIDE 音樂升 1 個半音、ABYSS 降 1 個半音（music/ 裡的 *-up／*-dn 檔，速度不變；沒上傳就用原調）
-const zmBase = k => String(k || '').replace(/-(up|dn)\d*$/, '');   // FLIPSIDE／ABYSS 轉調版的 key 帶 -up／-dn：開頭／結尾／循環點照原曲（轉調檔時間軸對齊原曲，0ms 偏移）
+const zmBase = k => String(k || '').replace(/c$/, '').replace(/-(up|dn)\d*$/, '');   // CHALLENGE 的 F1 key 尾巴多一個 c（f1c／f1-upc）：也要對到 f1 的開頭段＋循環點   // FLIPSIDE／ABYSS 轉調版的 key 帶 -up／-dn：開頭／結尾／循環點照原曲（轉調檔時間軸對齊原曲，0ms 偏移）
 const ZM_TONED = new Set(['f0-rev', 'f0-expert', 'f1', 'f1ex', 'f1rev', 'f2-rev', 'f3-rev', 'f4-rev', 'f5-rev', 'f6-rev', 'f7-rev', 'f8-rev', 'f9-rev', 'f10-rev', 'tera-rev']);
 const RQ_MUSIC = true;    // REQUIEM：比 DEATH 再降一個全音（F7–F10 高八度加重、低音 −4dB）
 const zmTone = () => qpHas('abyss') && !qpHas('ab_death') ? '-dn' : qpHas('flipside') && !qpHas('fs_death') ? '-up' : '';   // REQUIEM（DEATH 的 FLIPSIDE）音樂照 DEATH，不升調
