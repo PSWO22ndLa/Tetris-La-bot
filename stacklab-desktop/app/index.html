@@ -7911,7 +7911,7 @@ function lbPcMove(o, color){
   let bb0 = lbToBits(o.bd), gN = 0; const q = o.q; let hgt = 0, cnt = 0;
   const keepB2B = !LB_R.noB2B && (o.b2b ?? -1) >= 0;                 // B2B 連著的時候：只接受「每次消行都是 Quad／Spin」的 PC（B2B 比 PC 重要）
   if (color){                                                        // Color Clear：把底下的垃圾行當地板，上面清空就算
-    for (let y = BOT_H - 1; y >= 0; y--){ let g = false; for (let x = 0; x < W; x++) if (o.bd[y * W + x] === 8){ g = true; break; } if (g) gN++; else break; }
+    for (let y = BOT_H - 1; y >= 0; y--){ let g = false; for (let x = 0; x < W; x++) if (o.bd[y * W + x] === 8 || o.bd[y * W + x] === 9 || o.bd[y * W + x] === 10){ g = true; break; } if (g) gN++; else break; }
     if (gN){ const v = new Uint32Array(BOT_H); for (let y = 0; y < BOT_H - gN; y++) v[y + gN] = bb0[y]; bb0 = v; }
   }
   for (let y = 0; y < BOT_H; y++) if (bb0[y]){ hgt = Math.max(hgt, BOT_H - y); cnt += lbPop(bb0[y]); }
@@ -10910,7 +10910,7 @@ function lockPiece(){
   frames[fi] = r.board;
   active = null;
   lockInfo.upper = clearedYs.length > 0 && clearedYs.every(y => y < H - VISIBLE / 2);
-  lockInfo.color = r.cleared > 0 && r.board.every(v => !v || isGarb(v));
+  lockInfo.color = r.cleared > 0 && r.board.every(v => !v || isGarb(v) || v === 9 || v === 10);   // Wound（9）／永久行（10）也是垃圾：DEATH 系有永久行時 Color Clear 才認得到
   lockInfo.holdT = holdType;
   if (climb && !climb.over) climb.garbCleared += garbRows;
 
