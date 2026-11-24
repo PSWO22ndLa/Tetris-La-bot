@@ -5235,7 +5235,7 @@ const qpHas = id => (climb && climb.kind === 'qp' ? climb.mods : pickedMods).has
 // 本站：FLIPSIDE 音樂升 1 個半音、ABYSS 降 1 個半音（music/ 裡的 *-up／*-dn 檔，速度不變；沒上傳就用原調）
 const zmBase = k => String(k || '').replace(/-(up|dn)\d*$/, '');   // FLIPSIDE／ABYSS 轉調版的 key 帶 -up／-dn：開頭／結尾／循環點照原曲（轉調檔時間軸對齊原曲，0ms 偏移）
 const ZM_TONED = new Set(['f0-rev', 'f0-expert', 'f1', 'f1ex', 'f1rev', 'f2-rev', 'f3-rev', 'f4-rev', 'f5-rev', 'f6-rev', 'f7-rev', 'f8-rev', 'f9-rev', 'f10-rev', 'tera-rev']);
-const RQ_MUSIC = false;   // REQUIEM 降全音的音檔：使用者試聽 OK 前先關著（關著＝跟 DEATH 同音高）
+const RQ_MUSIC = true;    // REQUIEM：比 DEATH 再降一個全音（F7–F10 高八度加重、低音 −4dB）
 const zmTone = () => qpHas('abyss') ? '-dn' : qpHas('flipside') && !qpHas('fs_death') ? '-up' : '';   // REQUIEM（DEATH 的 FLIPSIDE）音樂照 DEATH，不升調
 const zmT = f => { const t = zmTone(); return t && ZM_TONED.has(f) ? f + t : f; };
 // 大廳：f0 多聲部；Expert 加 expert 聲部、No Hold 鋼琴小聲、逆位只剩 rev 聲部
