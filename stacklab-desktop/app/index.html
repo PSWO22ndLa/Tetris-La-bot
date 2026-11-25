@@ -10653,6 +10653,7 @@ function oCap(t){                                                      // 連續
 }
 function reqNext(){
   if (sunHas('mut10') && (climb.m10N = (climb.m10N || 0) + 1) % 40 === 0){ buildMut(); const P10 = Object.keys(MUT_SRC).filter(k => k.slice(1) === '10').map(k => MUT[k]); return P10[(rnd() * P10.length) | 0]; }   // MACABRE F7
+  if (sunHas('setup') && (climb.setN = (climb.setN || 0) + 1) % 20 === 0) return setupPiece();   // MACABRE F8：複合結構方塊（不是垃圾）
   if (climb.rv2Rand) return PIECE_ORDER[(Math.random() * 7) | 0];   // MACABRE F4：任務超時 → 完全亂發
   // 「整體 X% 是 O」：沒被強制的那幾顆還會從 7-bag 抽到 O（1/7），所以強制機率 p 要扣掉 → p＋(1−p)/7＝X；強制的 O 最多連 2 顆，避免一整排 O
   if (sunHas('o60') && oForce(.4)) return oCap('O');                      // MACABRE F3：原本 60%（實際約 66%）太恐怖 → 40%
@@ -10947,7 +10948,6 @@ function lockPiece(){
   }
   lockSfx(r.cleared, spin, difficult, prevCombo, prevB2b, isPC, combo);
   if (climb && !climb.over && climb.rs){ rsCheck('piece', lockInfo.type || (lockInfo.cells && lockInfo.cells.t)); if (r.cleared) rsCheck('clear'); if (spin) rsCheck('spin'); }
-  if (climb && !climb.over && sunHas('setup') && (climb.setN = (climb.setN || 0) + 1) % 20 === 0) setTimeout(() => { if (climb && !climb.over) setupRise(); }, 0);
   if (spin && climb && !climb.over && sunHas('nospin')){                  // REQUIEM F2：TALENTLESS——做出任何 spin（含 mini）直接冒 5 行垃圾
     climbInsert(5, false, true); sfxEv('no', 'no'); push('TALENTLESS · +5', '#ff4a5a', 'sm'); }
   if (b2b > prevB2b && r.cleared) bgCircle();                              // 官方：B2B 每延續一次放一圈 bgcircle
@@ -12544,12 +12544,12 @@ const DEATH_AB_FLOORS = {
   5:  { t:'THE ENDLESS FALL…',           sub:'event horizon (freefall abyss), but gravity starts slow and climbs to 20G across the floor · +2 permanent lines', grav:true, mods:['freefall', 'fs_freefall', 'ab_freefall'], perm:2 },
   6:  { t:'LEADEN LIMBS…',               sub:'DAS is locked to 30 frames · gravity rises every floor · the board slowly grows to 15 wide and stays that way', das30:true, mods:['gravity'], widen:true, wmax:15 },
   7:  { t:'THE FLESH TWISTS…',           sub:'mutation · every 40th piece is a floor-10 mutation', mods:['mutation'], mut10:true },
-  8:  { t:'GIFT OR CURSE…',              sub:'every 20 pieces a setup rises from below (TSD, triple tower, DT cannon, imperial cross…) · all-spin · the board grows to 30 rows tall and stays that way', setup:true, mods:['allspin'], vis:30 },
+  8:  { t:'GIFT OR CURSE…',              sub:'every 20th piece is a compound structure piece — a whole setup in one block (TSD, TST, DT cannon, imperial cross, STSD) · all-spin · the board grows to 30 rows tall and stays that way', setup:true, mods:['allspin'], vis:30 },
   9:  { t:'ASHES TO ASHES…',             sub:'no hold · every garbage line is damnation-style · +3 permanent lines', dall:true, mods:['nohold'], perm:3 },
   10: { ...DEATH_FLOORS[10], t:'THE DANCE NEVER ENDS…', sub:DEATH_FLOORS[10].sub + ' · every 20 seconds one curse from F1–F9 joins in', eclipse:true },
   11: DEATH_FLOORS[11],
 };
-const DAB_ECLIPSE = [['rep', 'PIECES REPEAT (70%)'], ['restr', "THE KING'S DECREE"], ['o60', '40% O PIECES'], ['quad', '4-WIDE GARBAGE HOLES'], ['ffg', 'EVENT HORIZON'], ['das30', 'DAS LOCKED TO 30 FRAMES'], ['mut10', 'FLOOR-10 MUTATIONS'], ['setup', 'SETUPS RISE FROM BELOW'], ['dall', 'DAMNATION GARBAGE'], ['nohold', 'NO HOLD']];
+const DAB_ECLIPSE = [['rep', 'PIECES REPEAT (70%)'], ['restr', "THE KING'S DECREE"], ['o60', '40% O PIECES'], ['quad', '4-WIDE GARBAGE HOLES'], ['ffg', 'EVENT HORIZON'], ['das30', 'DAS LOCKED TO 30 FRAMES'], ['mut10', 'FLOOR-10 MUTATIONS'], ['setup', 'COMPOUND SETUP PIECES'], ['dall', 'DAMNATION GARBAGE'], ['nohold', 'NO HOLD']];
 const DEATH_ECLIPSE = [['rep', 'PIECES REPEAT'], ['inv', 'YOUR CONTROLS ARE INVERTED'], ['mut', 'MUTATED PIECES'], ['cdelay', 'LINE CLEARS ARE DELAYED'], ['slip', 'THE GROUND FREEZES'], ['noghost', 'NO SHADOW · 1 NEXT'], ['scythe', 'CLEAR A LINE EVERY 8 SECONDS']];
 const chalOn = () => !!(climb && (hasModRaw('sun') || hasModRaw('death')));
 const dRe = () => !!(climb && climb.mods.has('fs_death'));
@@ -12748,6 +12748,28 @@ const SETUPS = {
   CROSS: ['####.#####', '###...####', '####.#####'],
   STSD:  ['##.#######', '##..######', '###.######', '##..######', '###.######'],
 };
+// MACABRE F8：每 20 顆發一顆「複合結構方塊」——整個 setup（牆＋懸空頂＋地板）是同一顆大方塊，放下去就有現成的 T-spin 洞
+const SETUP_PCS = {
+  TSD:   ['##...', '#...#', '##.##', '#####'],
+  TST:   ['#..#', '##.#', '#..#', '##.#', '####'],
+  DT:    ['##..##', '#...##', '##.###', '###..#', '####.#', '###..#', '####.#', '######'],
+  CROSS: ['##.##', '#...#', '##.##', '#####'],
+  STSD:  ['#.##', '#..#', '##.#', '#..#', '##.#', '####'],
+};
+const SETUP_NAME = { TSD: 'TSD', TST: 'TST', DT: 'DT cannon', CROSS: 'imperial cross', STSD: 'STSD' };
+function setupPiece(){
+  const ks = Object.keys(SETUP_PCS), k = ks[(rnd() * ks.length) | 0], flip = rnd() < .5, name = 'SU' + k + (flip ? 'f' : '');
+  if (!SHAPES[name]){
+    const rows = SETUP_PCS[k].map(r => flip ? [...r].reverse().join('') : r), cs = [];
+    rows.forEach((row, y) => [...row].forEach((ch, x) => { if (ch === '#') cs.push([x, y]); }));
+    const w = rows[0].length, h = rows.length, S = Math.max(w, h), ox = Math.floor((S - w) / 2), oy = Math.floor((S - h) / 2);
+    const st = [cs.map(([x, y]) => [x + ox, y + oy])];
+    for (let r = 1; r < 4; r++) st.push(st[r - 1].map(([x, y]) => [S - 1 - y, x]));
+    SHAPES[name] = st; SHAPES[name].s = S; PK[name] = KEYS.indexOf('T');
+  }
+  setTimeout(() => { if (climb && !climb.over) waterfall('GIFT OR CURSE?' + wfSub(`a ${SETUP_NAME[k]} structure is in your queue`), { bgcolor:'#2a0610', timeout:2200 }); }, 0);
+  return name;
+}
 function setupRise(){
   const names = Object.keys(SETUPS), nm = names[(Math.random() * names.length) | 0], rows = SETUPS[nm], flip = Math.random() < .5, ox = (Math.random() * (W - 9)) | 0;
   const g = grid();
