@@ -6076,7 +6076,7 @@ function tintPart(img, key){
 }
 // 官方 Kc.zenith.ns.Board 的 border：base.2x (989,69,1220,2110) 九宮格 [182,182,182,202]；換算成我們切的 frame 範圍＝左 111、上 111、右 113、下 191
 // 側欄（garbage bar）只拉中間：上 111、下 80（⚠️ 這兩個是照圖量的）
-const ATLAS_NINE = { frame:[111, 111, 113, 191], lbar:[0, 111, 0, 80], rbar:[0, 111, 0, 80], next:[0, 200, 0, 120] };   // next：ASCETICISM 只看 1 顆時框縮短（上 133 標題＋邊、下 81 邊，中間格子區拉伸）
+const ATLAS_NINE = { frame:[111, 111, 113, 191], lbar:[0, 111, 0, 80], rbar:[0, 111, 0, 80], next:[0, 181, 0, 183] };   // next：照官方 tetrio.js zenith next 的 NineSlicePlane（貼圖 2539,69,610,1734、slices 上下各 250+2）換算到本站裁切範圍（140～1734）→ 上 181、下 183
 let SPEC_SKIN = null;                           // 觀戰盤面：{ img, tint }——圖集照被看的人的 mod 選、框色照高度（跟自己玩的時候同一套規則）
 function atlasDraw(c, key, r){
   const img = (SPEC_SKIN && SPEC_SKIN.img) || boardImg(), f = img.width / 4096, a = BOARD_ATLAS[key];
@@ -6159,7 +6159,8 @@ function evIcon(id){
 function drawSkinBadges(){
   const SM = climb && (climb.showMods || climb.mods);                    // EASY 卡（CHARIOT／IDIOT）不進規則用的 climb.mods，但徽章要畫
   if (!climb || climb.kind !== 'qp' || !SM.size) return;
-  drawBadgeGrid(ctx, SM, skinRects(), cell, boardImg(), skinKind(), DUO_FULL(), (H + GUTB()) * cell);
+  const R0 = skinRects(); R0.next = { ...R0.next, h: 1594 * R0.k };   // 徽章照完整 NEXT 框的位置排（ASCETICISM 縮短 NEXT 時徽章不跟著往上跑）
+  drawBadgeGrid(ctx, SM, R0, cell, boardImg(), skinKind(), DUO_FULL(), (H + GUTB()) * cell);
 }
 // 觀戰盤面也走這裡：徽章畫法（圖集、朝向、菱形斜格）跟自己盤面完全同一套
 function drawBadgeGrid(ctx, mods, R, cell, img, kind, duoF, bottom){
