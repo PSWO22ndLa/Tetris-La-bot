@@ -10645,15 +10645,25 @@ function refillQueue(){
     queue.push(climb && sunHas('rep') && last && Math.random() < (dRe() ? .7 : .5) ? last : climb && sunHas('ugly') ? uglyPiece() : chalOn() ? reqNext() : nextBag()); }   // DEATH F1：一半機率跟上一顆一樣（REQUIEM 70%）   // THE SUN F9：醜方塊
 }
 // REQUIEM：F4 沒有 T／I、F3 沒有 I、F6 每 50 顆一顆六格、F8 一半是 O
+function oForce(tot){                                                // 只決定「要不要強制發 O」；連續 O 的上限在 reqNext 收尾（oCap）
+  const p = OF_P[tot] ?? (tot - 1 / 7) / (6 / 7);
+  return (climb.oRun || 0) < 2 && Math.random() < p;
+}
+const OF_P = { .4: .36, .5: .55 };                                    // 實測校正過（有連續上限會吃掉一些 O）：整體約 40%／50%
+function oCap(t){                                                      // 連續 O 最多 2 顆（bag 自己抽到的也算）
+  if (t === 'O' && (climb.oRun || 0) >= 2 && (sunHas('o60') || sunHas('o50'))){ let k = 0; while (t === 'O' && k++ < 8) t = nextBag(); }
+  climb.oRun = t === 'O' ? (climb.oRun || 0) + 1 : 0; return t;
+}
 function reqNext(){
   if (sunHas('mut10') && (climb.m10N = (climb.m10N || 0) + 1) % 20 === 0){ buildMut(); const P10 = Object.keys(MUT_SRC).filter(k => k.slice(1) === '10').map(k => MUT[k]); return P10[(rnd() * P10.length) | 0]; }   // MACABRE F7
   if (climb.rv2Rand) return PIECE_ORDER[(Math.random() * 7) | 0];   // MACABRE F4：任務超時 → 完全亂發
-  if (sunHas('o60') && Math.random() < .6) return 'O';
+  // 「整體 X% 是 O」：沒被強制的那幾顆還會從 7-bag 抽到 O（1/7），所以強制機率 p 要扣掉 → p＋(1−p)/7＝X；強制的 O 最多連 2 顆，避免一整排 O
+  if (sunHas('o60') && oForce(.4)) return oCap('O');                      // MACABRE F3：原本 60%（實際約 66%）太恐怖 → 40%
   if (sunHas('hexo') && (climb.hexN = (climb.hexN || 0) + 1) % 50 === 0){ const H6 = HEXA || (HEXA = buildPolys(6, 'H')); return H6[(rnd() * H6.length) | 0]; }
-  if (sunHas('o50') && Math.random() < .5) return 'O';
+  if (sunHas('o50') && oForce(.5)) return oCap('O');                     // REQUIEM F8：實際 50%（原本疊 bag 約 57%）
   let t = nextBag(), k = 0;
   while (((sunHas('noI') && /^I5?$/.test(t)) || (sunHas('noT') && t === 'T')) && k++ < 60) t = nextBag();
-  return t;
+  return oCap(t);
 }
 function spawn(type){
   syncVisible();
@@ -12532,7 +12542,7 @@ DEATH_RE_FLOORS[10] = DEATH_FLOORS[10]; DEATH_RE_FLOORS[11] = DEATH_FLOORS[11];
 const DEATH_AB_FLOORS = {
   1:  { t:'THE FIRST STEP OF THE DANCE…', sub:'pieces repeat: 70% chance the next piece is the same as the last one', rep:true },
   2:  { t:"THE KING'S DECREE…",          sub:'every few seconds a restriction appears above the board · break it and TYRANT takes over for 10 seconds · the second time REGICIDE (tyrant flipside) · from the third time on USURPER (tyrant abyss)', restr:true },
-  3:  { t:'THE SQUARE DANCE…',           sub:'60% of all pieces are O · all-spin · garbage has 4-wide holes', o60:true, quad:true, mods:['allspin'] },
+  3:  { t:'THE SQUARE DANCE…',           sub:'40% of all pieces are O · all-spin · garbage has 4-wide holes', o60:true, quad:true, mods:['allspin'] },
   4:  { t:'NO ONE IS COMING…',           sub:'revive tasks, one after another · fail one within 30 seconds and REGICIDE (tyrant flipside) takes over and pieces come in random order until you finish it', rv2:true },
   5:  { t:'THE ENDLESS FALL…',           sub:'event horizon (freefall abyss), but gravity starts slow and climbs to 20G across the floor · +2 permanent lines', grav:true, mods:['freefall', 'fs_freefall', 'ab_freefall'], perm:2 },
   6:  { t:'LEADEN LIMBS…',               sub:'DAS is locked to 30 frames · gravity rises every floor · the board slowly grows to 15 wide and stays that way', das30:true, mods:['gravity'], widen:true, wmax:15 },
@@ -12542,7 +12552,7 @@ const DEATH_AB_FLOORS = {
   10: { ...DEATH_FLOORS[10], t:'THE DANCE NEVER ENDS…', sub:DEATH_FLOORS[10].sub + ' · every 20 seconds one curse from F1–F9 joins in', eclipse:true },
   11: DEATH_FLOORS[11],
 };
-const DAB_ECLIPSE = [['rep', 'PIECES REPEAT (70%)'], ['restr', "THE KING'S DECREE"], ['o60', '60% O PIECES'], ['quad', '4-WIDE GARBAGE HOLES'], ['ffg', 'EVENT HORIZON'], ['das30', 'DAS LOCKED TO 30 FRAMES'], ['mut10', 'FLOOR-10 MUTATIONS'], ['setup', 'SETUPS RISE FROM BELOW'], ['dall', 'DAMNATION GARBAGE'], ['nohold', 'NO HOLD']];
+const DAB_ECLIPSE = [['rep', 'PIECES REPEAT (70%)'], ['restr', "THE KING'S DECREE"], ['o60', '40% O PIECES'], ['quad', '4-WIDE GARBAGE HOLES'], ['ffg', 'EVENT HORIZON'], ['das30', 'DAS LOCKED TO 30 FRAMES'], ['mut10', 'FLOOR-10 MUTATIONS'], ['setup', 'SETUPS RISE FROM BELOW'], ['dall', 'DAMNATION GARBAGE'], ['nohold', 'NO HOLD']];
 const DEATH_ECLIPSE = [['rep', 'PIECES REPEAT'], ['inv', 'YOUR CONTROLS ARE INVERTED'], ['mut', 'MUTATED PIECES'], ['cdelay', 'LINE CLEARS ARE DELAYED'], ['slip', 'THE GROUND FREEZES'], ['noghost', 'NO SHADOW · 1 NEXT'], ['scythe', 'CLEAR A LINE EVERY 8 SECONDS']];
 const chalOn = () => !!(climb && (hasModRaw('sun') || hasModRaw('death')));
 const dRe = () => !!(climb && climb.mods.has('fs_death'));
