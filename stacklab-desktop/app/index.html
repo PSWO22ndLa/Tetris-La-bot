@@ -5834,6 +5834,9 @@ const genR = () => genBar2() ? cell * 20 / 30 + cell * 9 / 92 : 0;   // 雪球�
 // 以盤面左上角（可視區頂）為原點，算出每個零件該畫在哪
 // 官方 Kc.generic.ns.boardsides：盤面矮於 20 行時，HOLD／NEXT／數據整組縮成 H÷20（雪球 4 行＝0.2 倍），高於 30 行縮成 H÷30
 const sideScale = () => mode === 'sim' && VISIBLE < 20 ? VISIBLE / 20 : mode === 'sim' && VISIBLE > 30 ? VISIBLE / 30 : 1;
+// ASCETICISM 系列（逆位 nohold，含 FLIPSIDE／ABYSS）：HOLD 框整個拔掉、NEXT 框縮到只裝得下看得到的那幾顆（ABYSS 一顆都看不到＝NEXT 也拔掉）
+const ascPanels = () => !!(climb && typeof hasMod === 'function' && hasMod('ascetic'));
+const nextSlots = () => ascPanels() ? Math.max(0, Math.min(5, nextShown())) : 5;
 function skinRects(){
   const s = cell / 92, k = s * sideScale(),   /* 實機 QP：HOLD／NEXT 跟盤面框同比例（原本縮 0.75，跟使用者的實機截圖比太小） */   /* 縮小盤面（雪球）照官方原尺寸×H/20，不再額外 ×0.75 */ Y0 = (H - VISIBLE) * cell, vs = VISIBLE / 20;   // 實機 Duo：HOLD／NEXT 是原尺寸（NEXT 高到盤面約 8 成）   // HOLD／NEXT／側欄縮 0.75 倍，手機才放得下
   const frame = { x:-79*s, y:Y0 - 29*s, w:(W * 92 + 160)*s, h:(VISIBLE * 92 + 188)*s };   // 10×20 時＝1080×2028（原圖大小）；雪球等其他尺寸用九宮格拉
@@ -5842,10 +5845,11 @@ function skinRects(){
   const lbar  = { x:DF ? frame.x + 29*s - 160*k : frame.x - 146*k, y:frame.y, w:160*k, h:(VISIBLE * 92 + 110)*s };
   const hold  = { x:DF ? lbar.x + 29*k - 540*k : lbar.x - 534*k, y:frame.y, w:540*k, h:490*k };
   const rbar  = { x:frame.x + frame.w - 14*k, y:frame.y, w:8*k, h:(VISIBLE * 92 + 110)*s };      // 實機 QP 右邊沒有側欄：寬度縮到只剩接縫，NEXT 直接貼著盤面框
-  const next  = { x:DF ? frame.x + 1049*s : rbar.x + rbar.w - 6*k, y:frame.y, w:540*k, h:1594*k };
-  return { s, k, Y0, frame, lbar, hold, rbar, next,
+  const nN = Math.max(1, nextSlots());
+  const next  = { x:DF ? frame.x + 1049*s : rbar.x + rbar.w - 6*k, y:frame.y, w:540*k, h:(1594 - 276 * (5 - nN))*k };
+  return { s, k, Y0, frame, lbar, hold, rbar, next, nN,
     holdIn: { x:hold.x + 79*k, y:hold.y + 133*k, w:461*k, h:276*k },
-    nextIn: { x:next.x, y:next.y + 133*k, w:459*k, h:1380*k } };
+    nextIn: { x:next.x, y:next.y + 133*k, w:459*k, h:276 * nN * k } };
 }
 // 圖集左下的小零件（4096 基準，用 alpha 範圍量出來的）。影片裡確認過用途的才接上：
 //   b2bBurst：盤面左邊的 B2B 計數爆炸框（白底黑字，例：202）
@@ -6072,7 +6076,7 @@ function tintPart(img, key){
 }
 // 官方 Kc.zenith.ns.Board 的 border：base.2x (989,69,1220,2110) 九宮格 [182,182,182,202]；換算成我們切的 frame 範圍＝左 111、上 111、右 113、下 191
 // 側欄（garbage bar）只拉中間：上 111、下 80（⚠️ 這兩個是照圖量的）
-const ATLAS_NINE = { frame:[111, 111, 113, 191], lbar:[0, 111, 0, 80], rbar:[0, 111, 0, 80] };
+const ATLAS_NINE = { frame:[111, 111, 113, 191], lbar:[0, 111, 0, 80], rbar:[0, 111, 0, 80], next:[0, 200, 0, 120] };   // next：ASCETICISM 只看 1 顆時框縮短（上 133 標題＋邊、下 81 邊，中間格子區拉伸）
 let SPEC_SKIN = null;                           // 觀戰盤面：{ img, tint }——圖集照被看的人的 mod 選、框色照高度（跟自己玩的時候同一套規則）
 function atlasDraw(c, key, r){
   const img = (SPEC_SKIN && SPEC_SKIN.img) || boardImg(), f = img.width / 4096, a = BOARD_ATLAS[key];
@@ -6245,15 +6249,15 @@ function drawSnowLights(R){
   strand([[q.x + q.w * .1, q.y + q.h * .02], [q.x + q.w * .8, q.y], [q.x + q.w * .98, q.y + q.h * .35], [q.x + q.w * .9, q.y + q.h * .75], [q.x + q.w * .2, q.y + q.h * .97]]);
 }
 function drawSkinPanels(){
-  const R = skinRects();
-  atlasDraw(ctx, 'holdBg', R.holdIn); atlasDraw(ctx, 'queueBg', R.nextIn);
-  ctx.save(); ctx.globalAlpha = holdUsed ? .45 : 1;
-  atlasDraw(ctx, 'hold', R.hold);
-  if (holdType) drawMini(holdType, R.holdIn, 1);
-  ctx.restore();
-  atlasDraw(ctx, 'next', R.next);
-  const q = $('bagMode').checked ? nextList() : [];
-  q.forEach((t, i) => drawMini(t, { x:R.nextIn.x, y:R.nextIn.y + i * R.nextIn.h / 5, w:R.nextIn.w, h:R.nextIn.h / 5 }, 1));
+  const R = skinRects(), noH = ascPanels(), noN = ascPanels() && nextSlots() === 0;
+  if (!noH) atlasDraw(ctx, 'holdBg', R.holdIn); if (!noN) atlasDraw(ctx, 'queueBg', R.nextIn);
+  if (!noH){ ctx.save(); ctx.globalAlpha = holdUsed ? .45 : 1;
+    atlasDraw(ctx, 'hold', R.hold);
+    if (holdType) drawMini(holdType, R.holdIn, 1);
+    ctx.restore(); }
+  if (!noN){ atlasDraw(ctx, 'next', R.next);
+    const q = $('bagMode').checked ? nextList() : [];
+    q.forEach((t, i) => drawMini(t, { x:R.nextIn.x, y:R.nextIn.y + i * R.nextIn.h / R.nN, w:R.nextIn.w, h:R.nextIn.h / R.nN }, 1)); }
   if (climb && climb.snow) drawSnowLights(R);
 }
 // 在矩形裡置中畫一顆迷你方塊
@@ -6502,7 +6506,7 @@ function drawGenBorder(X = ctx){
   X.beginPath(); X.moveTo(-lw / 2, top); X.lineTo(-lw / 2, H * cell + lw / 2); X.lineTo(W * cell + lw / 2, H * cell + lw / 2); X.lineTo(W * cell + lw / 2, top); X.stroke(); X.restore();
 }
 function drawSlotGen(label, types, x0, wide, dim, X, CS){
-  const isN = label === 'NEXT', u = CS / 30, bw = 156 * u, bh = (28 + 90 * (isN ? 5 : 1)) * u, top = (H - VISIBLE) * CS;
+  const isN = label === 'NEXT', u = CS / 30, bw = 156 * u, bh = (28 + 90 * (isN ? Math.max(1, nextSlots()) : 1)) * u, top = (H - VISIBLE) * CS;
   const bx = isN ? x0 + genR() : x0 + wide - bw - genL();
   X.save();
   X.globalAlpha = dim ? .4 : 1;
@@ -9738,12 +9742,12 @@ function drawFrame(){
       if (genBoard()) drawGenBorder();
       ctx.save();
       ctx.translate(-GUTL() * cell, 0);
-      drawSlot('HOLD', holdType ? [holdType] : [], 0, GUTL()*cell, holdUsed);
+      if (!ascPanels()) drawSlot('HOLD', holdType ? [holdType] : [], 0, GUTL()*cell, holdUsed);   // ASCETICISM：沒有 HOLD 框
       ctx.restore();
     }
     ctx.save();
     ctx.translate(W * cell, 0);
-    if (!boardSkinOn()) drawSlot('NEXT', $('bagMode').checked ? nextList() : [], 0, GUTR0()*cell, false);
+    if (!boardSkinOn() && nextSlots() > 0) drawSlot('NEXT', $('bagMode').checked ? nextList() : [], 0, GUTR0()*cell, false);
     if (climb) drawClimbHUD(GUTR0()*cell);
     ctx.restore();
     if (climb){ drawGarbageMeter(); drawCustomGoal(); drawZenDisplay(); }
@@ -17528,21 +17532,23 @@ function qplSpecBoard0(c, o, cs, sk, gl, gr, V, main){
   c.save(); c.translate(0, (H - BOT_H + 4) * cs); qplBoardCells(c, o, cs); c.restore();
   // 尺（先畫，HOLD／NEXT 蓋在上面）
   if (main) drawRuler(c, cs, V);
+  const oAsc = !!(o.mods && o.mods.has('ascetic')), oNq = o.mods && o.mods.has('ab_ascetic') ? 0 : oAsc ? 1 : 5;   // ASCETICISM：HOLD 拔掉、NEXT 縮短（nextShown 同款）
   if (sk){
     atlasDraw(c, 'lbar', R.lbar); atlasDraw(c, 'frame', R.frame);
-    atlasDraw(c, 'queueBg', R.nextIn); atlasDraw(c, 'next', R.next);
-    if (main || !V.DF){ atlasDraw(c, 'holdBg', R.holdIn); atlasDraw(c, 'hold', R.hold); if (o.hold) qplMini(c, o.hold, R.holdIn); }
+    const nN = Math.max(1, oNq), nx = { ...R.next, h: R.next.h - 276 * (5 - nN) * R.k }, nxIn = { ...R.nextIn, h: R.nextIn.h * nN / 5 };
+    if (oNq) { atlasDraw(c, 'queueBg', nxIn); atlasDraw(c, 'next', nx); }
+    if (oAsc){}
+    else if (main || !V.DF){ atlasDraw(c, 'holdBg', R.holdIn); atlasDraw(c, 'hold', R.hold); if (o.hold) qplMini(c, o.hold, R.holdIn); }
     else {                                                                  // 實機 Duo 隊友的 HOLD：兩個盤面中間、被看的人的 NEXT 下面，底部跟盤面齊（drawOppBoard 同款量測）
       const k = R.k, nx = R.next.x - R.mateX, hy = R.next.y + 1563 * k - 6 * k, hb = { x: nx, y: hy, w: 476 * k, h: R.frame.y + 1919 * R.s - hy }, im = SPEC_SKIN && SPEC_SKIN.img;
       c.fillStyle = '#000'; c.fillRect(hb.x + 26 * k, hb.y + 26 * k, hb.w - 26 * k, hb.h - 52 * k);
       if (V.duoR && im){ const f = im.width / 4096; c.drawImage(im, 172 * f, 240 * f, 493 * f, 359 * f, hb.x, hb.y, hb.w, hb.h); }
       else { c.strokeStyle = '#fff'; c.lineWidth = Math.max(1, 14 * k); c.strokeRect(hb.x + 20 * k, hb.y + 20 * k, hb.w - 40 * k, hb.h - 40 * k); }
       if (o.hold) qplMini(c, o.hold, { x: hb.x + 40 * k, y: hb.y + 40 * k, w: hb.w - 60 * k, h: hb.h - 130 * k }); }
-    (o.q || []).slice(1, 6).forEach((t, i) => qplMini(c, t, { x: R.nextIn.x, y: R.nextIn.y + i * R.nextIn.h / 5, w: R.nextIn.w, h: R.nextIn.h / 5 }));
+    (o.q || []).slice(1, 1 + oNq).forEach((t, i) => qplMini(c, t, { x: nxIn.x, y: nxIn.y + i * nxIn.h / nN, w: nxIn.w, h: nxIn.h / nN }));
   } else {
-    c.save(); c.translate(-gl * cs, 0); drawSlot('HOLD', o.hold ? [o.hold] : [], 0, gl * cs, false, c, cs, V); c.restore();
-    const nq = o.mods && o.mods.has('ab_ascetic') ? 0 : o.mods && o.mods.has('ascetic') ? 1 : 5;   // nextShown 同款
-    c.save(); c.translate(W * cs, 0); drawSlot('NEXT', (o.q || []).slice(1, 1 + nq), 0, gr * cs, false, c, cs, V); c.restore();
+    if (!oAsc){ c.save(); c.translate(-gl * cs, 0); drawSlot('HOLD', o.hold ? [o.hold] : [], 0, gl * cs, false, c, cs, V); c.restore(); }
+    if (oNq){ c.save(); c.translate(W * cs, 0); drawSlot('NEXT', (o.q || []).slice(1, 1 + oNq), 0, gr * cs, false, c, cs, V); c.restore(); }
   }
   // 垃圾條（drawGarbageMeter 同款：黃＝剛到、空心紅＝快進場、實心紅＝要進場；只到可視區頂端）
   { let y = H * cs; const wpx = Math.max(3, cs * .22), now = performance.now();
