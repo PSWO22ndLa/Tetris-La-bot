@@ -5039,14 +5039,14 @@ function bgm(id){
 // 官方 La.BgmFadeOut／mm.Stop(t)：音量在 ms 內降到 0 再停（⚠️ BgmFadeOut 的秒數沒寫在 tetrio.js 外層，取 1 秒）
 const BX = ['bx-clear', 'bx-top', 'bx-pre', 'bx-in', 'bx-shut', 'bx-open0', 'bx-open'];
 let BX_T = [];
-function boardFx(k){
+function boardFx(k, preMs = 1000){
   const st = $('stage'); if (!st) return;
   BX_T.forEach(clearTimeout); BX_T = [];
   st.classList.remove(...BX);
   if (!k) return;
   if (k === 'top') bgDeath(); else if (k === 'clear') bgCircle({ amt: 300, speed: 300 });   // 官方 GameOver：頂死／通關的背景粒子
   if (k === 'top') st.style.setProperty('--bxr', (Math.random() < .5 ? -17 : 17) + 'deg');
-  if (k === 'pre'){ st.classList.add('bx-pre'); BX_T.push(setTimeout(() => { st.classList.remove('bx-pre'); st.classList.add('bx-in'); BX_T.push(setTimeout(() => st.classList.remove('bx-in'), 600)); }, 1000)); return; }   // 官方 prestart 1 秒後 PlayZoomInto("slow")
+  if (k === 'pre'){ st.classList.add('bx-pre'); BX_T.push(setTimeout(() => { st.classList.remove('bx-pre'); st.classList.add('bx-in'); BX_T.push(setTimeout(() => st.classList.remove('bx-in'), 600)); }, preMs)); return; }   // 官方 prestart 1 秒後 PlayZoomInto("slow")
   if (k === 'open'){ st.classList.add('bx-open0'); requestAnimationFrame(() => requestAnimationFrame(() => { st.classList.remove('bx-open0'); st.classList.add('bx-open'); BX_T.push(setTimeout(() => st.classList.remove('bx-open'), 300)); })); return; }   // zoominto "fast"
   st.classList.add('bx-' + k);
 }
@@ -11675,7 +11675,9 @@ function startClimb(kind = 'qp', opts = {}){
   rpBar(false); rpBegin(kind, opts);
   IRS_TAP = 0; IHS_TAP = false;
   { const d = document.getElementById('listReq'); if (d) d.remove(); }
-  if (typeof boardFx === 'function') boardFx(kind === 'practice' && ['40l', 'blitz', 'zen'].includes(opts.sub || 'zen') ? (RETRYING ? 'open' : 'pre') : opts.custom && !opts.custom.tower && !opts.room && RETRYING ? 'open' : null);
+  // 官方 FormatOptions("multi")：QP 也是 zoominto "slow"、prestart 50ms → 盤面從下面滑上來；重試 zoominto "fast"
+  const qpIn = kind === 'qp' && !opts.custom && !opts.room;
+  if (typeof boardFx === 'function') boardFx(kind === 'practice' && ['40l', 'blitz', 'zen'].includes(opts.sub || 'zen') ? (RETRYING ? 'open' : 'pre') : qpIn ? (RETRYING ? 'open' : 'pre') : opts.custom && !opts.custom.tower && !opts.room && RETRYING ? 'open' : null, qpIn ? 50 : 1000);
   if ((kind !== 'qp' || (opts.custom && !opts.custom.tower)) && !climb && !opts.keepScore && typeof tbgNext === 'function') tbgNext();   // 官方 start_40l／blitz／zen／custom、房間開局 → ni() 換一張背景（局中 RETRY 不換）
   { const r = $('soloRes'); if (r) r.className = ''; }
   ZENH.undo.length = 0; ZENH.redo.length = 0;                     // 新的一局：ZEN 的 UNDO 紀錄清掉
