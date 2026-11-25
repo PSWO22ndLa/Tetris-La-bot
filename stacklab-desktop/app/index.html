@@ -6083,7 +6083,7 @@ function atlasDraw(c, key, r){
   if (dangerNow && DANGER_KEYS.has(key)){ src = tintPart(img, key); sx = sy = 0; sw = src.width; sh = src.height; }
   else if ((c === ctx || SPEC_SKIN) && DANGER_KEYS.has(key)){ const col = SPEC_SKIN ? SPEC_SKIN.tint : frameTintNow(); if (col){ src = tintPartColor(img, key, col); sx = sy = 0; sw = src.width; sh = src.height; } }
   const N = ATLAS_NINE[key], k = key === 'frame' ? ((SPEC_SKIN && SPEC_SKIN.cs) || cell) / 92 / (sw / a[2]) : r.w / sw;   // 主框：角跟格子同比例（1 格＝92px）；側欄：寬度原比例                                      // 寬高比跟原圖不一樣（雪球、MUTATION）→ 九宮格，邊框不變形
-  if (N && Math.abs(r.h / sh - k) > .01){ const g = sw / a[2]; nine(c, src, sx, sy, sw, sh, N[0]*g, N[1]*g, N[2]*g, N[3]*g, r.x, r.y, r.w, r.h, k); return; }
+  if (N && (Math.abs(r.h / sh - k) > .01 || Math.abs(r.w / sw - k) > .01)){ const g = sw / a[2]; nine(c, src, sx, sy, sw, sh, N[0]*g, N[1]*g, N[2]*g, N[3]*g, r.x, r.y, r.w, r.h, k); return; }   // 只有寬度變（DEATH／REQUIEM／MACABRE 長寬盤面）也要九宮格，不然整張框被橫向拉、邊框吃進左右兩欄
   c.drawImage(src, sx, sy, sw, sh, r.x, r.y, r.w, r.h);
 }
 function drawSkinUnder(){                       // 盤面底圖：畫在格子之前
@@ -10655,7 +10655,7 @@ function oCap(t){                                                      // 連續
   climb.oRun = t === 'O' ? (climb.oRun || 0) + 1 : 0; return t;
 }
 function reqNext(){
-  if (sunHas('mut10') && (climb.m10N = (climb.m10N || 0) + 1) % 20 === 0){ buildMut(); const P10 = Object.keys(MUT_SRC).filter(k => k.slice(1) === '10').map(k => MUT[k]); return P10[(rnd() * P10.length) | 0]; }   // MACABRE F7
+  if (sunHas('mut10') && (climb.m10N = (climb.m10N || 0) + 1) % 40 === 0){ buildMut(); const P10 = Object.keys(MUT_SRC).filter(k => k.slice(1) === '10').map(k => MUT[k]); return P10[(rnd() * P10.length) | 0]; }   // MACABRE F7
   if (climb.rv2Rand) return PIECE_ORDER[(Math.random() * 7) | 0];   // MACABRE F4：任務超時 → 完全亂發
   // 「整體 X% 是 O」：沒被強制的那幾顆還會從 7-bag 抽到 O（1/7），所以強制機率 p 要扣掉 → p＋(1−p)/7＝X；強制的 O 最多連 2 顆，避免一整排 O
   if (sunHas('o60') && oForce(.4)) return oCap('O');                      // MACABRE F3：原本 60%（實際約 66%）太恐怖 → 40%
@@ -12546,7 +12546,7 @@ const DEATH_AB_FLOORS = {
   4:  { t:'NO ONE IS COMING…',           sub:'revive tasks, one after another · fail one within 30 seconds and REGICIDE (tyrant flipside) takes over and pieces come in random order until you finish it', rv2:true },
   5:  { t:'THE ENDLESS FALL…',           sub:'event horizon (freefall abyss), but gravity starts slow and climbs to 20G across the floor · +2 permanent lines', grav:true, mods:['freefall', 'fs_freefall', 'ab_freefall'], perm:2 },
   6:  { t:'LEADEN LIMBS…',               sub:'DAS is locked to 30 frames · gravity rises every floor · the board slowly grows to 15 wide and stays that way', das30:true, mods:['gravity'], widen:true, wmax:15 },
-  7:  { t:'THE FLESH TWISTS…',           sub:'mutation · every 20th piece is a floor-10 mutation', mods:['mutation'], mut10:true },
+  7:  { t:'THE FLESH TWISTS…',           sub:'mutation · every 40th piece is a floor-10 mutation', mods:['mutation'], mut10:true },
   8:  { t:'GIFT OR CURSE…',              sub:'every 20 pieces a setup rises from below (TSD, triple tower, DT cannon, imperial cross…) · all-spin · the board grows to 30 rows tall and stays that way', setup:true, mods:['allspin'], vis:30 },
   9:  { t:'ASHES TO ASHES…',             sub:'no hold · every garbage line is damnation-style · +3 permanent lines', dall:true, mods:['nohold'], perm:3 },
   10: { ...DEATH_FLOORS[10], t:'THE DANCE NEVER ENDS…', sub:DEATH_FLOORS[10].sub + ' · every 20 seconds one curse from F1–F9 joins in', eclipse:true },
