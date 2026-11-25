@@ -5616,12 +5616,12 @@ function mutBlock(){
   buildMut();
   const q = [];
   for (let b = 0; b < 2; b++){ const s = PIECE_ORDER.slice(); for (let i = s.length - 1; i > 0; i--){ const j = (rnd() * (i + 1)) | 0; [s[i], s[j]] = [s[j], s[i]]; } q.push(...s); }
-  // DEATH F3：照這層爬的進度，突變塊 1→5 顆（每 14 顆）、可用的組從 F1 一路開到 F8；F11 抽到時直接全開
+  // DEATH F3：照這層爬的進度，突變塊 1→5 顆（每 14 顆）、可用的組從 F1 一路開到 F10；F11 抽到時直接全開
   let fl = floorOf(climb.alt).n, nm = 3;
-  if (sunHas('mut')){
+  if (sunHas('mut')){                                                 // DEATH F3：F1–F10 十組全部會開（原本只開到 F8，F9／F10 那 14 顆永遠抽不到）
     const t = sunCur().eclipse ? 1 : floorT();
-    fl = 1 + Math.round(t * 7); nm = 1 + Math.round(t * 4);
-  }
+    fl = 1 + Math.round(t * 9); nm = 1 + Math.round(t * 4);
+  } else if (!climb.mods.has('mutation') && climb.sunMods && climb.sunMods.has('mutation')) fl = 10;   // MACABRE F7 等樓層附帶的 mutation：70 顆全收（不跟著 QP 樓層數只開一部分）
   const pool = Object.keys(MUT_SRC).filter(k => +k.slice(1) <= fl).map(k => MUT[k]);
   for (let i = 0; i < nm; i++) q.splice((rnd() * (q.length + 1)) | 0, 0, pool[(rnd() * pool.length) | 0]);
   return q;
@@ -12512,7 +12512,7 @@ const SUN_FLOORS = {
 const DEATH_FLOORS = {
   1:  { t:'THE CANDLE FLICKERS…',      sub:'pieces repeat: 50% chance the next piece is the same as the last one', rep:true },
   2:  { t:'THE WORLD TURNS OVER…',      sub:'inverted controls: left ↔ right, CW ↔ CCW, soft drop ↔ hard drop', inv:true },
-  3:  { t:'FLESH TWISTS…',              sub:'mutated pieces creep in: from 1 to 5 in every 14 pieces, and from floor 1 sets up to floor 8 sets as you climb', mut:true },
+  3:  { t:'FLESH TWISTS…',              sub:'mutated pieces creep in: from 1 to 5 in every 14 pieces, and from floor 1 sets up to floor 10 sets (all 70) as you climb', mut:true },
   4:  { t:'NOTHING STAYS STILL…',       sub:'all-spin rules · every garbage line has two 2-wide holes', mods:['allspin'], dwh:true },
   5:  { t:'THE TRIALS OF THE DEAD…',    sub:'5 trials at 450 · 500 · 550 · 600 · 650m, easiest to hardest · you cannot pass one before finishing it · +2 permanent lines', trials:true, perm:2 },
   6:  { t:'TIME SLOWS TO A CRAWL…',     sub:'every line clear is delayed (loaded dice)', cdelay:true },
@@ -12543,7 +12543,7 @@ const DEATH_AB_FLOORS = {
   4:  { t:'NO ONE IS COMING…',           sub:'revive tasks, one after another · fail one within 30 seconds and REGICIDE (tyrant flipside) takes over and pieces come in random order until you finish it', rv2:true },
   5:  { t:'THE ENDLESS FALL…',           sub:'event horizon (freefall abyss), but gravity starts slow and climbs to 20G across the floor · +2 permanent lines', grav:true, mods:['freefall', 'fs_freefall', 'ab_freefall'], perm:2 },
   6:  { t:'LEADEN LIMBS…',               sub:'DAS is locked to 30 frames · gravity rises every floor · the board slowly grows to 15 wide and stays that way', das30:true, mods:['gravity'], widen:true, wmax:15 },
-  7:  { t:'THE FLESH TWISTS…',           sub:'mutation · every 40th piece is a floor-10 mutation', mods:['mutation'], mut10:true },
+  7:  { t:'THE FLESH TWISTS…',           sub:'mutation with all 70 pieces · every 40th piece is a floor-10 mutation', mods:['mutation'], mut10:true },
   8:  { t:'GIFT OR CURSE…',              sub:'every 20th piece is a compound structure piece — a whole setup in one block (TSD, TST, DT cannon, imperial cross, STSD) · all-spin · the board grows to 30 rows tall and stays that way', setup:true, mods:['allspin'], vis:30 },
   9:  { t:'ASHES TO ASHES…',             sub:'no hold · every garbage line is damnation-style · +3 permanent lines', dall:true, mods:['nohold'], perm:3 },
   10: { ...DEATH_FLOORS[10], t:'THE DANCE NEVER ENDS…', sub:DEATH_FLOORS[10].sub + ' · every 20 seconds one curse from F1–F9 joins in', eclipse:true },
