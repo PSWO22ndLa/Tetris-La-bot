@@ -863,25 +863,9 @@ document.documentElement.classList.add('booting'); addEventListener('load', func
   body.qpres .qpl-live{ z-index:59; top:42px; bottom:0; }
   /* 遊戲中（實機 QP 錄影）：右邊即時排名一直在，你自己那列有 ▸ 標記；RETRY／QUIT 在它上面 */
   @media (min-width:1100px) and (min-height:480px){ body.game.qpg .qpl-live{ display:flex; top:92px; bottom:8px; width:200px; opacity:.92; } }
-  body.game.qpg #qlList{ pointer-events:none; }
-  #qlList li.self{ outline:2px solid #fff; outline-offset:-2px; }
   body.qpres #qpResult .qpl-chat{ width:min(560px, 92vw); margin:14px auto 30px; }
   @media (min-width:1100px){ body.qpres #qpResult .qpl-chat{ position:fixed; left:14px; bottom:14px; top:auto; width:300px; margin:0; z-index:59; } body.qpres #qpResult .qpl-chat .qc-log{ height:min(60vh,520px); } }
-  /* 實機即時排名：前三名金／橘／紅，之後一路從紅漸變到紫（每列底色不同） */
-  #qlList li.lbg{ background:var(--rc); border-left-color:rgba(255,255,255,.18); }
-  .ql-h{ text-align:right; padding:4px 10px 4px 0; font:600 11px var(--t-font); letter-spacing:.08em; color:#d8b8a0; text-shadow:0 1px 2px #000; }
-  .ql-h b{ font-size:15px; color:#fff; margin-right:2px; }
-  #qlList{ list-style:none; margin:0; padding:0 4px 0 0; overflow:hidden; flex:1; mask-image:linear-gradient(180deg,#000 85%,transparent); -webkit-mask-image:linear-gradient(180deg,#000 85%,transparent); }
-  #qlList{ pointer-events:auto; } #qlList li{ cursor:pointer; } #qlList li:hover{ filter:brightness(1.3); }
-  #qlList li{ display:flex; align-items:center; gap:4px; height:22px; margin-bottom:2px; padding:0 6px 0 2px; background:rgba(20,8,8,.62); border-left:2px solid rgba(255,255,255,.08); color:#f2e6dc; font:600 12px var(--t-font); letter-spacing:.04em; }
-  #qlList li.lbsp{ margin:0 !important; padding:0 !important; background:none !important; border:0 !important; pointer-events:none; }
-  #qlList li i{ font-style:normal; width:16px; text-align:right; font-size:8px; color:#a98c7c; }
-  #qlList li b{ flex:1; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-  #qlList li span{ font-weight:700; color:#fff; } #qlList li span small{ font-size:.7em; color:#d0b8a8; }
-  #qlList li.r1{ background:linear-gradient(90deg,#e9a02a,#f2b84a); color:#2a1404; } #qlList li.r1 span, #qlList li.r1 small, #qlList li.r1 i{ color:#2a1404; }
-  #qlList li.r2{ background:linear-gradient(90deg,#e46a2a,#ee8a3a); color:#2a0e04; } #qlList li.r2 span, #qlList li.r2 small, #qlList li.r2 i{ color:#2a0e04; }
-  #qlList li.r3{ background:linear-gradient(90deg,#d63a50,#e6556a); color:#2a0408; } #qlList li.r3 span, #qlList li.r3 small, #qlList li.r3 i{ color:#2a0408; }
-  #qlList li.sp{ outline:1px solid #fff; outline-offset:-1px; }
+  #qlList{ list-style:none; } #qlList li{ cursor:pointer; }
   /* 官方 #zenithmenu .menuslide_rollup：▼ SPECTATE ▼／捲下去後 ▲ PLAY ▲（三角形是 ::before／::after） */
   .qpl-spec{ align-self:stretch; margin:0 0 -6px; border:0; border-bottom:3px dotted rgba(15,17,23,.6); border-radius:3px 3px 0 0; background:transparent; color:#f0b98a; font:900 17px var(--t-font); letter-spacing:.06em; padding:8px 14px 3px; box-shadow:none; text-shadow:none; cursor:pointer; transition:background-color .2s, color .2s; pointer-events:all; }
   .qpl-spec::before, .qpl-spec::after{ display:inline-block; content:""; width:1em; height:.5em; background-color:currentColor; margin:0 .5em; position:relative; top:-.15em; clip-path:polygon(0 0,50% 100%,100% 0); transition:transform .2s; }
@@ -2679,27 +2663,40 @@ document.documentElement.classList.add('booting'); addEventListener('load', func
   .tbar .tcount{ right:calc(var(--ofs) * 7) !important; } .tbar:has(.tcount:not(:empty)){ padding-right:17em !important; }
   @media (max-width:640px){ .tbar .tcount{ right:calc(2em + 22px) !important; } .tbar:has(.tcount:not(:empty)){ padding-right:calc(9em + 22px) !important; } }
   #qsName em.qsm{ font-style:normal; display:inline-flex; gap:2px; vertical-align:-2px; margin-left:4px; } #qsName em.qsm .mflat{ width:15px; height:15px; }
-  /* 右邊即時排名：整間房都列出來，可以捲動（觸控／滑鼠滾輪）；遊戲中也能捲 */
-  #qlList{ overflow-y:auto !important; overscroll-behavior:contain; -webkit-overflow-scrolling:touch; touch-action:pan-y; scrollbar-width:thin; scrollbar-color:rgba(255,255,255,.25) transparent; }
-  body.game.qpg #qlList{ pointer-events:auto !important; }
-  /* 官方 scoreboard（tetrio.js class xr，scale 0.5）：列高 35、寬 300 貼齊右邊；名字 HUN 18px 600、分數 21px 700 靠右 9px、小數 0.6 倍；
-     名次 13px（≤10）／11px 畫在列的左外側，≤10 不透明、≤50 半透明、其餘 0.3；1–3 名金 #FFBF00／橘 #FF7600／紅 #FF3600 */
-  @media (min-width:1100px) and (min-height:480px){ body.game.qpg .qpl-live, body.qpl .qpl-live, body.qpres .qpl-live{ width:330px; opacity:1; } }
-  .ql-h{ text-align:center; padding:6px 0 8px 30px; font:700 13px var(--t-font); letter-spacing:.06em; color:rgba(255,255,255,.8); text-shadow:none; }
+  /* 官方 scoreboard（tetrio.js class xr，scale 0.5）：列距 35、底圖 300×38 貼齊右邊、沒有外框和捲軸；
+     名字 HUN 18px 600（超過 12 字轉小寫）、分數 21px 700 靠右 9px、小數一位小字；名次在底圖左外側 13px（≤10）／11px，≤10 不透明、≤50 半透明、其餘 0.3；
+     1–3 名金 #FFBF00／橘 #FF7600／紅 #FF3600；最右邊爬速徽章 9.5×28；mod 圖示 16px 在分數左邊 */
+  @media (min-width:1100px) and (min-height:480px){ body.game.qpg .qpl-live, body.qpl .qpl-live, body.qpres .qpl-live{ width:340px; opacity:1; } }
+  .ql-h{ position:relative; z-index:3; width:300px; margin-left:auto; text-align:center; padding:8px 0 4px; font:700 13px var(--t-font); letter-spacing:.06em; color:rgba(255,255,255,.7); text-shadow:none; }
   .ql-h b{ font-size:22px; color:rgba(255,255,255,.8); margin-right:6px; vertical-align:-2px; }
-  #qlList{ padding:0 0 0 30px !important; }
-  #qlList li:not(.lbsp){ position:relative; height:35px !important; margin:0 !important; padding:0 9px 0 15px !important; gap:6px; border:0 !important; outline:0 !important;
-    font:600 18px var(--t-font) !important; letter-spacing:.02em; color:#fff !important; overflow:visible; }
-  body.has-scoreside #qlList li:not(.lbsp){ background:var(--sb) left center / 100% 100% no-repeat !important; }
-  #qlList li:not(.lbsp) b{ font-weight:600; color:#fff !important; }
-  #qlList li:not(.lbsp) span{ font:700 21px var(--t-font); color:#fff !important; } #qlList li:not(.lbsp) span small{ font-size:.6em; color:#fff !important; }
-  #qlList li:not(.lbsp) i{ position:absolute; right:calc(100% + 2px); top:50%; transform:translateY(-50%); width:auto; font:500 11px var(--t-font); color:#fff !important; opacity:.3; text-align:right; }
-  #qlList li:not(.lbsp) i.p10{ font-size:13px; opacity:1; } #qlList li:not(.lbsp) i.p50{ opacity:.5; }
-  #qlList li.r1 i, #qlList li.r2 i, #qlList li.r3 i{ font-weight:700; } #qlList li.r1 i{ color:#ffbf00 !important; } #qlList li.r2 i{ color:#ff7600 !important; } #qlList li.r3 i{ color:#ff3600 !important; }
-  #qlList li.sp:not(.lbsp){ filter:brightness(1.15); box-shadow:inset 0 0 0 2px rgba(255,255,255,.85); }
-  body.has-scoreside #qlList li.sp:not(.lbsp){ box-shadow:none; filter:none; }
-  #qlList li em.lbm{ margin-left:auto; }
-  #qlList::-webkit-scrollbar{ width:4px; } #qlList::-webkit-scrollbar-thumb{ background:rgba(255,255,255,.25); border-radius:2px; }
+  #qlList{ position:relative; flex:1; overflow:hidden !important; padding:0 !important; margin:0; mask-image:none !important; -webkit-mask-image:none !important; touch-action:none; pointer-events:auto !important; }
+  #qlList li{ position:absolute !important; right:0; top:0; width:300px; height:38px !important; margin:0 !important; padding:0 !important; border:0 !important; outline:0 !important; box-shadow:none !important; filter:none !important;
+    display:block !important; will-change:transform; color:#fff !important; font:600 18px var(--t-font) !important; letter-spacing:.02em; overflow:visible;
+    background:linear-gradient(90deg, var(--tc, rgba(255,255,255,.16)) 0 3px, rgba(14,14,18,.9) 3px 20px, rgba(14,14,18,.82)) !important; background-clip:content-box !important; }
+  #qlList li{ border-top:2px solid transparent !important; border-bottom:2px solid transparent !important; }
+  #qlList li.t1{ --tc:#ffbf00; } #qlList li.t2{ --tc:#ff7600; } #qlList li.t3{ --tc:#ff3600; } #qlList li.t10{ --tc:rgba(255,255,255,.7); } #qlList li.t25{ --tc:rgba(255,255,255,.45); } #qlList li.t50{ --tc:rgba(255,255,255,.3); }
+  #qlList li.sp{ background:linear-gradient(90deg, var(--tc, #fff) 0 3px, rgb(96,96,104) 3px 20px, rgb(78,78,86)) !important; background-clip:content-box !important; }
+  body.has-scoreside #qlList li{ background:var(--sb) left center / 100% 100% no-repeat !important; border:0 !important; }
+  #qlList li > i{ position:absolute; right:calc(100% - 5px); top:50%; transform:translateY(-50%); font:500 11px var(--t-font); font-style:normal; color:#fff; opacity:.3; text-align:right; white-space:nowrap; }
+  #qlList li.sp > i, #qlList li.self > i{ right:100%; }
+  #qlList li > i.p10{ font-size:13px; opacity:1; } #qlList li > i.p50{ opacity:.5; }
+  #qlList li.r1 > i, #qlList li.r2 > i, #qlList li.r3 > i{ font-weight:700; } #qlList li.r1 > i{ color:#ffbf00; } #qlList li.r2 > i{ color:#ff7600; } #qlList li.r3 > i{ color:#ff3600; }
+  #qlList li > b{ position:absolute; left:15px; top:50%; transform:translateY(-50%); max-width:170px; white-space:nowrap; overflow:hidden; font-weight:600; color:#fff; }
+  #qlList li > b.two{ font-size:13px; font-weight:700; white-space:pre; line-height:1.05; }
+  #qlList li > span{ position:absolute; right:9px; top:50%; transform:translateY(-50%); display:flex; align-items:center; gap:4px; font:700 21px var(--t-font); color:#fff; }
+  #qlList li > span s{ text-decoration:none; } #qlList li > span small{ font-size:.6em; color:#fff; }
+  #qlList li > u{ position:absolute; right:-.5px; top:5px; width:9.5px; height:28px; background:center / 100% 100% no-repeat; text-decoration:none; }
+  #qlList li > u.none{ display:none; }
+  body:not(.has-scoreside) #qlList li > u{ right:1px; top:8px; width:4px; height:22px; background:rgba(255,255,255,.18); }
+  body:not(.has-scoreside) #qlList li > u.r5, body:not(.has-scoreside) #qlList li > u.r6, body:not(.has-scoreside) #qlList li > u.r7{ background:#6ff0d8; }
+  body:not(.has-scoreside) #qlList li > u.r8, body:not(.has-scoreside) #qlList li > u.r9, body:not(.has-scoreside) #qlList li > u.r10, body:not(.has-scoreside) #qlList li > u.r11{ background:#ffd36a; }
+  #qlList li em.lbm{ font-style:normal; display:flex; gap:1px; flex:none; margin:0; }
+  #qlList li em.lbm .mflat{ width:15px; height:15px; }
+  #qlList li em.sbm{ position:relative; width:16px; height:16px; }
+  #qlList li em.sbm.many{ width:25px; }
+  #qlList li em.sbm img{ position:absolute; left:0; top:0; width:16px; height:16px; opacity:0; transition:opacity .15s; }
+  #qlList li em.sbm:not(.many) img, #qlList li em.sbm img.on{ opacity:1; }
+  #qlList li em.sbm img.ov{ left:11px; width:9.5px; opacity:1; z-index:-1; }
 
   /* ===== 官方資源套用（CONFIG → FETCH ALL 抓到之後才生效，沒抓到維持原樣）===== */
   /* 字：PFW＝輸入框、CC＝聊天、HUN-CHEEKY＝TETRIO 字樣 */
@@ -17093,40 +17090,119 @@ function qplStep(dt){
 const qplFmt = a => { const t = a.toFixed(1), i = t.indexOf('.'); return [Number(t.slice(0, i)).toLocaleString('en-US'), t.slice(i + 1)]; };
 // 官方 /res/scoreside.png：每列底圖（7 種名次 × 一般／焦點／好友）是 47×76 的 NineSlice（左邊 40px 固定、其餘拉長）
 //   → 載入後各畫成 600×76 的圖當 CSS 變數 --sb-<狀態>-<名次>；載不到就用本站的漸層
-const SCORESIDE = { st: 0 };
+const SCORESIDE = { st: 0, mods: {}, ranks: [] };
+const SB_MODS = ['allspin','doublehole','expert','gravity','invisible','messy','nohold','volatile','duo'];
 function scoresideLoad(){
   if (SCORESIDE.st || !tioImgOn()) return; SCORESIDE.st = 1;
   const im = new Image(); im.crossOrigin = 'anonymous';
   im.onload = () => { try {
     const T = ['any', 't50', 't25', 't10', 't3', 't2', 't1'], S = { base: 6, focused: 86, friend: 166 };
+    const cut = (x, y, w, h, f) => { const c = document.createElement('canvas'); c.width = w; c.height = h; const g = c.getContext('2d'); if (f) f(g); g.drawImage(im, x, y, w, h, 0, 0, w, h); return c; };
     for (const [st, y] of Object.entries(S)) T.forEach((t, e) => { const c = document.createElement('canvas'); c.width = 600; c.height = 76; const x = c.getContext('2d'), sx = 2 + 60 * e;
       x.drawImage(im, sx, y, 40, 76, 0, 0, 40, 76); x.drawImage(im, sx + 40, y, 7, 76, 40, 0, 560, 76);
       document.documentElement.style.setProperty(`--sb-${st}-${t}`, `url("${c.toDataURL()}")`); });
-    document.body.classList.add('has-scoreside'); SCORESIDE.st = 2; } catch(e){ SCORESIDE.st = 3; } };
+    // 官方 mod 圖示：白底 mod_base（2,251）＋黑色 mod 圖（tint 0）；逆位＝紅底 mod_reverse（58,251，tint #FF004C）＋左右翻的圖
+    const blk = c => { const g = c.getContext('2d'); g.globalCompositeOperation = 'source-in'; g.fillStyle = '#000'; g.fillRect(0, 0, c.width, c.height); return c; };
+    const red = c => { const g = c.getContext('2d'); g.globalCompositeOperation = 'source-in'; g.fillStyle = '#ff004c'; g.fillRect(0, 0, c.width, c.height); return c; };
+    const base = cut(2, 251, 32, 32), rbase = red(cut(58, 251, 32, 32));
+    SB_MODS.forEach((m, e) => { const ic = blk(cut(92 + 34 * e, 251, 32, 32));
+      const n = document.createElement('canvas'); n.width = n.height = 32; const g = n.getContext('2d'); g.drawImage(base, 0, 0); g.drawImage(ic, 0, 0); SCORESIDE.mods[m] = n.toDataURL();
+      const r = document.createElement('canvas'); r.width = r.height = 32; const h = r.getContext('2d'); h.drawImage(rbase, 0, 0); h.translate(32, 0); h.scale(-1, 1); h.drawImage(cut(92 + 34 * e, 251, 32, 32), 0, 0); SCORESIDE.mods[m + '_reversed'] = r.toDataURL(); });
+    SCORESIDE.over = cut(37, 251, 19, 32).toDataURL();
+    for (let e = 0; e < 10; e++) SCORESIDE.ranks[e] = cut(7 + 20 * e, 322, 19, 56).toDataURL();
+    document.body.classList.add('has-scoreside'); SCORESIDE.st = 2; if (QPL.lbEls) { QPL.lbEls.forEach(li => li.remove()); QPL.lbEls.clear(); } } catch(e){ SCORESIDE.st = 3; } };
   im.onerror = () => { SCORESIDE.st = 3; };
   im.src = TIO_RES() + 'scoreside.png?v=2';
 }
+// 本站的 mod id → 官方 scoreside 圖示名（逆位＝<base>_reversed）；有官方沒有的卡就回 null，改用本站的平面圖示
+function sbModKey(id){ if (SB_MODS.includes(id)) return id; const d = DECK_ALL.find(c => c.rev === id); return d && SB_MODS.includes(d.base) ? d.base + '_reversed' : null; }
+function sbModsHTML(ids){
+  const ms = (ids || []).filter(m => m !== 'duo' && !MOD_FLAG(m)); if (!ms.length) return '';
+  const ks = ms.map(sbModKey);
+  if (SCORESIDE.st !== 2 || ks.some(k => !k)) return `<em class="lbm">${modFlatHTML(ms)}</em>`;
+  const lab = ms.map(m => m.toUpperCase()).join(' · ');
+  return `<em class="lbm sbm${ks.length > 1 ? ' many' : ''}" title="${lab}" style="--n:${ks.length}">${ks.map((k, j) => `<img src="${SCORESIDE.mods[k]}" style="--j:${j}" alt="">`).join('')}${ks.length > 1 ? `<img class="ov" src="${SCORESIDE.over}" alt="">` : ''}</em>`;
+}
+// 官方 _FormatScore：千分位、小數一位小字
+const sbScore = a => `${a >= 1e3 ? Math.floor(a / 1e3) + ',' + String(Math.floor(a) % 1e3).padStart(3, '0') : Math.floor(a)}<small>.${Math.floor(10 * a) % 10}</small>`;
+// 爬速等級（官方 stats.rank）：自己用 climb.csp；別人照爬升速度估 ⚠️ 估計值
+const sbRank = p => p.self ? (climb && climb.csp) || 1 : Math.max(1, Math.min(11, Math.floor(1 + (p.rate || 1) * 1.7)));
+/* 官方 scoreboard（tetrio.js class yr／xr，scale 0.5）：
+   - 列距 35px、底圖 300×38 貼齊右邊；整串以「焦點列」（自己／觀戰的人）為中心，平滑捲動（焦點 0.8、手動 0.95 的指數逼近）
+   - 前 3 名、焦點列捲出畫面時黏在上／下緣（stickyAmt＝3–10 列，依螢幕高度），一般列靠近黏住區會淡出
+   - 離焦點越遠的列往右偏（_offset＝(|Δ|/2)²/(I/15)×2），形成往右彎的弧
+   - 名次在底圖左外側、名字 18px、分數 21px 靠右、最右邊是爬速等級徽章、mod 圖示在分數左邊 */
 function qplRenderLb(force){
   const ol = $('qlList'); if (!ol) return;
-  const now = performance.now(), per = [99999, 2500, 1000][uiDetail()];
-  if (!force && now - QPL.lbT < per) return; QPL.lbT = now;
+  const now = performance.now(), det = uiDetail(), per = [99999, 120, 0][det];
+  if (!force && now - QPL.lbT < per) return;
+  const dt = QPL.lbT ? Math.min(6, (now - QPL.lbT) / 16.67) : 1; QPL.lbT = now;
+  const snap = det < 2 || force === 'snap';
   $('qlCount').textContent = String(QPL.count);
-  const inQ = document.body.classList.contains('qpg') && climb && climb.kind === 'qp';
-  const meRow = inQ ? { name: profName() + (climb.duo ? ' & ' + String(climb.duo.name || 'LA BOT').toUpperCase() : ''), alt: climb.alt, self: true } : null;   // 實機：遊戲中右邊的即時排名也有你自己（▸ 標記）
-  const list = QPL.players.concat(meRow ? [meRow] : []).sort((a, b) => b.alt - a.alt);
-  const me = QPL.spec && QPL.spec.p;
-  // 效能：300–500 列每次全部重建會卡 50–100ms（朋友說「操作很卡」的主因）→ 只畫看得到的那段，上下用空白列撐高度
   scoresideLoad();
-  const RH = 35, N = list.length, idxOf = new Map(QPL.players.map((p, i) => [p, i]));
-  let st = ol.scrollTop;
-  if (meRow && !(QPL.userScrollT && now - QPL.userScrollT < 4000)){ const si = list.indexOf(meRow); st = Math.max(0, si * RH - ol.clientHeight / 2); }
-  const vis = Math.ceil((ol.clientHeight || 600) / RH) + 2, s0 = Math.max(0, Math.floor(st / RH) - 6), s1 = Math.min(N, s0 + vis + 12);
-  QPL.lbWin = [s0, s1];
-  ol.innerHTML = `<li class="lbsp" style="height:${s0 * RH}px"></li>` + list.slice(s0, s1).map((p, j) => { const i = s0 + j, [a, d] = qplFmt(p.alt);
-    const hue = 352 - Math.min(1, (i - 3) / 30) * 92, rc = `linear-gradient(90deg,hsl(${hue},62%,33%),hsl(${hue},58%,40%))`;
-    const pl = i + 1, tier = pl <= 1 ? 't1' : pl <= 2 ? 't2' : pl <= 3 ? 't3' : pl <= 10 ? 't10' : pl <= 25 ? 't25' : pl <= 50 ? 't50' : 'any', st = p.self || p === me ? 'focused' : 'base';
-    return `<li data-n="${idxOf.has(p) ? idxOf.get(p) : -1}" class="${i < 3 ? 'r' + (i + 1) : 'lbg'}${p === me || p.self ? ' sp' : ''}${p.self ? ' self' : ''} ${tier}" style="${i < 3 ? '' : '--rc:' + rc};--sb:var(--sb-${st}-${tier}, none)"><i class="${pl <= 10 ? 'p10' : pl <= 50 ? 'p50' : 'pany'}">${pl}</i><b>${p.duo ? p.name + ' &amp;' : qcEsc(p.name)}</b>${p.self ? (climb && climb.mods && climb.mods.size ? `<em class="lbm">${modFlatHTML([...climb.mods])}</em>` : '') : p.mods && p.mods.length ? `<em class="lbm">${modFlatHTML(p.mods)}</em>` : ''}<span>${a}<small>.${d}</small></span></li>`; }).join('') + `<li class="lbsp" style="height:${(N - s1) * RH}px"></li>`;
-  ol.scrollTop = st;                                                     // 遊戲中自動捲到你自己那列（手動捲過 4 秒內不搶）
+  const inQ = document.body.classList.contains('qpg') && climb && climb.kind === 'qp';
+  const me = QPL.spec && QPL.spec.p;
+  if (inQ){ const R = QPL.meRow || (QPL.meRow = { self: true }); R.name = profName() + (climb.duo ? ' & ' + String(climb.duo.name || 'LA BOT').toUpperCase() : ''); R.alt = climb.alt; R.mods = climb.mods ? [...climb.mods] : []; }
+  const list = QPL.players.concat(inQ ? [QPL.meRow] : []).sort((a, b) => b.alt - a.alt);
+  const focus = inQ ? QPL.meRow : me || null, fi = focus ? list.indexOf(focus) : -1;
+  const RH = 35, H = ol.clientHeight || 600, rows = H / RH, N = list.length;
+  const topPad = 0, botPad = 0, I = Math.ceil(rows * .75), win = Math.ceil(rows * .4);
+  const stickyAmt = Math.round(Math.min(10, Math.max(3, 3 + (rows - 22) / 3)));
+  if (QPL.lbFocused === undefined) QPL.lbFocused = true;
+  if (!QPL.lbFocused && QPL.userScrollT && COARSE_PTR && now - QPL.userScrollT > 4000) QPL.lbFocused = true;   // 觸控：放手 4 秒回到焦點（官方是滑鼠離開計分板）
+  if (QPL.lbFocused) QPL.lbPosT = fi >= 0 ? fi : 0;
+  const minPos = rows / 2 - topPad - .5;
+  QPL.lbPosT = Math.max(minPos, Math.min(Math.max(minPos, N - 1 - rows / 2 + 1.5), QPL.lbPosT || 0));
+  if (QPL.lbFocused && fi >= 0) QPL.lbPosT = Math.max(minPos, fi);
+  const pos = QPL.lbPos = snap || QPL.lbPos == null ? QPL.lbPosT : QPL.lbPosT + (QPL.lbPos - QPL.lbPosT) * Math.pow(QPL.lbFocused ? .8 : .95, dt);
+  // 黏住的列（官方 _ReflowSticky）
+  const up = [], dn = [];
+  for (let i = 0; i < N; i++){ if (i >= pos - win && i <= pos + win) continue; const p = list[i];
+    const pr = p === focus ? 1000 : i < 3 ? 100 : -1e9; if (pr < 0) continue; (i < pos ? up : dn).push({ p, i, pr }); }
+  const pick = A => A.sort((a, b) => b.pr - a.pr || Math.abs(a.i - pos) - Math.abs(b.i - pos)).slice(0, stickyAmt).sort((a, b) => a.i - b.i);
+  const U = pick(up), D = pick(dn), stk = new Map();
+  U.forEach((o, k) => stk.set(o.p, { side: 'top', k }));
+  D.forEach((o, k) => stk.set(o.p, { side: 'bot', k: D.length - 1 - k }));
+  const nT = U.length, nB = D.length;
+  const els = QPL.lbEls || (QPL.lbEls = new Map()), seen = new Set();
+  for (let i = 0; i < N; i++){
+    const p = list[i], sk = stk.get(p);
+    if (!sk && !(i >= pos - I && i <= pos + I)) continue;
+    let li = els.get(p);
+    if (!li){ li = document.createElement('li'); li._p = p; li._ii = i; li.innerHTML = '<i></i><b></b><span></span><u></u>'; li._k = {}; els.set(p, li); ol.appendChild(li);
+      if (!snap){ li.style.transition = 'none'; li._in = now; } }
+    seen.add(p);
+    li._ii = snap ? i : i + (li._ii - i) * Math.pow(.95, dt); if (Math.abs(li._ii - i) < .02) li._ii = i;
+    const pl = i + 1, tier = pl <= 1 ? 't1' : pl <= 2 ? 't2' : pl <= 3 ? 't3' : pl <= 10 ? 't10' : pl <= 25 ? 't25' : pl <= 50 ? 't50' : 'any';
+    const foc = p === focus || p.self || p === me, K = li._k;
+    const cls = `${tier}${foc ? ' sp' : ''}${p.self ? ' self' : ''}${i < 3 ? ' r' + pl : ''}${sk ? ' stk' : ''}${p.duo ? ' duo' : ''}`;
+    if (K.cls !== cls){ K.cls = li.className = cls; li.style.setProperty('--sb', `var(--sb-${foc ? 'focused' : 'base'}-${tier}, none)`); }
+    if (K.pl !== pl){ K.pl = pl; li.children[0].textContent = pl; li.children[0].className = pl <= 10 ? 'p10' : pl <= 50 ? 'p50' : 'pany'; }
+    const n1 = p.self ? p.name.split(' & ')[0] : p.name, n2 = p.self ? p.name.split(' & ')[1] : p.duo ? qplMateName(p) : null, nm = n1 + '|' + n2;
+    if (K.nm !== nm){ K.nm = nm; const b = li.children[1], L = n1.length + (n2 ? n2.length : 0), two = !!n2 && L > 12;   // 官方：DUO 兩人合計 >12 字＝兩行大寫 13px、>10＝一行小寫；單人 >12 字轉小寫
+      b.textContent = !n2 ? (L > 12 ? n1.toLowerCase() : n1.toUpperCase()) : two ? `${n1.toUpperCase()} &\n${n2.toUpperCase()}` : L > 10 ? `${n1.toLowerCase()} & ${n2.toLowerCase()}` : `${n1.toUpperCase()} & ${n2.toUpperCase()}`;
+      b.classList.toggle('two', two); }
+    const sc = sbScore(p.alt), mk = (p.mods || []).join() + '|' + SCORESIDE.st;
+    if (K.sc !== sc || K.mk !== mk){ K.sc = sc; K.mk = mk; li.children[2].innerHTML = sbModsHTML(p.mods) + `<s>${sc}</s>`; K.mi = -1; }
+    { const ims = li.children[2].querySelectorAll('em.many img:not(.ov)'); if (ims.length){ const j = Math.floor(now / 1500) % ims.length; if (K.mi !== j){ K.mi = j; ims.forEach((m, q) => m.classList.toggle('on', q === j)); } } }
+    const rk = Math.floor(sbRank(p));
+    if (K.rk !== rk){ K.rk = rk; const u = li.children[3]; u.className = rk >= 2 ? 'r' + Math.min(11, rk) : 'none';
+      u.style.backgroundImage = SCORESIDE.st === 2 && rk >= 2 ? `url("${SCORESIDE.ranks[Math.min(9, rk - 2)]}")` : ''; }
+    let y = RH * (li._ii - pos), off = 0, al = 1;
+    if (sk){ if (sk.side === 'top') y = Math.max(y, -H / 2 + (.5 + sk.k + topPad) * RH); else y = Math.min(y, H / 2 - (.5 + sk.k + botPad) * RH); off = 1.75 * sk.k; }
+    else {
+      if (nT) al = Math.min(al, (y - (-H / 2 + (.5 + nT + topPad) * RH) + 50) / 100);
+      if (nB) al = Math.min(al, (H / 2 - (.5 + nB + botPad) * RH - y + 50) / 100);
+      al = Math.max(0, Math.min(1, al));
+      off = li._ii < .67 * I ? 0 : (Math.abs(li._ii - pos) / 2) ** 2 / (I / 15) * 2 * .5;
+    }
+    if (li._in){ const k = Math.min(1, (now - li._in) / 500), e = 1 - Math.pow(1 - k, 3); off += 300 * (1 - e); if (k >= 1) li._in = 0; }   // 官方：新列從右邊滑進來（0.5s）
+    li.style.transform = `translate3d(${off.toFixed(1)}px,${(H / 2 + y - 19).toFixed(1)}px,0)`;
+    li.style.opacity = al.toFixed(2); li.style.zIndex = sk || foc ? 2 : 1;
+  }
+  for (const [p, li] of els) if (!seen.has(p)){ li.remove(); els.delete(p); }
+  if (!snap && (Math.abs(pos - QPL.lbPosT) > .01 || [...els.values()].some(li => li._in || Math.abs(li._ii - list.indexOf(li._p)) > .02)) && !QPL.lbAnim){
+    QPL.lbAnim = requestAnimationFrame(() => { QPL.lbAnim = 0; qplRenderLb(true); }); }
 }
 /* ---- 小盤面：簡單 AI 一直放方塊（El-Tetris 評分），頂死就換下一個人 ---- */
 function qplGhost(){
@@ -18715,12 +18791,18 @@ function syncMpCounts(){
   const c = $('mpQpCount'); if (c) c.firstChild.textContent = String(QPL.count);   // 跟房間裡的 PLAYING NOW 同一個數字（300–500）
 }
 { const lv = $('qplLive'); if (lv) document.body.appendChild(lv); }          // 即時排名放在 body：大廳和結算頁都看得到
-['wheel', 'touchmove', 'pointerdown'].forEach(ev => $('qlList').addEventListener(ev, () => { QPL.userScrollT = performance.now(); }, { passive: true }));
-$('qlList').addEventListener('scroll', () => { const ol = $('qlList'), W2 = QPL.lbWin || [0, 0], a = Math.floor(ol.scrollTop / 24), b = a + Math.ceil(ol.clientHeight / 24);   // 捲到還沒畫的那段才補畫
-  if (a < W2[0] + 2 || b > W2[1] - 2){ if (!QPL.lbRaf) QPL.lbRaf = requestAnimationFrame(() => { QPL.lbRaf = 0; qplRenderLb(true); }); } }, { passive: true });
-$('qlList').onclick = e => { if (climb && !climb.over) return; const li = e.target.closest('li[data-n]'); if (!li) return;   // 遊戲中只能捲，不會點到觀戰
-  const p = QPL.players[+li.dataset.n]; if (!p) return;   // 實機：點右邊即時排名的名字 → 看他
-  if (!QPL.specOn) qplSpecToggle(true); qplSpecNew(p); };   // 官方 referee_score_side：點計分板上的名字 → 看他
+{ const ol = $('qlList');   // 官方 _OnScroll：滾輪在計分板上 → 脫離焦點、每單位 deltaY 捲 0.05 列；滑鼠移出計分板 → 回到焦點
+  const kick = () => { if (!QPL.lbAnim) QPL.lbAnim = requestAnimationFrame(() => { QPL.lbAnim = 0; qplRenderLb(true); }); };
+  ol.addEventListener('wheel', e => { QPL.lbFocused = false; QPL.userScrollT = performance.now(); QPL.lbPosT = (QPL.lbPosT || 0) + .05 * e.deltaY; e.preventDefault(); kick(); }, { passive: false });
+  ol.addEventListener('mouseleave', () => { QPL.lbFocused = true; kick(); });
+  let drag = null;
+  ol.addEventListener('pointerdown', e => { drag = { y: e.clientY, p: QPL.lbPosT || 0, moved: false }; });
+  ol.addEventListener('pointermove', e => { if (!drag || e.pointerType === 'mouse') return; const d = (drag.y - e.clientY) / 35; if (Math.abs(d) > .2) drag.moved = true;
+    QPL.lbFocused = false; QPL.userScrollT = performance.now(); QPL.lbPosT = drag.p + d; QPL.lbPos = QPL.lbPosT; kick(); });
+  addEventListener('pointerup', () => { if (drag && drag.moved) QPL.lbDragT = performance.now(); drag = null; });
+  ol.onclick = e => { if (climb && !climb.over) return; if (QPL.lbDragT && performance.now() - QPL.lbDragT < 300) return;
+    const li = e.target.closest('li'); const p = li && li._p; if (!p || p.self || !QPL.players.includes(p)) return;   // 實機：點右邊即時排名的名字 → 看他
+    if (!QPL.specOn) qplSpecToggle(true); qplSpecNew(p); }; }   // 官方 referee_score_side：點計分板上的名字 → 看他
 $('qpSpecBtn').onclick = () => qplSpecToggle(!QPL.specOn);
 // 官方 QP 鍵盤（guideline 預設）：觀戰列出現時 ←/A 上一個、→/D 下一個、↑/W free；ESC／Backspace＝捲回（沒捲下去就離開）；R＝START；T＝聊天
 addEventListener('keydown', e => {
