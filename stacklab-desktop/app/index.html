@@ -2163,6 +2163,9 @@ document.documentElement.classList.add('booting'); addEventListener('load', func
   #goText.fade{ transition:opacity .45s; opacity:0; }
   @keyframes goIn{ from{ transform:scale(1.5); opacity:0; } to{ transform:none; opacity:1; } }
   /* 官方盤面動畫（GameOver／StartGame）：clear＝放大 5 倍淡出 5s；topout＝250ms 後歪著掉出畫面 1s；開局 slow＝從下面滑上來 .5s；重試＝橫向縮成 0 再展開 .25s */
+  /* #stage 是 overflow:auto：盤面被推到畫面外（+1300px）會把 stage 撐出捲軸 → 有實體捲軸的桌機每幀寬度跳動、塔背景大畫布跟著重配 → 卡死；動畫期間不准捲、盤面先升成合成層 */
+  #stage.bx-clear, #stage.bx-top, #stage.bx-pre, #stage.bx-in, #stage.bx-shut, #stage.bx-open0, #stage.bx-open, #stage.fall{ overflow:hidden !important; }
+  #stage[class*="bx-"] #cv{ will-change:transform; }
   #stage.bx-clear #cv{ transition:transform 5s cubic-bezier(.1,.16,.94,.06), opacity 5s cubic-bezier(.1,.16,.94,.06); transform:scale(5); opacity:0; }
   #stage.bx-top #cv{ transition:transform 1s cubic-bezier(.37,.06,.75,.56) .25s; transform:translateY(calc(100vh + 400px)) rotate(var(--bxr, 17deg)); }
   #stage.bx-pre #cv{ transform:translateY(calc(100vh + 400px)); transition:none; }
