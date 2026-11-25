@@ -4774,10 +4774,15 @@ function opStep(t){
 function opXY(bx, by){
   const st = document.getElementById('stage'); if (!st || !cv._cssW) return null;
   const sr = st.getBoundingClientRect(), cr = cv.getBoundingClientRect(), k = cr.width / cv._cssW;
-  return { x: cr.left - sr.left + (GUTL() * cell + bx * cell) * k, y: cr.top - sr.top + (by - VIEW_TOP()) * cell * k, c: cell * k };
+  return { x: cr.left - sr.left + (GUTL() * cell + bx * cell) * k, y: cr.top - sr.top + (by - VIEW_TOP() + (cv._padRows || 0)) * cell * k, c: cell * k };
 }
 const opP = () => (optN('oParticles') / 100) || .6;                                   // 官方 video.particles（預設 .6）
 const opGfx = () => opt('oGraphics') || 'high';
+// GRAPHICS 也決定畫布解析度（原本 LOW／MEDIUM／HIGH 解析度完全一樣，只差特效 → 調了看起來沒差）：
+// [倍率上限, 每張畫布最多幾個實際像素]；MINIMAL 或勾 LOW RESOLUTION＝0.5 倍
+const GFX_RES = { minimal:[.5, .4e6], low:[1, 1.2e6], medium:[1.5, 1.8e6], high:[3, 2.5e6], ultra:[3, 6e6] };
+function gfxDpr(area, cap = 3){ const [c, bud] = GFX_RES[opGfx()] || GFX_RES.high; if (opt('oLowRes')) return .5;
+  const m = Math.min(cap, c); return Math.max(Math.min(1, m), Math.min(m, window.devicePixelRatio || 1, Math.sqrt(bud / Math.max(1, area)))); }
 const opOn = () => fxOn() && tioImgOn() && mode === 'sim';
 // El.utils：freq（數量 × particle count）、scale（大小：Ss(1.8)×e ÷ clamp(particles+.4, .75, 2)）
 function opU(){ const b = opXY(0, 0), us = (b ? b.c : cell) / 30; return { us, Ss: n => n * us, Fs: n => n * us * 30 / 92, freq: n => n * opP(), scale: n => 1.8 * us * n / Math.max(.75, Math.min(2, opP() + .4)), C: 30 * us }; }
@@ -5515,7 +5520,9 @@ let W = 10;                                // 盤面寬；SNOWBALL BOARD 會從 
 let VISIBLE = 20;                          // 可視列數；遊戲模式由 climb.vis 決定（Last Stand 是 14）
 // 遊戲模式用 10×40（TETR.IO 規格）：上面 20 行是緩衝區，畫面只顯示可視區加上方 3 行生成區
 const syncVisible = () => { VISIBLE = (climb && mode === 'sim' && climb.vis) ? climb.vis : Math.min(20, H); };
-const VIEW_TOP = () => (climb && mode === 'sim') ? Math.max(0, H - (VISIBLE + 3)) : 0;   // 雪球小盤面照實機：畫面跟著盤面縮放，小盤面格子就變大
+const VIEW_TOP = () => (climb && mode === 'sim') ? Math.max(0, H - (VISIBLE + 3)) : 0;
+// 盤面上方原本只畫 3 列，再往上的方塊、消行／spin 特效都被畫布邊緣切掉（像一個看不見的框）→ 畫布再往上多長 8 列（不超過整個盤面），用負 margin 抵銷，版面位置不變
+const VIEW_PAD = () => Math.min(VIEW_TOP(), 8);   // 雪球小盤面照實機：畫面跟著盤面縮放，小盤面格子就變大
 const KEYS   = ['.', 'I','J','L','O','S','T','Z','G'];
 const COLORS = ['#0b0e12','#31c7ef','#5a65d8','#ef9535','#f7d33e','#42c65f','#af59d6','#ef4b4b','#eef2f6','#a8607a','#1b1e23','#8d97a3','#ef4b4b'];
 // GIF 只有 16 色的 global color table：前 9 格是方塊，後 7 格留給提示文字與抗鋸齒中間色
@@ -7207,6 +7214,7 @@ function drawRuler(X = ctx, CS = cell, S = climb){
   for (let m = lo; m <= S.alt + mid / px; m += 5){
     if (m < 0) continue;
     const y = mid - (m - S.alt) * px;
+    if (y < (H - VISIBLE - 3) * CS) continue;   // 尺只畫到盤面上方 3 列（畫布往上加長後不讓刻度一路畫到頂）
     const major = m % 25 === 0;
     X.fillStyle = major ? 'rgba(220,226,240,.55)' : 'rgba(220,226,240,.22)';
     X.fillRect(x, y, major ? CS*0.5 : CS*0.25, 1);
@@ -9616,19 +9624,19 @@ function drawNow(){
 function drawFrame(){
   const gut = GUTL() * cell, totalW = W*cell + gut + GUTR()*cell;
   syncVisible();
-  const VT = VIEW_TOP();
-  const totalH = (H - VT + GUTB()) * cell;
+  const VT = VIEW_TOP(), E = VIEW_PAD();
+  const totalH0 = (H - VT + GUTB()) * cell, totalH = totalH0 + E * cell;   // E：盤面上方多畫幾列（畫布往上長、margin-top 抵銷，版面不動）
   // 效能：主畫布每幀整張重畫。上限 3x（手機 DPR 3 時 2x 會糊），而且實際像素最多約 2.5MP（電腦大螢幕＋高 DPI 時不會一幀畫好幾百萬像素）
   // RIVALS：同一個畫面要畫兩個完整遊戲 → 每邊固定 1 倍（實測跟單人 QP 一樣順；2 倍時兩邊加起來掉一半幀數）
-  const dpr = opt('oLowRes') ? .5 : fxOn() ? Math.max(1, Math.min(LOCAL_P ? 1 : 3, window.devicePixelRatio || 1, Math.sqrt((LOCAL_P ? 1.2e6 : 2.5e6) / Math.max(1, totalW * totalH)))) : 1;   // 特效關：畫布用 1 倍解析度
+  const dpr = opt('oLowRes') ? .5 : LOCAL_P ? Math.min(gfxDpr(totalW * totalH, 1), 1) : fxOn() ? gfxDpr(totalW * totalH) : Math.min(1, gfxDpr(totalW * totalH));   // GRAPHICS 決定倍率（見 GFX_RES）   // 特效關：畫布用 1 倍解析度
   const cw = Math.round(totalW*dpr), ch = Math.round(totalH*dpr);
   if (cv.width !== cw || cv.height !== ch || cv._cssW !== totalW || cv._cssH !== totalH){         // 效能：尺寸沒變就不重設畫布
-    cv.style.width = totalW+'px'; cv.style.height = totalH+'px'; cv._cssW = totalW; cv._cssH = totalH;
+    cv.style.width = totalW+'px'; cv.style.height = totalH+'px'; cv.style.marginTop = (E ? -E * cell : 0) + 'px'; cv._cssW = totalW; cv._cssH = totalH; cv._padRows = E;
     cv.width = cw; cv.height = ch;
   }
   ctx.setTransform(dpr,0,0,dpr,0,0);
   ctx.clearRect(0,0,totalW,totalH);
-  ctx.translate(gut, -VT * cell);
+  ctx.translate(gut, -(VT - E) * cell);
 
   if (mode === 'sim' && !opAmb && HI() && uiDetail() >= 2 && opOn()) opAmbient(true);   // 官方 Xl：背景一直飄的 bigbox／particle（手機 UI DETAIL 低時不開，整個畫面每幀重畫）
   dangerNow = isDanger();
@@ -9883,7 +9891,8 @@ function cellAt(ev){
   const r = cv.getBoundingClientRect();
   const unit = r.width / (W + GUTL() + GUTR());
   const VT = VIEW_TOP();
-  return [Math.floor((ev.clientX - r.left) / unit) - GUTL(), Math.floor((ev.clientY - r.top)/(r.height/(H - VT + GUTB()))) + VT];
+  const E = cv._padRows || 0;
+  return [Math.floor((ev.clientX - r.left) / unit) - GUTL(), Math.floor((ev.clientY - r.top)/(r.height/(H - VT + GUTB() + E))) + VT - E];
 }
 function dist(a,b){ return Math.hypot(a.x-b.x, a.y-b.y); }
 
@@ -10497,7 +10506,8 @@ function optWire(){
   // GRAPHICS 預設組：對應本站的 UI DETAIL／EFFECTS／LOW RESOLUTION（官方是 WebGL 品質，⚠️ 這裡是等效對應）
   on('oGraphics', () => { const g = opt('oGraphics'), set = (id, v) => { const e = $(id); if (!e) return; if (e.type === 'checkbox') e.checked = v; else e.value = v; e.dispatchEvent(new Event('change')); };
     set('uiDetail', g === 'minimal' || g === 'low' ? 'low' : g === 'medium' ? 'med' : 'high');
-    set('fxOn', g !== 'minimal'); set('oLowRes', g === 'minimal'); syncConfigUI(); });
+    set('fxOn', g !== 'minimal'); set('oLowRes', g === 'minimal'); syncConfigUI();
+    try { draw(); } catch(e){} setTimeout(() => dispatchEvent(new Event('resize')), 0); });   // 解析度跟著換：主畫布、塔背景、特效層都重設大小
   const T = $('oNotifTest'); if (T) T.onclick = () => { if (!('Notification' in window)) return notice('THIS BROWSER HAS NO NOTIFICATIONS');
     if (!opt('oNotif')){ $('oNotif').checked = true; saveHandling(); }
     Notification.requestPermission().then(r => r === 'granted' ? optNotify('STACK LAB', 'NOTIFICATIONS ARE ON') : notice('NOTIFICATIONS BLOCKED BY THE BROWSER')); };
@@ -14134,7 +14144,7 @@ const BEZ_OFF = bez(0, .71, .51, .15), BEZ_DEF = bez(.1, .38, 0, .88);
 function popCtx(){
   let c = document.getElementById('popfx');
   if (!c){ c = document.createElement('canvas'); c.id = 'popfx'; c.setAttribute('aria-hidden', 'true'); c.style.cssText = 'position:fixed;left:0;top:0;width:100vw;height:100vh;pointer-events:none;z-index:30'; document.body.appendChild(c); }
-  const dpr = Math.min(3, window.devicePixelRatio || 1), w = Math.round(innerWidth * dpr), h = Math.round(innerHeight * dpr);
+  const dpr = gfxDpr(innerWidth * innerHeight * 2), w = Math.round(innerWidth * dpr), h = Math.round(innerHeight * dpr);
   if (c.width !== w || c.height !== h){ c.width = w; c.height = h; }
   const x = c.getContext('2d'), bc = ctx.canvas, r = bc.getBoundingClientRect(), m = ctx.getTransform(), sx = r.width / bc.width * dpr, sy = r.height / bc.height * dpr;
   x.setTransform(1, 0, 0, 1, 0, 0); x.clearRect(0, 0, w, h); c._dirty = true;
@@ -16480,7 +16490,7 @@ function drawCover(x, im, w, h, n){
 function qpBg(dt){
   const cv = document.getElementById('qpbg'); if (!cv) return;
   const on = dt > 0 && climb && climb.kind === 'qp' && !(climb.custom && !climb.custom.tower) && stage.dataset.bgkey === 'zcscroll';
-  const r = cv.getBoundingClientRect(), dpr = Math.max(1, Math.min(2, window.devicePixelRatio || 1, Math.sqrt(2.2e6 / Math.max(1, r.width * r.height))));   // 塔背景只在捲動時重畫：高 DPI 用 2 倍（1 倍在手機上糊）
+  const r = cv.getBoundingClientRect(), dpr = gfxDpr(r.width * r.height, 2);   // 塔背景只在捲動時重畫：高 DPI 用 2 倍（1 倍在手機上糊）
   const w = Math.round(r.width * dpr), h = Math.round(r.height * dpr);
   if (cv.width !== w || cv.height !== h){ cv.width = w; cv.height = h; QPB.key = null; }
   const x = cv.getContext('2d');
@@ -17703,7 +17713,7 @@ function qplTowerDraw(c, w, h, dt){
 }
 function qplDraw(){
   const cv = $('qplCv'); if (!cv) return;
-  const r = cv.getBoundingClientRect(), dpr = Math.min(1.5, window.devicePixelRatio || 1), w = Math.round(r.width), h = Math.round(r.height);
+  const r = cv.getBoundingClientRect(), dpr = gfxDpr(r.width * r.height, 1.5), w = Math.round(r.width), h = Math.round(r.height);
   if (cv.width !== Math.round(w * dpr) || cv.height !== Math.round(h * dpr)){ cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr); QPL.bgKey = ''; }
   const c = cv.getContext('2d'); c.setTransform(dpr, 0, 0, dpr, 0, 0);
   // 背景：觀戰時是那個人所在樓層的塔圖；平常是一樓（圖底＝塔底）
@@ -22091,7 +22101,7 @@ const UsernameData = (() => { const lib = {}; for (const k in D.unames) lib[k] =
 let CV = null, X = null, DPR = 1;
 const SCR = { w: 0, h: 0, k: 1, x: 0, y: 0, w0: 1600, h0: 1000 };
 function scrResize(){
-  const w = innerWidth, h = innerHeight; DPR = usingTouch ? 1 : max(.75, min(2, devicePixelRatio || 1, Math.sqrt(2.5e6 / max(1, w * h))));   // 手機：1 倍（整張全螢幕每幀重畫，DPR 2.6 時只剩 12fps → 1 倍約 26fps）
+  const w = innerWidth, h = innerHeight; DPR = usingTouch ? Math.min(1, gfxDpr(w * h)) : max(.5, gfxDpr(w * h, 2));   // 手機：1 倍（整張全螢幕每幀重畫，DPR 2.6 時只剩 12fps → 1 倍約 26fps）
   if (CV.width !== Math.round(w * DPR) || CV.height !== Math.round(h * DPR)){ CV.width = Math.round(w * DPR); CV.height = Math.round(h * DPR); }
   SCR.w = w; SCR.h = h; SCR.x = 0; SCR.y = 0;
   if (h / w >= SCR.h0 / SCR.w0){ SCR.k = w / SCR.w0; SCR.y = (h - SCR.h0 * SCR.k) / 2; } else { SCR.k = h / SCR.h0; SCR.x = (w - SCR.w0 * SCR.k) / 2; }
