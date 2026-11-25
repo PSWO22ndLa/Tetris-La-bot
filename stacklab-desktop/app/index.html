@@ -5836,6 +5836,7 @@ const genR = () => genBar2() ? cell * 20 / 30 + cell * 9 / 92 : 0;   // 雪球�
 const sideScale = () => mode === 'sim' && VISIBLE < 20 ? VISIBLE / 20 : mode === 'sim' && VISIBLE > 30 ? VISIBLE / 30 : 1;
 // ASCETICISM 系列（逆位 nohold，含 FLIPSIDE／ABYSS）：HOLD 框整個拔掉、NEXT 框縮到只裝得下看得到的那幾顆（ABYSS 一顆都看不到＝NEXT 也拔掉）
 const ascPanels = () => !!(climb && typeof hasMod === 'function' && hasMod('ascetic'));
+const noHoldPanel = () => !!(climb && typeof hasMod === 'function' && (hasMod('nohold') || hasMod('ascetic')));   // NO HOLD 系列（含 ASCETICISM）：HOLD 框拔掉
 const nextSlots = () => ascPanels() ? Math.max(0, Math.min(5, nextShown())) : 5;
 function skinRects(){
   const s = cell / 92, k = s * sideScale(),   /* 實機 QP：HOLD／NEXT 跟盤面框同比例（原本縮 0.75，跟使用者的實機截圖比太小） */   /* 縮小盤面（雪球）照官方原尺寸×H/20，不再額外 ×0.75 */ Y0 = (H - VISIBLE) * cell, vs = VISIBLE / 20;   // 實機 Duo：HOLD／NEXT 是原尺寸（NEXT 高到盤面約 8 成）   // HOLD／NEXT／側欄縮 0.75 倍，手機才放得下
@@ -6250,7 +6251,7 @@ function drawSnowLights(R){
   strand([[q.x + q.w * .1, q.y + q.h * .02], [q.x + q.w * .8, q.y], [q.x + q.w * .98, q.y + q.h * .35], [q.x + q.w * .9, q.y + q.h * .75], [q.x + q.w * .2, q.y + q.h * .97]]);
 }
 function drawSkinPanels(){
-  const R = skinRects(), noH = ascPanels(), noN = ascPanels() && nextSlots() === 0;
+  const R = skinRects(), noH = noHoldPanel(), noN = ascPanels() && nextSlots() === 0;
   if (!noH) atlasDraw(ctx, 'holdBg', R.holdIn); if (!noN) atlasDraw(ctx, 'queueBg', R.nextIn);
   if (!noH){ ctx.save(); ctx.globalAlpha = holdUsed ? .45 : 1;
     atlasDraw(ctx, 'hold', R.hold);
@@ -9743,7 +9744,7 @@ function drawFrame(){
       if (genBoard()) drawGenBorder();
       ctx.save();
       ctx.translate(-GUTL() * cell, 0);
-      if (!ascPanels()) drawSlot('HOLD', holdType ? [holdType] : [], 0, GUTL()*cell, holdUsed);   // ASCETICISM：沒有 HOLD 框
+      if (!noHoldPanel()) drawSlot('HOLD', holdType ? [holdType] : [], 0, GUTL()*cell, holdUsed);   // ASCETICISM：沒有 HOLD 框
       ctx.restore();
     }
     ctx.save();
@@ -17533,12 +17534,12 @@ function qplSpecBoard0(c, o, cs, sk, gl, gr, V, main){
   c.save(); c.translate(0, (H - BOT_H + 4) * cs); qplBoardCells(c, o, cs); c.restore();
   // 尺（先畫，HOLD／NEXT 蓋在上面）
   if (main) drawRuler(c, cs, V);
-  const oAsc = !!(o.mods && o.mods.has('ascetic')), oNq = o.mods && o.mods.has('ab_ascetic') ? 0 : oAsc ? 1 : 5;   // ASCETICISM：HOLD 拔掉、NEXT 縮短（nextShown 同款）
+  const oAsc = !!(o.mods && o.mods.has('ascetic')), oNoH = oAsc || !!(o.mods && o.mods.has('nohold')), oNq = o.mods && o.mods.has('ab_ascetic') ? 0 : oAsc ? 1 : 5;   // ASCETICISM：HOLD 拔掉、NEXT 縮短（nextShown 同款）
   if (sk){
     atlasDraw(c, 'lbar', R.lbar); atlasDraw(c, 'frame', R.frame);
     const nN = Math.max(1, oNq), nx = { ...R.next, h: R.next.h - 276 * (5 - nN) * R.k }, nxIn = { ...R.nextIn, h: R.nextIn.h * nN / 5 };
     if (oNq) { atlasDraw(c, 'queueBg', nxIn); atlasDraw(c, 'next', nx); }
-    if (oAsc){}
+    if (oNoH){}
     else if (main || !V.DF){ atlasDraw(c, 'holdBg', R.holdIn); atlasDraw(c, 'hold', R.hold); if (o.hold) qplMini(c, o.hold, R.holdIn); }
     else {                                                                  // 實機 Duo 隊友的 HOLD：兩個盤面中間、被看的人的 NEXT 下面，底部跟盤面齊（drawOppBoard 同款量測）
       const k = R.k, nx = R.next.x - R.mateX, hy = R.next.y + 1563 * k - 6 * k, hb = { x: nx, y: hy, w: 476 * k, h: R.frame.y + 1919 * R.s - hy }, im = SPEC_SKIN && SPEC_SKIN.img;
@@ -17548,7 +17549,7 @@ function qplSpecBoard0(c, o, cs, sk, gl, gr, V, main){
       if (o.hold) qplMini(c, o.hold, { x: hb.x + 40 * k, y: hb.y + 40 * k, w: hb.w - 60 * k, h: hb.h - 130 * k }); }
     (o.q || []).slice(1, 1 + oNq).forEach((t, i) => qplMini(c, t, { x: nxIn.x, y: nxIn.y + i * nxIn.h / nN, w: nxIn.w, h: nxIn.h / nN }));
   } else {
-    if (!oAsc){ c.save(); c.translate(-gl * cs, 0); drawSlot('HOLD', o.hold ? [o.hold] : [], 0, gl * cs, false, c, cs, V); c.restore(); }
+    if (!oNoH){ c.save(); c.translate(-gl * cs, 0); drawSlot('HOLD', o.hold ? [o.hold] : [], 0, gl * cs, false, c, cs, V); c.restore(); }
     if (oNq){ c.save(); c.translate(W * cs, 0); drawSlot('NEXT', (o.q || []).slice(1, 1 + oNq), 0, gr * cs, false, c, cs, V); c.restore(); }
   }
   // 垃圾條（drawGarbageMeter 同款：黃＝剛到、空心紅＝快進場、實心紅＝要進場；只到可視區頂端）
