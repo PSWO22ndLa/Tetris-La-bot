@@ -990,6 +990,64 @@ document.documentElement.classList.add('booting'); addEventListener('load', func
   #tlRes .tr-btns button{ border-radius:0; border:1px solid #6a6a74; background:#2a2a30; color:#e8e8ee; font:700 15px var(--t-font); letter-spacing:.08em; padding:9px 20px; box-shadow:none; }
   #tlRes .tr-btns button.pri{ background:#7a1621; border-color:#c0303e; color:#ffd7db; }
   @media (max-width:640px){ #tlRes .tr-body{ grid-template-columns:1fr; } #tlRes .tr-stand{ order:-1; } #tlRes .tr-stand h3{ text-align:center; } }
+
+  /* ── 官方 #pair（配對到對手的動畫）：tetrio.css 原樣照搬，只把字型換成本站載得到的同一套 ── */
+  #pair{ position:fixed; inset:0; z-index:10000; overflow:hidden; user-select:none; }
+  #pair.hidden{ display:none; }
+  #pair:not(.hidden){ animation:16s ease-in-out 0s 1 normal both running PC; }
+  #pair_bg{ position:absolute; inset:0; background:#000; opacity:0; }
+  #pair:not(.hidden) #pair_bg{ animation:16s linear 0s 1 normal both running PC_bg; }
+  #pair_intro_p1, #pair_intro_p2{ position:absolute; font-family:HUN, var(--t-font); font-weight:900; color:#fff; text-shadow:#fff 0 0 8px; font-size:6vw; left:0; right:0; text-align:center; filter:brightness(1); transform:translateX(0); white-space:nowrap; }
+  #pair_intro_p1{ top:calc(50vh - 6vw); } #pair_intro_p2{ top:calc(50vh + 1vw); }
+  #pair:not(.hidden) #pair_intro_p1{ animation:2.5s ease-out 0s 1 normal both running PC_header; }
+  #pair:not(.hidden) #pair_intro_p2{ animation:2.5s ease-out 0s 1 normal both running PC_headerII; }
+  #pair_el_p1, #pair_el_p2{ position:fixed; font-family:HUN, var(--t-font); font-weight:900; color:#fff; text-shadow:#fff 0 0 8px; font-size:4vw; width:120vw; height:60vh; left:-10vw; box-sizing:border-box; transform:translate(0,-50px); white-space:nowrap; }
+  #pair_el_p1{ border:4px solid rgb(25,74,255); background:linear-gradient(to top, rgba(25,74,255,.667) 0, rgba(25,74,255,.2) 50%, rgba(25,74,255,.133) 100%), var(--crystal, linear-gradient(#0a0f2c,#0a0f2c)); top:-10vh; }
+  #pair_el_p2{ border:4px solid rgb(255,25,25); background:linear-gradient(to top, rgba(255,25,25,.133) 0, rgba(255,25,25,.2) 50%, rgba(255,25,25,.667) 100%), var(--crystal, linear-gradient(#2c0a0a,#2c0a0a)); top:50vh; }
+  #pair:not(.hidden) #pair_el_p1{ animation:16s ease-out 0s 1 normal both running PC_el; }
+  #pair:not(.hidden) #pair_el_p2{ animation:16s ease-out 0s 1 normal both running PC_elII; }
+  #pair_name_p1{ position:absolute; left:15vw; bottom:7.5vh; display:inline-block; font-size:6vw; pointer-events:none; }
+  #pair_rank_p1{ position:absolute; right:15vw; bottom:10vh; display:inline-block; font-size:4vw; pointer-events:none; }
+  #pair_name_p2{ position:absolute; right:15vw; top:12.5vh; display:inline-block; font-size:6vw; pointer-events:none; }
+  #pair_rank_p2{ position:absolute; left:15vw; top:15vh; display:inline-block; font-size:4vw; }
+  #pair_rank_p1 span, #pair_rank_p2 span{ font-size:2vw; }
+  #pair_rank_p1 img{ height:8vw; vertical-align:bottom; position:relative; top:1.3vw; }
+  #pair_rank_p2 img{ height:8vw; vertical-align:top; position:relative; top:-2.2vw; pointer-events:none; }
+  #pair_glow{ position:fixed; width:80vw; height:10vh; background:radial-gradient(closest-side, #fff 0, rgba(255,255,255,0) 100%); top:45vh; left:10vw; transform:rotate(-3deg); pointer-events:none; }
+  #pair:not(.hidden) #pair_glow{ animation:16s ease-out 0s 1 normal both running PC_glow; }
+  #pair_vs{ position:fixed; font-family:HUN, var(--t-font); font-weight:900; font-size:20vh; top:50vh; left:50vw; color:rgb(255,204,0); text-shadow:rgb(255,136,0) 0 0 16px, rgb(255,136,0) 0 0 16px, rgb(255,136,0) 0 0 16px, rgb(255,136,0) 0 0 64px; pointer-events:none; }
+  #pair:not(.hidden) #pair_vs{ animation:16s ease-out 0s 1 normal both running PC_vs; }
+  #pair_ft{ position:fixed; font-family:HUN, var(--t-font); font-weight:900; font-size:8vh; top:5vh; left:50vw; color:#fff; text-shadow:#fff 0 0 16px; pointer-events:none; }
+  #pair:not(.hidden) #pair_ft{ animation:16s ease-out 0s 1 normal both running PC_ft; }
+  @keyframes PC{ 0%{ opacity:0; } 3%{ opacity:1; } 90%{ opacity:1; } 100%{ opacity:0; } }
+  @keyframes PC_bg{ 0%{ opacity:0; } 25%{ opacity:1; } 87.5%{ opacity:1; } 92.5%{ opacity:0; } 100%{ opacity:0; } }
+  @keyframes PC_header{ 0%{ transform:translateX(80vw); } 20%{ transform:translateX(5vw); } 80%{ transform:translateX(-5vw); } 100%{ transform:translateX(-80vw); } }
+  @keyframes PC_headerII{ 0%{ transform:translateX(-80vw); } 20%{ transform:translateX(-5vw); } 80%{ transform:translateX(5vw); } 100%{ transform:translateX(80vw); } }
+  @keyframes PC_el{ 0%,15%{ transform:translate(110vw,-20vh) rotate(0deg); filter:brightness(1) grayscale(0); } 19%,20%{ transform:translate(0,-20vh) rotate(0deg); filter:brightness(1) grayscale(0); } 21%{ transform:translate(0,0) rotate(0deg); filter:brightness(1) grayscale(0); } 21.01%{ transform:translate(0,0) rotate(0deg); filter:brightness(5) grayscale(1); } 21.5%{ transform:translate(0,0) rotate(-3deg); filter:brightness(5) grayscale(1); } 30%,80%{ transform:translate(0,0) rotate(-3deg); filter:brightness(1.01) grayscale(0); } 85%,100%{ transform:translate(0,-60vh) rotate(-3deg); filter:brightness(1.01) grayscale(0); } }
+  @keyframes PC_elII{ 0%,15%{ transform:translate(-110vw,20vh) rotate(0deg); filter:brightness(1) grayscale(0); } 19%,20%{ transform:translate(0,20vh) rotate(0deg); filter:brightness(1) grayscale(0); } 21%{ transform:translate(0,0) rotate(0deg); filter:brightness(1) grayscale(0); } 21.01%{ transform:translate(0,0) rotate(0deg); filter:brightness(5) grayscale(1); } 21.5%{ transform:translate(0,0) rotate(-3deg); filter:brightness(5) grayscale(1); } 30%,80%{ transform:translate(0,0) rotate(-3deg); filter:brightness(1.01) grayscale(0); } 85%,100%{ transform:translate(0,60vh) rotate(-3deg); filter:brightness(1.01) grayscale(0); } }
+  @keyframes PC_glow{ 0%,21%{ opacity:0; } 21.01%{ opacity:1; } 60%,100%{ opacity:0; } }
+  @keyframes PC_vs{ 0%,21%{ opacity:0; transform:translate(-50%,-40%) scale(2); } 22%,80%{ opacity:1; transform:translate(-50%,-40%) scale(1); } 85%,100%{ opacity:0; transform:translate(-50%,-40%) scale(.5); } }
+  @keyframes PC_ft{ 0%,21%{ transform:translate(-50%,-20vh); } 22%,80%{ transform:translate(-50%,0); } 85%,100%{ transform:translate(-50%,-20vh); } }
+  @keyframes ShakeBody{ 0%{ transform:translate(-1vw,-1vh); } 10%{ transform:translate(-.5vw,2vh); } 20%{ transform:translate(0,-.5vh); } 30%{ transform:translate(-1vw,1vh); } 40%{ transform:translate(2vw,0); } 50%{ transform:translate(.5vw,-1vh); } 60%{ transform:translate(-1vw,-.5vh); } 70%{ transform:translate(-.5vw,1.5vh); } 80%{ transform:translate(1vw,-1vh); } 90%{ transform:translate(-.5vw,.5vh); } 100%{ transform:translate(-1vw,-1vh); } }
+  body.shaking{ animation:.1s linear 0s infinite normal none running ShakeBody; }
+
+  /* 官方 #ingame_chat_container：畫面最左邊一欄，訊息從下面往上疊，不擋操作（只有輸入框吃得到滑鼠）。--r＝官方的介面比例 us */
+  #ingame_chat_container{ position:fixed; top:0; left:-2em; width:calc(50vw - 500px * var(--r, 1)); min-width:275px; bottom:0; border-radius:8px; z-index:45; pointer-events:none; display:none; transition:background .2s; }
+  @media (min-width:1100px) and (hover:hover) and (pointer:fine){ body.game.tl:not(.rpmode) #ingame_chat_container{ display:block; } }
+  body.chatfocus #ingame_chat_container{ background:rgba(0,0,0,.8); }
+  #ingame_chat{ position:absolute; left:0; right:0; bottom:0; max-height:100%; padding-left:2.5em; overflow-y:hidden; }
+  #ingame_chat .chat_message:last-child{ margin-bottom:2.5em; }
+  #ingame_chat .chat_message p{ margin-right:.25em; }
+  #ingame_chat_input{ position:absolute; bottom:.5em; right:.5em; width:calc(50vw - 500px * var(--r, 1) - 3.2em); min-width:calc(275px - 3.2em); font-family:var(--pfw, sans-serif); color:#fff; font-size:1.1em; background:rgba(0,0,0,.867); box-shadow:rgba(0,0,0,.667) 0 2px 6px; border:1px solid #060606; border-radius:3px; padding:.15em .2em 0; transition:box-shadow .2s; pointer-events:all; outline:0 !important; }
+  #ingame_chat_input:focus{ box-shadow:rgba(0,0,0,.667) 0 2px 6px, #fff 0 0 8px; }
+  .chat_message.chat_banner h1{ display:none; }
+  .chat_message.chat_banner p{ color:rgba(255,255,255,.533); border:1px solid rgba(255,255,255,.133); border-radius:3px; padding:.2em .5em; }
+  #tlRes.el .el-chat .chat_message{ font-size:1em; } #tlRes.el .el-chat .chat_message h1{ padding-left:0; font-weight:400; } #tlRes.el .el-chat .chat_message.chat_banner p{ margin-left:0; }
+  /* 段位圖：官方 TL 選單 #league_rank 高 6vw、結算 #leaguestanding_rank 寬 6vw（原本一律 1.5rem，縮放規則還寫給已經不存在的 .rk） */
+  #leaguesel #tlMyRank .rbadge.rkimg img{ height:6vw; min-height:44px; }
+  #leaguesel #tlMyRank .rbadge:not(.rkimg){ font-size:clamp(20px,3vw,44px); padding:0 .3em; }
+  #tlRes.el .el-rk .rbadge.rkimg img{ width:6vw; min-width:48px; height:auto; }
+  #tlRes.el .el-rk .rbadge:not(.rkimg){ font-size:clamp(20px,3vw,44px); padding:0 .3em; }
   #tlOv{ position:fixed; inset:0; z-index:60; pointer-events:none; display:none; font-family:var(--t-font); }
   #tlOv.on{ display:block; }
   #tlOv .vs{ position:absolute; inset:0; background:#06070c; overflow:hidden; animation:tlIn .25s ease-out; }
@@ -2542,6 +2600,7 @@ document.documentElement.classList.add('booting'); addEventListener('load', func
   /* 官方 TL header／footer 就是 data-menu-type="league" 那組，body.tlp 的舊配色讓位 */
   body.tlp[data-menu="league"] .profchip{ background:linear-gradient(rgba(6,6,6,.667),rgba(6,6,6,.867)) !important; border-color:rgba(6,6,6,.933) !important; }
   /* ===== TL 結算（官方 #endleagueview）：輸＝紫（endleague），贏＝金（.league_victory）===== */
+  body:has(#tlRes.el.on) #stage, body:has(#tlRes.el.on) #tlScore, body:has(#tlRes.el.on) #ingame_chat_container{ visibility:hidden; }   /* 官方：結算頁出來時遊戲畫面已經收掉，不會透在後面 */
   #tlRes.el{ background:rgba(9,8,20,.97) !important; font-size:var(--ofs); font-family:var(--hunf); overflow:hidden; }
   #tlRes.el .el-hd, #tlRes.el .el-ft{ flex:0 0 auto; display:flex; align-items:center; padding:0 .5em; box-shadow:#000 0 0 8px; color:rgb(157,151,243); }
   #tlRes.el .el-hd{ height:calc(var(--ofs) * 4.2); font:400 calc(var(--ofs) * 2.25)/1 var(--hunf); background:linear-gradient(rgb(39,35,95),rgb(27,25,61)); border-bottom:2px solid rgb(51,46,127); }
@@ -2563,7 +2622,7 @@ document.documentElement.classList.add('booting'); addEventListener('load', func
   #tlRes.el .el-vs{ flex:0 0 auto; color:rgb(255,204,0); font:400 3.5em var(--hunf); margin:0 .5em; text-shadow:rgb(255,136,0) 0 2px, rgb(255,136,0) 0 0 8px; position:relative; z-index:1; }
   #tlRes.el .el-rinfo{ display:flex; justify-content:flex-end; align-items:center; gap:.7em; width:70vw; margin:1em 0 0 auto; }
   #tlRes.el .el-rid{ flex:1; text-align:left; font:400 2em/1 var(--hunf); color:rgb(204,204,204); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-  #tlRes.el .el-rid small{ font-size:.5em; opacity:.6; margin-right:.4em; }
+  #tlRes.el .el-rid small{ font-size:.75em; opacity:.3; margin-right:.25em; }
   #tlRes.el .el-wr{ font:400 2em/1 var(--hunf) !important; letter-spacing:0 !important; background:rgba(255,255,255,.08) !important; border:1px solid rgba(255,255,255,.2) !important; color:#ddd !important; border-radius:0 !important; padding:.2em .5em 0 !important; box-shadow:#000 0 0 8px !important; }
   #tlRes.el .el-wr:disabled{ opacity:.4; }
   #tlRes.el .el-two{ display:grid; grid-template-columns:1fr 1fr; gap:4em; margin:1.5em 0 0 -15vw; padding:0 0 0 0; text-align:left; }
@@ -11405,6 +11464,18 @@ function rpGraph(){
   x.clearRect(0, 0, w, h); x.beginPath(); x.moveTo(0, h); v.forEach((q, i) => x.lineTo(i / n * w, h - q / mx * (h - 6))); x.lineTo(w, h); x.closePath();
   x.fillStyle = 'rgba(255,120,0,.2)'; x.fill(); x.beginPath(); v.forEach((q, i) => i ? x.lineTo(i / n * w, h - q / mx * (h - 6)) : x.moveTo(0, h - q / mx * (h - 6))); x.strokeStyle = 'rgb(255,120,0)'; x.lineWidth = 1.5; x.stroke();
 }
+// TL 回放：每一局的比分總和不同 → 用比分切出各局的起訖時間
+function rpRounds(R){
+  if (R._rounds) return R._rounds;
+  const out = []; let cur = null;
+  for (const f of R.frames){ const k = f.sc ? f.sc[0] + f.sc[1] : 0; if (!cur || cur.k !== k){ cur = { k, t0: f.t, t1: f.t }; out.push(cur); } else cur.t1 = f.t; }
+  const rs = out.filter(r => r.t1 - r.t0 > 1500);                               // 局末比分剛跳完的那一小段不算一局
+  return (R._rounds = rs.length ? rs : [{ k: 0, t0: R.frames[0].t, t1: R.frames[R.frames.length - 1].t }]);
+}
+function rpMultiHead(R, n){
+  const a = String(R.who || (typeof profName === 'function' ? profName() : 'YOU')).toUpperCase(), b = String((R.opts && (R.opts.oppName || (R.opts.opp && R.opts.opp.name))) || 'OPPONENT').toUpperCase(), tot = rpRounds(R).length;
+  return `watching <span>${tlEsc(a)}</span> VS <span>${tlEsc(b)}</span>, round <span>${n}</span><small>/${tot}</small>`;
+}
 function rpBar(on){
   let b = $('replaytools'), h = $('replay');
   if (!on){ if (b) b.remove(); if (h) h.remove(); window.removeEventListener('keydown', rpKey, true); document.body.classList.remove('idlemouse');
@@ -11413,7 +11484,8 @@ function rpBar(on){
   document.body.classList.add('rpmode'); try { fit(); } catch(e){}                 // 盤面往上讓出工具列的高度
   const R = climb.rp.R, who = R.who || (typeof profName === 'function' ? profName() : 'YOU'), md = (R.sum || rpSummary(R)).name, multi = R.kind === 'league';
   h = document.createElement('div'); h.id = 'replay'; h.className = 'watch_header ns';
-  h.innerHTML = `<div class="keystone">REPLAY</div><div id="data_replay" class="data">watching <span>${tlEsc(String(who).toUpperCase())}</span> play <span>${tlEsc(md)}</span></div><div id="exit_replay" class="exit">EXIT</div>`;
+  // 官方：單人「watching <誰> play <模式>」；多人（TL）「watching <A> VS <B>, round <n>/<總局數>」
+  h.innerHTML = `<div class="keystone">REPLAY</div><div id="data_replay" class="data">${multi ? rpMultiHead(R, 1) : `watching <span>${tlEsc(String(who).toUpperCase())}</span> play <span>${tlEsc(md)}</span>`}</div><div id="exit_replay" class="exit">EXIT</div>`;
   document.body.appendChild(h);
   b = document.createElement('div'); b.id = 'replaytools'; b.className = 'ns';
   const mb = (id, g, t, cls = 'disableable') => `<div class="${cls}" id="replaytools_button_${id}" title="${t}">${rpIco(g)}</div>`;
@@ -11452,6 +11524,8 @@ function rpBarSync(){
   const pp = $('replaytools_button_playpause'), want = P.playing ? 'Ǥ' : 'ǣ'; if (pp.dataset.g !== want){ pp.dataset.g = want; pp.innerHTML = rpIco(want); }
   $('replaytools_seekbar').style.setProperty('--progress', ((P.t - t0) / Math.max(1, P.dur - t0) * 100).toFixed(2) + '%');
   $('replaytools_timestamp').innerHTML = `${Math.floor(ms / 60000)}:${z(Math.floor(ms / 1000) % 60)}.${z(Math.floor(ms % 1000), 3)}<span>frame ${Math.round(ms * 60 / 1000)}</span>`;
+  if (P.R.kind === 'league'){ const rs = rpRounds(P.R); let n = 1; for (let i = 0; i < rs.length; i++) if (P.t >= rs[i].t0) n = i + 1;
+    if (P._rn !== n){ P._rn = n; const d = $('data_replay'); if (d) d.innerHTML = rpMultiHead(P.R, n); } }
 }
 function drawReplayTag(){
   if (!climb || !climb.rp) return;
@@ -11721,6 +11795,7 @@ function qpRunMods(src){
   return m;
 }
 function startClimb(kind = 'qp', opts = {}){
+  if (kind === 'league' && !opts.keepScore && !RP_OPENING && typeof tlChatReset === 'function') tlChatReset();   // 新的一場：聊天紀錄清空
   rpBar(false); rpBegin(kind, opts);
   IRS_TAP = 0; IHS_TAP = false;
   { const d = document.getElementById('listReq'); if (d) d.remove(); }
@@ -14985,24 +15060,23 @@ function tlResults(){
   const L = TL_LAST, m = tlMyTR();
   const trNow = m.tr != null ? m.tr : null, d = L && L.placed && !L.justPlaced ? Math.round(L.d) : 0;
   const rk = m.r ? m.r.r : null, top = m.r && m.r.top != null ? m.r.top : null;
-  const chat = [`<p class="sys">Please remember to be civil to your opponent.</p>`, `<p class="sys">[SYS] started the game</p>`,
-    `<p><b class="me">${myName}</b> glhf</p>`, `<p><b>${opName}</b> glhf</p>`, `<p class="sys">[SYS] game finished</p>`, `<p><b>${opName}</b> gg</p>`, `<p class="sys"><b>${opName}</b> left the room</p>`].join('');
+  const chat = TLCHAT.log.map(tlChatHtml).join('');                              // 真的紀錄（官方進房提醒＋對戰中打的字），不編對話
   const pill = top != null ? `<span class="lpi">TOP <span>${top}</span></span>` : `<span class="lpi">${L && !L.placed ? `RATING GAMES <span>${TL_PLACE - L.left}/${TL_PLACE}</span>` : 'UNRANKED'}</span>`;
   const el = $('tlRes');
   el.className = 'el' + (win ? ' vic' : ' lose');
-  el.innerHTML = `<div class="el-hd">TETRA LEAGUE</div><div class="el-body">
+  el.innerHTML = `<div class="el-hd">TETRA LEAGUE / RESULTS</div><div class="el-body">
     <div class="el-res">${win ? 'VICTORY' : 'DEFEAT'}</div>
     <div class="el-pls"><div class="el-pl self"><div class="el-name">${myName}</div><div class="el-cnt">${me.score}</div><div class="el-x">${st(T)}</div></div>
       <div class="el-vs">VS</div>
       <div class="el-pl"><div class="el-name">${opName}</div><div class="el-cnt">${o.score}</div><div class="el-x">${st(U)}</div></div></div>
-    <div class="el-rinfo"><div class="el-rid"><small>REPLAY ID</small>R:${Array.from({ length: 12 }, () => '0123456789abcdef'[(Math.random() * 16) | 0]).join('')}</div>
-      <button class="el-wr" id="trReplay" title="Watch the last round">REPLAY</button></div>
+    <div class="el-rinfo"><div class="el-rid"><small>replay id:</small>${(() => { const R0 = (typeof RP_REC !== 'undefined' && RP_REC && RP_REC.kind === 'league' ? RP_REC : null) || (typeof RP_LAST !== 'undefined' && RP_LAST && RP_LAST.kind === 'league' ? RP_LAST : null); return R0 ? 'r' + (R0.at || '') : '—'; })()}</div>
+      <button class="el-wr" id="trReplay" title="Watch the replay of this match">REPLAY</button></div>
     <div class="el-two"><div class="el-box"><h1>CHAT</h1><div class="el-chat" id="trChat">${chat}</div><input class="el-in" id="trChatIn" maxlength="512" placeholder="message..." autocomplete="off"></div>
       <div class="el-box st"><h1>TETRA LEAGUE STANDING</h1>
         <div class="el-tr"><b id="trNum">${trNow != null ? Math.round(trNow - d) : '?????'}</b><span>TR</span><i id="trD" class="${d > 0 ? 'up' : d < 0 ? 'dn' : ''}">${trNow != null && d ? (d > 0 ? '+' : '−') + Math.abs(d) : ''}</i></div>
         <div class="el-rk">${rk ? rankBadge(rk) : ''}${pill}${L && L.justPlaced ? '<i class="up">RANKED!</i>' : ''}</div></div></div>
     <button class="el-next" id="trBack">NEXT</button>
-  </div><div class="el-ft">${win ? 'YOU WON THE MATCH!' : 'BETTER LUCK NEXT TIME!'}</div>`;
+  </div><div class="el-ft">THE RESULTS ARE IN!</div>`;
   el.classList.add('on');
   // TR 從比賽前數到比賽後
   if (trNow != null && d){ const n0 = trNow - d, t0 = performance.now(), num = $('trNum');
@@ -15011,7 +15085,8 @@ function tlResults(){
   $('trReplay').onclick = () => { rpOpen(); };
   if (climb.opts.unranked) el.querySelectorAll('*').forEach(n => { if (n.childNodes.length === 1 && n.firstChild.nodeType === 3 && /TETRA LEAGUE/.test(n.textContent)) n.textContent = n.textContent.replace('TETRA LEAGUE', 'CUSTOM GAME'); });
   $('trBack').onclick = () => { el.classList.remove('on'); $('climbStop').onclick(); };
-  $('trChatIn').onkeydown = e => { e.stopPropagation(); if (e.key === 'Enter' && e.target.value.trim()){ const c = $('trChat'); c.insertAdjacentHTML('beforeend', `<p><b class="me">${myName}</b> ${tlEsc(e.target.value.trim())}</p>`); e.target.value = ''; c.scrollTop = c.scrollHeight; } };
+  $('trChatIn').onkeydown = e => { e.stopPropagation(); if (e.key === 'Enter' && !e.isComposing && e.target.value.trim()){ tlChatSend(e.target.value); e.target.value = ''; } };
+  { const c = $('trChat'); if (c) c.scrollTop = c.scrollHeight; }
 }
 function roundEnd(winner){
   if (!climb || climb.over) return;
@@ -20376,12 +20451,65 @@ $('tlEnter').onclick = () => {
     tlFinding = null; tlMmTimer(0); b.classList.remove('finding'); b.firstChild.textContent = 'ENTER MATCHMAKING'; b.lastChild.textContent = 'LEAVING EARLY IS PUNISHED';
     const ft = tlFtForTR(((m.tr != null ? m.tr : m.mmTR) + opp.tr) / 2), oppTr = Math.round(opp.tr), oppName = opp.name.toUpperCase();
     const cc = c => c ? `<div class="cc">${tlEsc(String(c).toUpperCase())}</div>` : '';
-    sfxEv('matchintro', 'matchintro'); optNotify('MATCH FOUND', `TETRA LEAGUE · VS ${oppName}`);                                // ⚠️ 配對到人、VS 畫面：音效名照音效包推定
-    await tlOv(`<div class="vs"><div class="ft">FT${ft}</div><div class="bl"><div class="nm">${tlEsc(m.name)}</div><div class="tr">${m.r ? rankBadge(m.r.r) : ''}${m.tr != null ? m.tr.toLocaleString('en-US') + ' TR' : 'UNRANKED'}</div></div>`
-      + `<div class="rd"><div class="nm">${tlEsc(oppName)}</div><div class="tr">${rankBadge(opp.r)}${oppTr.toLocaleString('en-US')} TR</div>${cc(opp.country)}</div><div class="vsx">VS</div></div>`, 2600);
+    sfxEv('matchintro', 'matchintro'); optNotify(oppName, 'Your TETRA LEAGUE opponent is here!');   // 官方通知文字                                // ⚠️ 配對到人、VS 畫面：音效名照音效包推定
+    const myRank = m.r ? m.r.r : null, myPlace = m.r && m.r.place != null ? m.r.place : null;
+    await tlPair({ name: m.name, tr: m.tr, rank: myRank, place: myPlace }, { name: opp.name, tr: opp.tr, rank: opp.r, place: opp.place != null ? opp.place : null }, ft);
+    if (screen !== 'leaguesel' || climb) return;                                   // 動畫途中離開 TL 選單
     startClimb('league', { rank: opp.r, ft, oppName, opp });
   }, 1500 + Math.random() * 2000);
 };
+// 官方配對動畫（tetrio.js z()＋tetrio.css #pair）：
+//   0s「GET READY FOR／THE NEXT BATTLE」左右滑過（2.5s）→ 2.4s 藍、紅兩片從兩側滑進來 → 3.36s 合上、閃白、歪 -3°，VS 和 FT 跳出來、畫面震一下（3443–3500ms）
+//   → 12.8s 兩片往上下滑走（這時候遊戲畫面在底下出來）→ 17s 整個收掉。名字超過 14 字又在前 100 名才轉小寫；TR 四捨五入、沒有千分位；沒段位（z）不放圖。
+// ── TL 聊天（官方 #ingame_chat／#league_chat）：只放真的發生過的訊息——進房時官方那句提醒＋你自己打的字。
+//    對手是模擬的，不會替他編 glhf／gg 這種沒發生過的對話。對戰中按 T（沒被綁成遊戲鍵時）或點輸入框打字，Enter 送出、Esc 離開。
+const TLCHAT = { log: [] };
+function tlChatHtml(m){ return m.banner ? `<div class="chat_message chat_banner"><p>${tlEsc(m.text)}</p></div>` : `<div class="chat_message${m.sys ? ' system' : ''}"><h1 class="chat_tag">${tlEsc(m.who)}</h1><p>${tlEsc(m.text)}</p></div>`; }
+function tlChatRender(){ for (const id of ['ingame_chat', 'trChat']){ const e = document.getElementById(id); if (e){ e.innerHTML = TLCHAT.log.map(tlChatHtml).join(''); e.scrollTop = e.scrollHeight; } } }
+function tlChatReset(){ TLCHAT.log = [{ banner: true, text: 'Please remember to be civil to your opponent.' }]; tlChatUI(); tlChatRender(); }
+function tlChatSend(text){ text = String(text || '').trim().slice(0, 512); if (!text) return; TLCHAT.log.push({ who: String(loadProfile().name || 'you').toLowerCase(), text }); if (TLCHAT.log.length > 200) TLCHAT.log.splice(1, TLCHAT.log.length - 200); tlChatRender(); }
+function tlChatUI(){
+  if (document.getElementById('ingame_chat_container')) return;
+  const c = document.createElement('div'); c.id = 'ingame_chat_container';
+  c.innerHTML = '<div id="ingame_chat"></div><input id="ingame_chat_input" maxlength="512" placeholder="message..." autocomplete="off" type="text">';
+  document.body.appendChild(c);
+  const inp = c.querySelector('input');
+  inp.addEventListener('keydown', e => { e.stopPropagation(); if (e.isComposing) return;
+    if (e.key === 'Enter'){ e.preventDefault(); tlChatSend(inp.value); inp.value = ''; inp.blur(); }
+    else if (e.key === 'Escape'){ e.preventDefault(); inp.blur(); } });
+  inp.addEventListener('keyup', e => e.stopPropagation());
+  inp.addEventListener('focusin', () => document.body.classList.add('chatfocus'));
+  inp.addEventListener('focusout', () => document.body.classList.remove('chatfocus'));
+  addEventListener('keydown', e => {
+    if (e.code !== 'KeyT' || e.repeat || e.ctrlKey || e.metaKey || e.altKey) return;
+    if (!climb || climb.kind !== 'league' || climb.rp || !document.body.classList.contains('tl')) return;
+    const t = e.target; if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA')) return;
+    if (typeof actOf === 'function' && actOf('KeyT')) return;                 // T 被綁成遊戲鍵就不搶
+    if (getComputedStyle(c).display === 'none') return;
+    e.preventDefault(); e.stopPropagation(); inp.focus();
+  }, true);
+}
+const TL_PAIR = { timers: [] };
+function tlPairClear(){ TL_PAIR.timers.forEach(clearTimeout); TL_PAIR.timers = []; const e = document.getElementById('pair'); if (e) e.remove(); document.body.classList.remove('shaking'); }
+function tlPair(p1, p2, ft){
+  tlPairClear();
+  const el = document.createElement('div'); el.id = 'pair';
+  const nm = p => tlEsc(String(p.name)[String(p.name).length > 14 && p.place != null && p.place <= 100 ? 'toLowerCase' : 'toUpperCase']());
+  const img = p => p.rank && String(p.rank).toLowerCase() !== 'z' && tioImgOn() ? `<img src="${rankIconUrl(p.rank)}" alt="" onerror="this.remove()">` : '';
+  const pl = p => p.place != null && p.place <= 100 ? `<span class="league_placement_inline ${p.place === 1 ? 't1' : p.place <= 10 ? 't10' : 't100'}">#<span>${p.place}</span></span>` : '';
+  const r1 = p1.tr == null ? '' : `${pl(p1) ? pl(p1) + ' ' : ''}${Math.round(p1.tr)}<span>TR</span>${img(p1) ? ' ' + img(p1) : ''}`;
+  const r2 = p2.tr == null ? '' : `${img(p2) ? img(p2) + ' ' : ''}${Math.round(p2.tr)}<span>TR</span>${pl(p2) ? ' ' + pl(p2) : ''}`;
+  el.innerHTML = `<div id="pair_bg"></div><div id="pair_intro_p1">GET READY FOR</div><div id="pair_intro_p2">THE NEXT BATTLE</div>`
+    + `<div id="pair_el_p1"><div id="pair_name_p1">${nm(p1)}</div><div id="pair_rank_p1">${r1}</div></div>`
+    + `<div id="pair_el_p2"><div id="pair_name_p2">${nm(p2)}</div><div id="pair_rank_p2">${r2}</div></div>`
+    + `<div id="pair_glow"></div><div id="pair_vs">VS</div><div id="pair_ft">FT${ft}</div>`;
+  if (tioImgOn()) el.style.setProperty('--crystal', `url("${TIO_RES()}crystal.png")`);
+  document.body.appendChild(el);
+  const T = TL_PAIR.timers;
+  if (uiDetail() > 0){ T.push(setTimeout(() => document.body.classList.add('shaking'), 3443)); T.push(setTimeout(() => document.body.classList.remove('shaking'), 3500)); }
+  T.push(setTimeout(tlPairClear, 17000));
+  return new Promise(res => T.push(setTimeout(res, 12800)));
+}
 const syncTlFt = () => { $('tlFt').textContent = 'FT' + tlFtFor($('tlRank').value); };
 $('tlRank').addEventListener('change', syncTlFt); setTimeout(syncTlFt, 0);
 function tlBanner(){ tlOv('<div class="ban">TETRA LEAGUE</div>', 1100); }
@@ -20832,6 +20960,7 @@ function fit(){
   //   只在電腦（滑鼠＋橫向畫面）套用：手機直向照官方算一格只剩 6px，沒辦法玩。
   const off = officialCell();
   if (off) cell = Math.max(4, Math.min(cell, Math.floor(off * zoom)));
+  { const ic = document.getElementById('ingame_chat_container'); if (ic) ic.style.setProperty('--r', off ? (off / 30).toFixed(4) : '1'); }
   draw();
 }
 addEventListener('resize', fit);
