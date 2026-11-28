@@ -1002,11 +1002,12 @@ document.documentElement.classList.add('booting'); addEventListener('load', func
   .qpl-reveal.tc.anim .tcp{ animation:tcThrow .9s cubic-bezier(.25,.7,.3,1) both, qprShadow .9s linear; }
   .qpl-reveal.tc.anim .tcp:nth-child(2){ animation-delay:.09s; }
   @keyframes tcThrow{                                                        /* 跟 qprThrow 同一套手感：出牌組 → 放大往上甩 → 轉過頭 → 回正；差別是轉滿 360° */
-    0%{ transform:translate(var(--sx, 0px), var(--sy, 0px)) rotate(0deg) scale(var(--ss, 1)); }
+    0%{ transform:translate(calc(var(--sx, 0px) - var(--fx, 0px)), calc(var(--sy, 0px) - var(--fy, 0px))) translate(var(--fx, 0px), var(--fy, 0px)) rotate(0deg) scale(var(--ss, 1)); }
     30%{ transform:translate(0,-34%) rotate(150deg) scale(1.6); }
     55%{ transform:translate(0,-28%) rotate(250deg) scale(1.45); }
-    80%{ transform:translate(0,-6%) rotate(368deg) scale(1.07); }
-    100%{ transform:translate(0,0) rotate(360deg) scale(1); } }
+    80%{ transform:translate(calc(var(--fx, 0px) * .85), calc(var(--fy, 0px) * .85)) translate(0,-6%) rotate(calc(368deg + var(--fa, 0deg))) scale(1.07); }
+    100%{ transform:translate(var(--fx, 0px), var(--fy, 0px)) rotate(calc(360deg + var(--fa, 0deg))) scale(1); } }
+  .qpl-reveal.tc .tcp{ transform:translate(var(--fx, 0px), var(--fy, 0px)) rotate(var(--fa, 0deg)); }   /* 扇形排法的落點（--fx/--fy/--fa；沒設＝並排） */
   .qpl-reveal.tc .qpr-name{ color:#f3dcc0; text-shadow:0 0 6px #b07a3f, 0 0 18px #8b5a2b, 0 0 32px rgba(139,90,43,.9), 0 2px 0 #2a1708, 0 0 3px #000; z-index:2; bottom:auto; top:calc(var(--tcv, 290px) * .62); font-size:clamp(20px, 7.4vw, 38px); line-height:1.1; }   /* 跟逆位揭示一樣壓在卡片下緣；往上一點，電腦版才不會被頁尾切到 */
   .qpl-reveal.tc .qpr-fl{ color:#e0b98a; z-index:2; text-shadow:0 1px 2px #000; bottom:auto; top:calc(var(--tcv, 290px) * .86); }
   /* ── 組合揭示（.cb）：同一套甩牌，顏色照名字配 ── */
@@ -20672,9 +20673,11 @@ function tcReveal(animate, sp){
   { const r = box.getBoundingClientRect(), ft = $('foot') ? $('foot').getBoundingClientRect() : null, lim = ft && ft.height && ft.top > r.top ? ft.top : innerHeight;   // 電腦版這一塊下半截會被頁尾蓋住 → 只用看得到的高度排版
     box.style.setProperty('--tcv', Math.max(120, Math.min(r.height, lim - r.top)).toFixed(0) + 'px'); }
   if (sp){ const n = els.length, W = box.clientWidth * .9, tv = parseFloat(box.style.getPropertyValue('--tcv')) || 290;      // 張數不固定：3～4 張並排，7 張以上疊成一排
-    const w = Math.min(112, Math.max(54, innerWidth * .21), tv * .4, n > 4 ? tv * .3 : 1e9, n <= 4 ? (W - 10 * (n - 1)) / n : 1e9), step = Math.min(w + 10, (W - w) / (n - 1));
+    const fan = n > 4, da = fan ? Math.min(9, 64 / (n - 1)) : 0, amax = da * (n - 1) / 2 * Math.PI / 180, RK = 3.3;      // 多張：像拿撲克牌一樣，全部疊在同一點再照弧線散開（半徑＝3.3 張卡寬）
+    const w = fan ? Math.min(112, tv * .34, W / (1.1 + 2 * RK * Math.sin(amax))) : Math.min(112, Math.max(54, innerWidth * .21), tv * .4, (W - 10 * (n - 1)) / n), step = fan ? 0 : w + 10;
     qc.style.gap = '0px';
-    [...qc.children].forEach((x, i) => { x.style.width = w.toFixed(1) + 'px'; x.style.flex = 'none'; if (i) x.style.marginLeft = (step - w).toFixed(1) + 'px'; const d = (i * Math.min(.09, .45 / n)).toFixed(3); x.style.animationDelay = `${d}s, ${d}s, ${(+d + .95).toFixed(3)}s`; }); }
+    [...qc.children].forEach((x, i) => { x.style.width = w.toFixed(1) + 'px'; x.style.flex = 'none'; if (i) x.style.marginLeft = (step - w).toFixed(1) + 'px';
+      if (fan){ const a = (i - (n - 1) / 2) * da, r = a * Math.PI / 180, R = RK * w; x.style.setProperty('--fa', a.toFixed(2) + 'deg'); x.style.setProperty('--fx', (R * Math.sin(r)).toFixed(1) + 'px'); x.style.setProperty('--fy', (R * (1 - Math.cos(r)) - R * (1 - Math.cos(amax)) / 2).toFixed(1) + 'px'); } const d = (i * Math.min(.09, .45 / n)).toFixed(3); x.style.animationDelay = `${d}s, ${d}s, ${(+d + .95).toFixed(3)}s`; }); }
   [...qc.children].forEach((w, i) => { const k = (w.offsetWidth || 100) / dim[i][0]; w.firstChild.style.transform = `scale(${k.toFixed(4)})`; });
   if (from){
     [...qc.children].forEach((w, i) => { const r = w.getBoundingClientRect(), f = from[i];
