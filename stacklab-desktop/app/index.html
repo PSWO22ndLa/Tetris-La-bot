@@ -1009,6 +1009,27 @@ document.documentElement.classList.add('booting'); addEventListener('load', func
     100%{ transform:translate(0,0) rotate(360deg) scale(1); } }
   .qpl-reveal.tc .qpr-name{ color:#f3dcc0; text-shadow:0 0 6px #b07a3f, 0 0 18px #8b5a2b, 0 0 32px rgba(139,90,43,.9), 0 2px 0 #2a1708, 0 0 3px #000; z-index:2; bottom:auto; top:calc(var(--tcv, 290px) * .62); font-size:clamp(20px, 7.4vw, 38px); line-height:1.1; }   /* 跟逆位揭示一樣壓在卡片下緣；往上一點，電腦版才不會被頁尾切到 */
   .qpl-reveal.tc .qpr-fl{ color:#e0b98a; z-index:2; text-shadow:0 1px 2px #000; bottom:auto; top:calc(var(--tcv, 290px) * .86); }
+  /* ── 組合揭示（.cb）：同一套甩牌，顏色照名字配 ── */
+  .qpl-reveal.cb-swl{ --cb0:#03100f; --cb2:#2f7f78; --cb1:#8fe6d2; --cb3:#eafff9; --cb4:#b4e9dc; --cbf:saturate(.8) brightness(1.05); }                       /* 稀釋過的沼澤水：淡青綠 */
+  .qpl-reveal.cb-sw{ --cb0:#050500; --cb2:#4d4c10; --cb1:#a9aa26; --cb3:#eeeaa2; --cb4:#bdbb68; --cbf:sepia(.5) hue-rotate(28deg) saturate(1.35) brightness(.84); }   /* 原汁沼澤水：混濁的黃綠泥色 */
+  .qpl-reveal.cb-dec{ --cb0:#0c0214; --cb2:#5d1580; --cb1:#ffc93a; --cb3:#fff1bd; --cb4:#f0cd78; --cbf:none; }                                                /* 皇帝：紫底金邊 */
+  .qpl-reveal.cb-div{ --cb0:#020d1c; --cb2:#2c8bd2; --cb1:#e2f7ff; --cb3:#ffffff; --cb4:#cdeeff; --cbf:brightness(1.08); }                                    /* 神：天藍底白光 */
+  .qpl-reveal.tc.cb{ background:radial-gradient(90% 90% at 50% 45%, var(--cb2), var(--cb0)); }
+  .qpl-reveal.tc.cb .qpr-bg polygon{ stroke:var(--cb1); }
+  .qpl-reveal.tc.cb .qpr-bg{ filter:drop-shadow(0 0 4px var(--cb1)); }
+  .qpl-reveal.tc.cb .tcp{ filter:drop-shadow(0 0 10px var(--cb1)) drop-shadow(0 6px 12px rgba(0,0,0,.7)); }
+  .qpl-reveal.tc.cb .tcp .tcard{ filter:var(--cbf) !important; }
+  .qpl-reveal.tc.cb .qpr-name{ color:var(--cb3); text-shadow:0 0 6px var(--cb1), 0 0 18px var(--cb1), 0 0 32px var(--cb2), 0 2px 0 var(--cb0), 0 0 3px #000; }
+  .qpl-reveal.tc.cb .qpr-fl{ color:var(--cb4); }
+  .qpl-reveal.tc.cb.anim .tcp{ animation:tcThrow .9s cubic-bezier(.25,.7,.3,1) both, qprShadow .9s linear, cbIdle 3.2s ease-in-out infinite; }
+  .qpl-reveal.tc.cb-swl.anim .tcp, .qpl-reveal.tc.cb-sw.anim .tcp{ animation-name:tcThrow, qprShadow, cbBob; }          /* 沼澤：落定後像浮在水面上下晃 */
+  .qpl-reveal.tc.cb-sw.anim .tcp:nth-child(even), .qpl-reveal.tc.cb-swl.anim .tcp:nth-child(even){ animation-direction:normal, normal, reverse; }
+  .qpl-reveal.tc.cb-dec.anim .tcp{ animation-name:tcThrow, qprShadow, cbGild; }                                        /* 皇帝：金光一明一暗 */
+  .qpl-reveal.tc.cb-div.anim .tcp{ animation-name:tcThrow, qprShadow, cbHalo; }                                        /* 神：白光往外擴 */
+  @keyframes cbIdle{ 0%, 100%{ translate:0 0; } }
+  @keyframes cbBob{ 0%, 100%{ translate:0 -3%; rotate:-1.5deg; } 50%{ translate:0 3%; rotate:1.5deg; } }
+  @keyframes cbGild{ 0%, 100%{ filter:drop-shadow(0 0 6px var(--cb1)) drop-shadow(0 6px 12px rgba(0,0,0,.7)); } 50%{ filter:drop-shadow(0 0 20px var(--cb1)) drop-shadow(0 0 4px #fff) drop-shadow(0 6px 12px rgba(0,0,0,.7)); } }
+  @keyframes cbHalo{ 0%, 100%{ filter:drop-shadow(0 0 8px var(--cb1)) drop-shadow(0 0 0 rgba(120,200,255,0)); translate:0 0; } 50%{ filter:drop-shadow(0 0 16px #fff) drop-shadow(0 0 34px rgba(120,200,255,.9)); translate:0 -2%; } }
   /* START：長按時由左到右填滿的棕色進度；切換後整顆變棕色 */
   #modStart.tc-hold{ background-image:linear-gradient(90deg, rgba(176,122,63,.95) calc(var(--tcp, 0) * 100%), transparent calc(var(--tcp, 0) * 100%)) !important; }
   #modStart.tc{ background-color:#5a3a1c !important; border-color:#b07a3f !important; color:#f3dcc0 !important; box-shadow:0 0 18px rgba(176,112,50,.55) !important; }
@@ -16153,6 +16174,7 @@ function layoutDeck(){
 const CSTAR_FLIP = new Map();   // 剛翻成逆位、還沒播星星動畫的卡
 const CSTAR_IMG = ['data:image/webp;base64,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', 'data:image/webp;base64,UklGRqwKAABXRUJQVlA4WAoAAAAQAAAARwAARwAAQUxQSJADAAABoERtmyHJ+v74/7Fta3Vt27btre/d2bZt27Zt2xgzIv7vorsqM/LefURMAP4/Rbp2FfkvMFx2Gew/QLEmuRa0cUH7fOH+RR8NTTNcxpR4Oaxhis0YycjNoY2SMPhHz2T2HweH0CTDLUwkmXgLrEGKnRnZYeIu0MYEGfVH9o48/zlaQlMMDzCx08QHoQ1RHMjIFiMPgjYiYPKc5K14mjMZoQGi8iwTW058TlTKMxzOyDYjj4AVp1h8YfJ2PC1cAlqYaJc3mNh24ptdVMoyHM/ICiNPgBUkoRtWysmr8JRXRrcgRYgagB4fMbPSzI97ADCVmoIpgLDU4a8ys+LMV49aTgEEC1WJmgAYuMk575J0Vu4kPzh/s8EAYCptiSoATNnn9p9JMmbWmCNJ/nbX/tMAQFU6k2ABQPeVjn55Eckcs7PuHBPJ+Nrxq/UEECwIoAYAI7a/+kuSTMlZqKdIkl9ft/MoADAFZIlDH55O0mNyFu05OsmZjx6+jAJbnPqOk0wxs5E5JpJ8/8ytbyMZk7PBniLJO+w5JjY+8XnDhOmem5Z9+kQYNmf0ZnnkFjAYTmBsVuSJMEAMjzI1KfExMQEQZOj3zM3J/H6oBPxbsXqO3hSPeQ0oOjYczNiUyENg6NxwC2MzIm+FocUQ+nzM3ITMj/uE0AoUS8zLXp7n+UtC0bphD8byIveEoV3DRYylRV4MQ9uiXV9lKivxta4q7SFgwh/ZS/L850QEVKnYnMnL8cQtoKjWcDxTOYknwFCxmDzHVEric2JSFQxXMJYSeQUMlSvuZiol8W7R6gIeLulhhDqeLunpOgQvlvQipI7XmMt5rZ63ysl8q553SnqnDuC9kt5D9QL7rKTPDFJdr+9K+q5XHf1/oZfi/KV/HYOnl/Tn4DqGz64kx5grmT28uoBR89rzlEkyR29v3iiE6sYsbMNTIvn5ySd8QjIlb2PhmDrGtuQpkvzpivV7AN3WvfQHkil5K4vG1jEpdZYjyZl37NAfgBmAvtveOp1kzN5JnFjH4uwwR5KLHj9gNABVAUQVwMh9H1lAMmZ2uFh1ihXo9JhJvnbENACqgk5FFcDUQ1920mOmcwVodWv4okzyo5OXBSAW0KZYALD08e+TzIt8jTrWI/n9Ret0BWABlQYTwNY8/xuS69Wx+aybt+4HwAJqDAagzxY3zNy8OsHgkQBUBTWLKoARgyFV/VtVUKSool1WUDgg9gYAANAhAJ0BKkgASAA+MRKHQqIhDMzPzBABglsAMrtwNg+Y35fzXq4/O/v1+RHwA8AotHaZkG9Q/58/4HuC86bzAftF+zvsq/1z2RegB/XP9V6QHsLegB/E/7Z6an7mfBX+z37Pez1/6c4v/nPbJ/mPxasl/9dxKy47G3+W43vrN5mHEtUAP5F/Qv9f/YP2j+FH/H8x/03/z/cD/jn82/zH51f3/5gOob/TVmjspMcXIZznlxrCPYRhp4GxoObuKkBU71VzniUdMcuhMYLcQLdk9poLNvtb6k9yRnxk8/6pEounPvabfntBoJqZvow9tlykVi3RcsYS7cmUktkjGlHpkq94wxvaUgPSMCQ5B6hup/6Xlzj4A66gYAD+/2Abx/MKFQveLnMx3x93eCwpRzv+kyZHWI8Py70cQLtkn3a8X2Cby+dBBoNmX1OCREDAk1ftEYAABOHFkhVbkjkwKiuqn170M1Zu17GcAQwIi7dDm/QhZQoWBQUMBAcD/QYqxfnIWeXQi5ACumwUV1KfF1qfo11urRM4/3tE9HcxKcOdnI1cdr/nkvtt2yLZX4hJDl+Pc5g+OftcfmawNoophEnhxP9cQcagRen2//bD0lBJNAKD/83EUnigXOMxw0RNENHxpKgv5y6rVlabv/NP/Q1ezxo9vQzdSrd6n8/iCvnRWPbq8VipURmp5SD5r97O+hqC8aiX4LH7mdvxZQiWN98cHzN1H7+il6Ifmo2eo/k2lv1nyJqC2knuhoMQWfxl5Vwe4KVC8bu//lojPk/UZhaJoEqkE3Re15fanVbvw+peGx+xWBlDisFAVXAjDeQMMnZn93Nbr6y3XI3F1FtHfFCh4dReup8IfD30ZGgHpxPfikcIAVZyc+QOcj07hq3jgDO88PMj+iMQV0hnzRn5fy/1//ozjnJNWoBxV0ryEr6KKg4mRZg5cAyPft/g7ueQJKxWhWJOPd/gGfTKFkHfqpSM/5Wp4villzek6/tWae6L3TIR5eEduAx4by8qO0ugHLL+K1UvRJ5zOa6Bse72pQThtgqwc/j3fot13J1h0bhdLaFg0dzkd395T4edytkX44/lgxGDm7noo5nk8x0Sf3OHfOPHyryZbrEpK66U6UfhKuzOyDYLFzO6sUE50YAY4SF8ZwtWl7n/KFE1qmGv/bZVAHDr+6gYL+KwlS0Hely+aC4wh9gz7E/owYKTaA72AwOqW8lXFsxVzDk73L5FPsBIzT2DFeozjD0q+X8hv8+2VghfMJ5uL3j4KO1frvgg8JL/E7vU+8AhqohmwL+0GRigfHogqnXJ8xCubCoGo46buDeKkRMnljwp5tgqKHF+sw/zw29Z3vQey3tXWh9CsIIa5GoQ+LZRFT9HxoY7HlSxs82LspQbN0Y1A+v+LESX+ux4CxF96goEMugZqbZPFmiVpMW6UMNnt4CRbGxU9d05193/noF4oHPeyKCt4dSLy5xwds/0PG3xHlp4E/QfmZ98v0osQTObBj6SHqipLF5CJEfpcwWurcjE91H3hOj0zmjIrjc0PuOaIhA6FUbmtQKq6hr3X4wLW/asU/YhbZ+Xqznd5Ee33zL//pMw/lpPt3HfmqAInOQhkokcNswYzqG/4lke5TBj4qghgmSg5G4Txd+ShgU0+Y2Kxk+Tr5WvzwRrffABLi/y5GwDKXX/jzbjiXWge1wstb45wGHma78xTr99rctkjldvpZzNONxO0mLtwSvH9jQX1+fANlQTBFm+FTBpW1OAz2R7iBadyvTDCP8l8nKF1g2WpMdGrLKl0ucGxlonorSoebedsLJxnIdRI0KwC3XA9VdJYMKt9rXvCc7jeRS9H0aN7zmvV9NrvP3w1uan783O3UgqsaZ5VkaPPf3C7+Ou9W55PP1WftY/NwVb49IhVjQvNAiAkQ0Vnp2vbOd6dFaQqzWe9u2pswTBF3giOIBphyKa23IJ3v4ucg1ju0RdcdcTv/0BXAWZn9rLQTeMIYELpatMmEfxqOdh/Ze9J5XTGE/VWxMQdkm1yiImFAGsTCtEGbHE//iR6wMR5tiBr/ds7+gY1v50U81kCeiuIOMecxgso0rE80L8DGzj3u/KEFB+/7mH3/6bX/3khVfRoOPtrWyBTl6i7nI/zb/Ogd1kidXiuljed4aSttv+efmk6kZcZi7QaLlgU0TiMn8hMgqDtzokk+qlP60IaHKwEqiVZbPylV/OPrSrDMhLyTby0ROiKK3fqiRVJ1QovmLqEkYImt7Px7EOt8NhSPjzZ7P+ddVVb9XHynoMl+eL3IHv7hLGsJWmE7taverbgrkCD7guKXhxgLqvfjDtsdV9RNTVwGBMX8IpL37ruQ4ZSU6ThUc7mz4/mOHSdDaDOQ4ZCAAAAA=='];
 const COMBO_NAMES = {};   // 單張逆位一律用官方名（tetrio.js zenithMods *_reversed：THE TYRANT／THE EXILE／THE WARLOCK…），不另外取名
+const CB_CLS = ['cb', 'cb-swl', 'cb-sw', 'cb-dec', 'cb-div'];
 let qpRevealCard = -1;            // 正在揭示的逆位卡（-1 = 顯示牌組）
 // 紅色多邊形背景：隨機五角形／六角形，各自延遲閃動
 function qprPolys(){
@@ -16175,7 +16197,7 @@ function qprFit(){
 }
 function showReveal(i, animate){
   const box = $('qpReveal');
-  box.classList.remove('tc'); if (i >= 0 && typeof TC_ARM !== 'undefined' && TC_ARM.on){ TC_ARM.on = false; if (typeof tcStartLabel === 'function') tcStartLabel(); }   // 別的揭示接手 → A TRUE CLASSIC 取消
+  box.classList.remove('tc', ...CB_CLS); if (i >= 0 && typeof TC_ARM !== 'undefined' && TC_ARM.on){ TC_ARM.on = false; if (typeof tcStartLabel === 'function') tcStartLabel(); }   // 別的揭示接手 → A TRUE CLASSIC 取消
   if (i < 0 || !QDECK[i] || !revealable(QDECK[i])){ qpRevealCard = -1; box.classList.remove('ext'); box.classList.add('hidden'); $('modGrid').classList.remove('hidden'); $('qpStars').classList.remove('hidden'); requestAnimationFrame(layoutDeck); return; }
   const c = QDECK[i], st = cardState(c), art = loadArt();
   qpRevealCard = i;
@@ -16350,6 +16372,7 @@ function refreshQuickPick(){
   if (screen === 'modsel') $('foot').textContent = revOn ? 'OVERTHROW THE TOWER!' : ex ? 'CHALLENGE THE TOWER!' : 'SCALE THE TOWER!';   // 官方 rr()：逆位 overthrow／EXPERT challenge／其他 scale   // 實機：選了逆位 mod，底列標語變 OVERTHROW THE TOWER!
   const rev = DECK_ALL.find(c => cardState(c) >= 2 && c !== CHARIOT_CARD);
   const cn = qpComboName(pickedMods);
+  if (typeof cbCheck === 'function') cbCheck(rev ? '' : cn);
   $('qpCombo').textContent = rev ? revComboName(pickedMods)
     : cn ? cn.toUpperCase() : DECK_ALL.filter(c => cardState(c) === 1).map(c => modById(c.base).name).join(' · ');   // 認得的組合顯示組合名   // 正位：START 底下列出選的 mod
   { const st = cardState(CHARIOT_CARD);                                // EASY 卡：組合名後面補上這一階的名字（逆位那幾階不算進組合名）
@@ -18997,7 +19020,7 @@ $('floorDim').onchange = () => { stage.dataset.bgkey = ''; try { localStorage.se
 try { $('floorDim').checked = localStorage.getItem('bp:floordim') === '2'; } catch(e){}   // 官方 QP 的塔背景不壓暗（panelsoil alpha＝min(1, 10×background)）：預設關；以前存的 '1' 不算（改用 '2'）
 $('artClearAll').onclick = () => { store.set(ART_KEY, '{}'); renderArtGrid(); say('ALL CARD ART CLEARED'); };
 $('qpReveal').addEventListener('pointerdown', e => { if (qpRevealCard === -2 && (EXT_HOLD.start || e.ctrlKey || e.metaKey)){ e.preventDefault(); if (EXT_HOLD.start) EXT_HOLD.eat = true; $('qpReveal').__ext = true; towerExtend(); } });   // 擴建畫面上繼續按＝再加一層
-$('qpReveal').onclick = () => { if ($('qpReveal').__ext){ $('qpReveal').__ext = false; return; } if (qpRevealCard === -3){ tcArm(false); return; } showReveal(-1); };                        // 點揭示畫面 → 回到牌組繼續選
+$('qpReveal').onclick = () => { if ($('qpReveal').__ext){ $('qpReveal').__ext = false; return; } if (qpRevealCard === -3){ tcArm(false); return; } if (qpRevealCard === -4){ cbHide(); return; } showReveal(-1); };                        // 點揭示畫面 → 回到牌組繼續選
 const qpStep = d => { const n = QDECK.length; let i = deckFocus < 0 ? (d > 0 ? 0 : n - 1) : (deckFocus + d + n) % n;
   if (qpRevealCard !== -1) showReveal(-1);
   deckFocus = i; showCardInfo(i); layoutDeck(); sfxEv('cardslide', 'card_slide_' + (1 + (i % 4)), 0.7); };
@@ -20633,21 +20656,25 @@ function tcRecord(){
   try { localStorage.setItem('bp:tcBest', JSON.stringify(n)); } catch(e){}
 }
 function tcCards(){ const g = $('modGrid'); if (!g) return []; return ['nohold', 'gravity'].map(b => g.children[QDECK.findIndex(c => c.base === b)]).filter(Boolean); }
-function tcReveal(animate){
-  const box = $('qpReveal'), g = $('modGrid'), els = tcCards(); if (!box || els.length < 2) return;
+function tcReveal(animate, sp){
+  const box = $('qpReveal'), g = $('modGrid'), els = sp ? sp.els : tcCards(); if (!box || els.length < 2) return;
   const vis = !g.classList.contains('hidden'), from = animate && vis ? els.map(el => el.getBoundingClientRect()) : null;
   const dim = els.map(el => [el.offsetWidth || 150, el.offsetHeight || 228]);
-  qpRevealCard = -3;
-  const qc = $('qprCard'); qc.innerHTML = '<div class="tcp"></div><div class="tcp"></div>'; qc.removeAttribute('style');
+  qpRevealCard = sp ? -4 : -3;
+  const qc = $('qprCard'); qc.innerHTML = els.map(() => '<div class="tcp"></div>').join(''); qc.removeAttribute('style');
   els.forEach((el, i) => { const c = el.cloneNode(true); c.removeAttribute('style'); c.className = el.className.replace(/\b(pressing|hov)\b/g, '') + ' tc-clone'; c.style.width = dim[i][0] + 'px'; c.style.height = dim[i][1] + 'px'; qc.children[i].appendChild(c); });
   const b = tcBest();
-  $('qprName').textContent = 'A TRUE CLASSIC';
-  $('qprFl').textContent = 'This is how it was.' + (b ? ` · BEST ${Math.floor(b.alt || 0)}M, ${(b.score || 0).toLocaleString('en-US')} PTS, ${b.lines || 0} LINES` : '');
-  for (const k of ['flip', 'abyss', 'mc', 'sun', 'death', 'rq', 'ext', 'anim']) box.classList.remove(k);
-  box.classList.add('tc'); $('qprBg').innerHTML = qprPolys();
+  $('qprName').textContent = sp ? sp.name : 'A TRUE CLASSIC';
+  $('qprFl').textContent = sp ? sp.fl : 'This is how it was.' + (b ? ` · BEST ${Math.floor(b.alt || 0)}M, ${(b.score || 0).toLocaleString('en-US')} PTS, ${b.lines || 0} LINES` : '');
+  for (const k of ['flip', 'abyss', 'mc', 'sun', 'death', 'rq', 'ext', 'anim', ...CB_CLS]) box.classList.remove(k);
+  box.classList.add('tc'); if (sp) box.classList.add('cb', sp.cls); $('qprBg').innerHTML = qprPolys();
   box.classList.remove('hidden'); g.classList.add('hidden'); $('qpStars').classList.add('hidden');
   { const r = box.getBoundingClientRect(), ft = $('foot') ? $('foot').getBoundingClientRect() : null, lim = ft && ft.height && ft.top > r.top ? ft.top : innerHeight;   // 電腦版這一塊下半截會被頁尾蓋住 → 只用看得到的高度排版
     box.style.setProperty('--tcv', Math.max(120, Math.min(r.height, lim - r.top)).toFixed(0) + 'px'); }
+  if (sp){ const n = els.length, W = box.clientWidth * .9, tv = parseFloat(box.style.getPropertyValue('--tcv')) || 290;      // 張數不固定：3～4 張並排，7 張以上疊成一排
+    const w = Math.min(112, Math.max(54, innerWidth * .21), tv * .4, n > 4 ? tv * .3 : 1e9, n <= 4 ? (W - 10 * (n - 1)) / n : 1e9), step = Math.min(w + 10, (W - w) / (n - 1));
+    qc.style.gap = '0px';
+    [...qc.children].forEach((x, i) => { x.style.width = w.toFixed(1) + 'px'; x.style.flex = 'none'; if (i) x.style.marginLeft = (step - w).toFixed(1) + 'px'; const d = (i * Math.min(.09, .45 / n)).toFixed(3); x.style.animationDelay = `${d}s, ${d}s, ${(+d + .95).toFixed(3)}s`; }); }
   [...qc.children].forEach((w, i) => { const k = (w.offsetWidth || 100) / dim[i][0]; w.firstChild.style.transform = `scale(${k.toFixed(4)})`; });
   if (from){
     [...qc.children].forEach((w, i) => { const r = w.getBoundingClientRect(), f = from[i];
@@ -20659,6 +20686,23 @@ function tcReveal(animate){
   qprFit();
 }
 function tcRevealHide(){ const box = $('qpReveal'); if (box) box.classList.remove('tc', 'anim'); if (qpRevealCard === -3) showReveal(-1); }
+// ── 組合揭示：選到 SWAMP WATER LITE／SWAMP WATER／EMPEROR'S DECADENCE／DIVINE MASTERY 的那一下，整組卡用同一套甩牌演出亮一次（各自的顏色），
+//    約 3 秒後自己回牌組，點一下也會回去。qpRevealCard＝-4。只是演出，不改規則。
+const CB_SPEC = { 'Swamp Water Lite': ['cb-swl', 'Comes in 8 different flavors!'], 'Swamp Water': ['cb-sw', 'The worst of all worlds.'], "Emperor's Decadence": ['cb-dec', "The Devil's lesson in humility."], 'Divine Mastery': ['cb-div', 'The universe is yours.'] };
+const CB = { last: null, t: 0, t2: 0 };
+function cbHide(){ clearTimeout(CB.t2); const box = $('qpReveal'); if (qpRevealCard !== -4) return; box.classList.remove('tc', 'anim', ...CB_CLS); $('qprCard').removeAttribute('style'); showReveal(-1); }
+function cbShow(name){
+  const sp = CB_SPEC[name], g = $('modGrid'); if (!sp || !g || tcBlocked() || TC_ARM.on || qpRevealCard !== -1 || qpComboName(pickedMods) !== name) return;
+  const els = DECK.filter(c => pickedMods.has(c.base)).map(c => g.children[QDECK.indexOf(c)]).filter(Boolean); if (els.length < 2) return;
+  deckBusy(900); tcReveal(uiDetail() > 0, { els, name: '"' + name.toUpperCase() + '"', fl: sp[1], cls: sp[0] }); sfxEv('cardrev', 'card_select_reverse');
+  clearTimeout(CB.t2); CB.t2 = setTimeout(cbHide, 3200);
+}
+function cbCheck(cn){                                               // refreshQuickPick 每次都會叫：組合名「剛變成」這四個之一才演（進選卡頁時原本就選好的不演）
+  const was = CB.last; CB.last = cn || '';
+  if (qpRevealCard === -4 && $('qprName').textContent !== '"' + (cn || '').toUpperCase() + '"') cbHide();
+  if (was === null || was === CB.last || !CB_SPEC[cn]) return;
+  clearTimeout(CB.t); CB.t = setTimeout(() => cbShow(cn), 420);    // 等這張卡自己的翻牌做完
+}
 function tcArm(on){
   if (on === TC_ARM.on) return;
   if (on && !tcEligible()) return;
