@@ -992,23 +992,23 @@ document.documentElement.classList.add('booting'); addEventListener('load', func
   @media (max-width:640px){ #tlRes .tr-body{ grid-template-columns:1fr; } #tlRes .tr-stand{ order:-1; } #tlRes .tr-stand h3{ text-align:center; } }
 
 
-  /* ── A TRUE CLASSIC（選卡畫面）：整套棕色 ── */
-  #tcOv{ position:fixed; inset:0; z-index:40; pointer-events:none; perspective:1400px; font-family:var(--hunf, var(--t-font)); }
-  #tcOv .tc-dim{ position:absolute; left:0; right:0; top:0; height:var(--st, 50vh); background:radial-gradient(ellipse 70% 90% at 50% 60%, rgba(92,56,26,.6) 0, rgba(38,22,10,.85) 55%, rgba(14,8,4,.94) 100%); }
-  #tcOv .tc-dim.b{ top:var(--sb, 60vh); height:auto; bottom:0; background:rgba(20,11,5,.86); }   /* START 那一條不蓋，保持最亮 */
-  #tcOv.in .tc-dim{ animation:tcDim .7s ease-out both; } #tcOv.out{ animation:tcOut .45s ease-in both; }
-  #tcOv .tc-title{ position:absolute; left:0; right:0; display:flex; flex-direction:column; justify-content:center; text-align:center; color:#e3b27a; text-shadow:0 0 18px rgba(176,112,50,.9), 0 2px 0 #3a2210; }
-  #tcOv .tc-title b{ display:block; font-weight:900; line-height:1; letter-spacing:.04em; white-space:nowrap; }
-  #tcOv .tc-title i{ display:block; font:italic 400 clamp(10px,1.1vw,15px) var(--t-font); color:#c49a6c; text-shadow:none; margin-top:.25em; }
-  #tcOv .tc-title small{ display:block; font:600 clamp(8px,.85vw,11px) var(--t-font); letter-spacing:.16em; color:#9a7048; text-shadow:none; margin-top:.35em; }
-  #tcOv.in .tc-title{ animation:tcTitle .6s .75s cubic-bezier(.2,.8,.2,1) both; }
-  #tcOv .tc-c{ position:fixed; pointer-events:auto; cursor:pointer; transform-style:preserve-3d; box-shadow:0 0 0 2px #b07a3f, 0 0 34px 6px rgba(176,112,50,.75), 0 14px 40px rgba(0,0,0,.6); background:#2b190b; }
-  #tcOv .tc-c::after{ content:""; position:absolute; inset:0; background:linear-gradient(135deg, rgba(210,150,84,.28), rgba(92,52,20,.34)); mix-blend-mode:color; pointer-events:none; }
-  #tcOv .tc-c .tcard{ position:absolute !important; inset:0 !important; left:0 !important; top:0 !important; width:100% !important; height:100% !important; transform:none !important; opacity:1 !important; pointer-events:none; filter:sepia(.7) saturate(1.25) hue-rotate(-14deg) brightness(.96) !important; margin:0 !important; transition:none !important; }
-  #modGrid > .tcard.tc-away{ opacity:0 !important; pointer-events:none !important; }
-  body.tc-armed #modGrid > .tcard:not(.tc-away){ filter:brightness(.32) grayscale(.7) sepia(.4) !important; pointer-events:none !important; }
-  @keyframes tcDim{ from{ opacity:0; } to{ opacity:1; } } @keyframes tcOut{ to{ opacity:0; } }
-  @keyframes tcTitle{ from{ opacity:0; transform:translateY(10px) scale(.96); } to{ opacity:1; transform:none; } }
+  /* ── A TRUE CLASSIC（選卡畫面）：沿用逆位卡的揭示畫面（.qpl-reveal），整套棕色，兩張卡各轉 360° 並排 ── */
+  .qpl-reveal.tc{ background:radial-gradient(90% 90% at 50% 45%, #5c3a1b, #0e0703); }
+  .qpl-reveal.tc .qpr-bg polygon{ stroke:#b07a3f; }
+  .qpl-reveal.tc .qpr-bg{ filter:drop-shadow(0 0 4px #a8733c); }
+  .qpl-reveal.tc .qpr-card{ width:auto; aspect-ratio:auto; display:flex; gap:clamp(8px, 2.6vw, 18px); top:calc(var(--tcv, 290px) * .38); transform:translate(-50%,-50%); filter:none; animation:none !important; }
+  .qpl-reveal.tc .tcp{ position:relative; width:min(clamp(74px, 21vw, 112px), calc(var(--tcv, 290px) * .4)); aspect-ratio:183/279; will-change:transform; filter:drop-shadow(0 0 12px rgba(176,112,50,.9)) drop-shadow(0 6px 12px rgba(0,0,0,.7)); }
+  .qpl-reveal.tc .tcp .tcard{ position:absolute !important; left:0 !important; top:0 !important; margin:0 !important; opacity:1 !important; pointer-events:none; transition:none !important; transform-origin:0 0 !important; filter:sepia(.7) saturate(1.25) hue-rotate(-14deg) brightness(.96) !important; }
+  .qpl-reveal.tc.anim .tcp{ animation:tcThrow .9s cubic-bezier(.25,.7,.3,1) both, qprShadow .9s linear; }
+  .qpl-reveal.tc.anim .tcp:nth-child(2){ animation-delay:.09s; }
+  @keyframes tcThrow{                                                        /* 跟 qprThrow 同一套手感：出牌組 → 放大往上甩 → 轉過頭 → 回正；差別是轉滿 360° */
+    0%{ transform:translate(var(--sx, 0px), var(--sy, 0px)) rotate(0deg) scale(var(--ss, 1)); }
+    30%{ transform:translate(0,-34%) rotate(150deg) scale(1.6); }
+    55%{ transform:translate(0,-28%) rotate(250deg) scale(1.45); }
+    80%{ transform:translate(0,-6%) rotate(368deg) scale(1.07); }
+    100%{ transform:translate(0,0) rotate(360deg) scale(1); } }
+  .qpl-reveal.tc .qpr-name{ color:#f3dcc0; text-shadow:0 0 6px #b07a3f, 0 0 18px #8b5a2b, 0 0 32px rgba(139,90,43,.9), 0 2px 0 #2a1708, 0 0 3px #000; z-index:2; bottom:auto; top:calc(var(--tcv, 290px) * .62); font-size:clamp(20px, 7.4vw, 38px); line-height:1.1; }   /* 跟逆位揭示一樣壓在卡片下緣；往上一點，電腦版才不會被頁尾切到 */
+  .qpl-reveal.tc .qpr-fl{ color:#e0b98a; z-index:2; text-shadow:0 1px 2px #000; bottom:auto; top:calc(var(--tcv, 290px) * .86); }
   /* START：長按時由左到右填滿的棕色進度；切換後整顆變棕色 */
   #modStart.tc-hold{ background-image:linear-gradient(90deg, rgba(176,122,63,.95) calc(var(--tcp, 0) * 100%), transparent calc(var(--tcp, 0) * 100%)) !important; }
   #modStart.tc{ background-color:#5a3a1c !important; border-color:#b07a3f !important; color:#f3dcc0 !important; box-shadow:0 0 18px rgba(176,112,50,.55) !important; }
@@ -10721,8 +10721,9 @@ const tcFpr = lv => TC_FPR[Math.min(29, Math.max(0, lv))];
 function tcNext(){ let i = (rnd() * 8) | 0; if (i === 7 || PIECE_ORDER[i] === lastGen) i = (rnd() * 7) | 0; return (lastGen = PIECE_ORDER[i]); }
 function tcStep(dt){
   const T = climb.tc;
-  if (!held.soft) T.softLock = false;
-  const soft = held.soft && !T.softLock;
+  const down = held.soft || held.drop;                                    // 硬降鍵在這裡等於軟降
+  if (!down) T.softLock = false;
+  const soft = down && !T.softLock;
   if (!soft){ tickShift(dt); T.push = 0; }                              // 原版：按著下的時候不能左右移
   if (!active) return;
   const fpr = tcFpr(T.level); G_EFF = 1 / fpr;
@@ -10842,7 +10843,7 @@ function spawn(type){
   // 下一顆被推到疊塊上方繼續玩；沒消行時出生點（叉叉）被擋住就直接 block out
   if (climb && climb.tc){                                               // 原版出生位置：最上面那一列、靠中間（I 佔第 4–7 欄，其他以第 6 欄為中心）
     const cs = SHAPES[type][a.rot & 3], mx = Math.min(...cs.map(c => c[0])), my = Math.min(...cs.map(c => c[1]));
-    a.x = (type === 'I' ? 3 : 4) - mx; a.y = (H - VISIBLE) - my; climb.tc.softLock = !!held.soft; climb.tc.push = 0; }
+    a.x = (type === 'I' ? 3 : 4) - mx; a.y = (H - VISIBLE) - my; climb.tc.softLock = !!(held.soft || held.drop); climb.tc.push = 0; }
   if (!fits(a)){
     const canClutch = clutchArm && !(climb && climb.tc) && (!climb || !climb.custom || climb.custom.clutch !== false);
     if (canClutch){ while (!fits(a) && a.y > 0) a.y--; }
@@ -11299,7 +11300,7 @@ function boardKick(dx, dy, dmg){
 }
 function hardDrop(){
   if (climb && climb.rp) return;
-  if (climb && climb.tc) return;                                          // A TRUE CLASSIC：沒有硬降
+  if (climb && climb.tc) return;                                          // A TRUE CLASSIC：沒有硬降——硬降鍵當軟降用（tcStep 看 held.drop）
   setTimeout(() => boardKick(0, 3, false), 0);
   if (!active) return;
   if (climb && climb.custom && !climb.custom.hd) return;
@@ -14262,7 +14263,6 @@ function holePlan(N){
 }
 /* --- 收垃圾：≥8 行觸發 Windup 拆成 4+4+… --- */
 function climbReceive(lines, plan, fresh = true, quiet = false){
-  if (climb && climb.tc) return 0;                                         // A TRUE CLASSIC：沒有垃圾
   if (!climb || climb.over || climb.downed) return;                 // DUO：倒下等復活時不收垃圾
   // 官方 AddPendingGarbage（QP）：抵銷疲勞。每份攻擊至少變成 min(原本 + k×cancelstreak², 該樓層上限)；
   //   k＝0.001（只開 Volatile 0.0003、只開 All-Spin 0.002）；上限 F1–F7＝4/5/6/7/8/9/10，F8 起無上限；Windup 進行中上限最多 6
@@ -14636,7 +14636,7 @@ function climbSend(attack){
   if (climb.kind === 'qp'){
     // wiki：每送出一行 = 立刻加一秒份的 Climb Speed
     const half = 1;                                                    // 官方 DUO：兩人的高度加成、climb_pts 都全額分享，不減半
-    { const d = giveBonus(lineBonus(out * CLIMB_CFG.cspPassive * Math.floor(climb.csp) * half)); if (climb.duo) climb.cMe = (climb.cMe || 0) + Math.max(0, d); }   // DUO 結算的貢獻％：只算送攻擊爬的公尺（實機 61.8%＝341.5m／38.2%＝211.3m，加起來小於總高度）
+    if (!climb.tc){ const d = giveBonus(lineBonus(out * CLIMB_CFG.cspPassive * Math.floor(climb.csp) * half)); if (climb.duo) climb.cMe = (climb.cMe || 0) + Math.max(0, d); }   // A TRUE CLASSIC：高度已經照消行數給了，送攻擊不再另外加   // DUO 結算的貢獻％：只算送攻擊爬的公尺（實機 61.8%＝341.5m／38.2%＝211.3m，加起來小於總高度）
     if (out > 0) cspGain(out + .05);
     if (cancelled > 0) cspGain((isExpert() || hasMod('laststand') || climb.hearts ? 0 : cancelled) + .05);
     if (out > 0 && !(climb.custom && !climb.custom.tower)) koHit(out, half);
@@ -14940,7 +14940,7 @@ function climbOnLock(res){
       b2b = -1;                                    // 不能累積 B2B
     }
     if (sunHas('voidc') && !res.spin){ atk = 0; b2b = -1; if (clearMsg) clearMsg.lines.unshift({ text:'VOID', color:'#ff6070', size:'sm' }); }   // REQUIEM F6：普通消行不送、不接 B2B
-    if (climb.tc){ const m = [0, 1, 3, 5, 8][Math.min(4, res.cleared)]; atk = 0; b2b = -1; if (m){ addAlt(m); altGain(m); } }   // A TRUE CLASSIC：消 1／2／3／4 行直接爬 1／3／5／8 公尺，不送攻擊、沒有其他加成
+    if (climb.tc){ const m = [0, 1, 3, 5, 8][Math.min(4, res.cleared)]; b2b = -1; if (m){ addAlt(m); altGain(m); } }   // A TRUE CLASSIC：消 1／2／3／4 行直接爬 1／3／5／8 公尺；攻擊照 QP 的基本表（抵銷別人打來的垃圾、多的送出去），沒有 spin／combo／B2B 加成
     if (climb.kind === 'qp') passGate();
     climb.lastAtk = atk; if (res.combo >= 2) climb.comboPow = Math.min(Math.max(climb.comboPow || 0, atk), 7);   // 官方 combopower
     const sentRes = climbSend(atk);
@@ -16175,6 +16175,7 @@ function qprFit(){
 }
 function showReveal(i, animate){
   const box = $('qpReveal');
+  box.classList.remove('tc'); if (i >= 0 && typeof TC_ARM !== 'undefined' && TC_ARM.on){ TC_ARM.on = false; if (typeof tcStartLabel === 'function') tcStartLabel(); }   // 別的揭示接手 → A TRUE CLASSIC 取消
   if (i < 0 || !QDECK[i] || !revealable(QDECK[i])){ qpRevealCard = -1; box.classList.remove('ext'); box.classList.add('hidden'); $('modGrid').classList.remove('hidden'); $('qpStars').classList.remove('hidden'); requestAnimationFrame(layoutDeck); return; }
   const c = QDECK[i], st = cardState(c), art = loadArt();
   qpRevealCard = i;
@@ -18996,7 +18997,7 @@ $('floorDim').onchange = () => { stage.dataset.bgkey = ''; try { localStorage.se
 try { $('floorDim').checked = localStorage.getItem('bp:floordim') === '2'; } catch(e){}   // 官方 QP 的塔背景不壓暗（panelsoil alpha＝min(1, 10×background)）：預設關；以前存的 '1' 不算（改用 '2'）
 $('artClearAll').onclick = () => { store.set(ART_KEY, '{}'); renderArtGrid(); say('ALL CARD ART CLEARED'); };
 $('qpReveal').addEventListener('pointerdown', e => { if (qpRevealCard === -2 && (EXT_HOLD.start || e.ctrlKey || e.metaKey)){ e.preventDefault(); if (EXT_HOLD.start) EXT_HOLD.eat = true; $('qpReveal').__ext = true; towerExtend(); } });   // 擴建畫面上繼續按＝再加一層
-$('qpReveal').onclick = () => { if ($('qpReveal').__ext){ $('qpReveal').__ext = false; return; } showReveal(-1); };                        // 點揭示畫面 → 回到牌組繼續選
+$('qpReveal').onclick = () => { if ($('qpReveal').__ext){ $('qpReveal').__ext = false; return; } if (qpRevealCard === -3){ tcArm(false); return; } showReveal(-1); };                        // 點揭示畫面 → 回到牌組繼續選
 const qpStep = d => { const n = QDECK.length; let i = deckFocus < 0 ? (d > 0 ? 0 : n - 1) : (deckFocus + d + n) % n;
   if (qpRevealCard !== -1) showReveal(-1);
   deckFocus = i; showCardInfo(i); layoutDeck(); sfxEv('cardslide', 'card_slide_' + (1 + (i % 4)), 0.7); };
@@ -20612,7 +20613,7 @@ $('modBack').onclick = () => setScreen('multisel');
 const EASY = { resetHeld: 0, eatReset: false };
 function qpStart(easy){
   qrOutOfLobby();
-  if (TC_ARM.on && tcEligible()){ tcOvHide(); startClimb('qp', { classic: true }); say('A TRUE CLASSIC'); return; }                                                        // 結算時按 AGAIN（＝START）：結算區塊收回去
+  if (TC_ARM.on && tcEligible()){ startClimb('qp', { classic: true }); say('A TRUE CLASSIC'); return; }                                                        // 結算時按 AGAIN（＝START）：結算區塊收回去
   { const st = cardState(CHARIOT_CARD); if (st) easy = [0, 2, 3, 5, 10][st]; }   // THE CHARIOT（EASY）×2／THE IDIOT ×3／THE DISADVANTAGE ×5／AUTOPILOT ×10
   if (pickedMods.has('world') && typeof QPK !== 'undefined'){ QPK.open(true); return; }
   if ((pickedMods.has('sun') || pickedMods.has('death')) && towerExt < 5){ buildTower(5); renderModSel(); say('CHALLENGE MOD · THE TOWER EXTENDED TO 5/5'); qcSys('CHALLENGE MOD requires the full tower: extended to 5/5.'); }   // THE WORLD：整個換成 Zenith Clicker（QUICK PICK）
@@ -20621,9 +20622,10 @@ function qpStart(easy){
   startClimb('qp', easy ? { easy } : {});                                // easy：true（Ctrl＋START）或倍率數字（EASY 卡）
   if (easy && climb){ const k = easy === true ? 2 : easy; say(`EASY MOD · CLIMB SPEED ×${k} · NOT RECORDED`); qcSys(`EASY MOD on: climb speed ×${k}, this run is not recorded.`); }
 }
-// ── A TRUE CLASSIC 的選卡畫面：只選 NO HOLD＋GRAVITY 時長按 START 1 秒 → 兩張卡各翻 360° 飛到中間並排（棕色），停在選卡畫面；
-//    再按 START 才開局。點中間的卡或再長按一次 START＝取消，卡片翻回原位。切換後其他卡變暗不能選。
-const TC_ARM = { on: false, busy: false, t: 0, raf: 0, eat: false };
+// ── A TRUE CLASSIC 的選卡畫面：只選 NO HOLD＋GRAVITY 時長按 START 1 秒 → 跟選逆位卡一樣的揭示演出（牌組那一塊換成揭示畫面），
+//    只是這次是兩張卡一起從牌組甩出來、各轉 360° 落在中間並排，整套棕色。停在選卡畫面，再按 START 才開局。
+//    點揭示畫面或再長按一次 START＝取消，回到牌組。qpRevealCard＝-3 代表現在開著的是這個揭示。
+const TC_ARM = { on: false, t: 0, raf: 0, eat: false };
 const tcEligible = () => pickedMods.size === 2 && pickedMods.has('nohold') && pickedMods.has('gravity');
 const tcBest = () => { try { return JSON.parse(localStorage.getItem('bp:tcBest') || 'null'); } catch(e){ return null; } };
 function tcRecord(){
@@ -20631,72 +20633,48 @@ function tcRecord(){
   try { localStorage.setItem('bp:tcBest', JSON.stringify(n)); } catch(e){}
 }
 function tcCards(){ const g = $('modGrid'); if (!g) return []; return ['nohold', 'gravity'].map(b => g.children[QDECK.findIndex(c => c.base === b)]).filter(Boolean); }
-// 版面：兩張卡排在 START 上面那塊（原本放 QUICK PLAY 說明的地方）的正中間，名字在卡片上方；START 和下面的牌堆不會被蓋住
-function tcRegion(){
-  const sb = $('modStart').getBoundingClientRect(), prev = $('modStart').previousElementSibling, pr = prev ? prev.getBoundingClientRect() : null;
-  const top = Math.max(60, pr && pr.height > 80 ? pr.top : 70), bot = sb.top - 10, h = Math.max(160, bot - top);
-  const titleH = Math.max(58, Math.min(112, h * .3));
-  return { top, bot, h, titleH, cardH: Math.max(90, h - titleH - 14), cx: sb.left + sb.width / 2 };
+function tcReveal(animate){
+  const box = $('qpReveal'), g = $('modGrid'), els = tcCards(); if (!box || els.length < 2) return;
+  const vis = !g.classList.contains('hidden'), from = animate && vis ? els.map(el => el.getBoundingClientRect()) : null;
+  const dim = els.map(el => [el.offsetWidth || 150, el.offsetHeight || 228]);
+  qpRevealCard = -3;
+  const qc = $('qprCard'); qc.innerHTML = '<div class="tcp"></div><div class="tcp"></div>'; qc.removeAttribute('style');
+  els.forEach((el, i) => { const c = el.cloneNode(true); c.removeAttribute('style'); c.className = el.className.replace(/\b(pressing|hov)\b/g, '') + ' tc-clone'; c.style.width = dim[i][0] + 'px'; c.style.height = dim[i][1] + 'px'; qc.children[i].appendChild(c); });
+  const b = tcBest();
+  $('qprName').textContent = 'A TRUE CLASSIC';
+  $('qprFl').textContent = 'This is how it was.' + (b ? ` · BEST ${Math.floor(b.alt || 0)}M, ${(b.score || 0).toLocaleString('en-US')} PTS, ${b.lines || 0} LINES` : '');
+  for (const k of ['flip', 'abyss', 'mc', 'sun', 'death', 'rq', 'ext', 'anim']) box.classList.remove(k);
+  box.classList.add('tc'); $('qprBg').innerHTML = qprPolys();
+  box.classList.remove('hidden'); g.classList.add('hidden'); $('qpStars').classList.add('hidden');
+  { const r = box.getBoundingClientRect(), ft = $('foot') ? $('foot').getBoundingClientRect() : null, lim = ft && ft.height && ft.top > r.top ? ft.top : innerHeight;   // 電腦版這一塊下半截會被頁尾蓋住 → 只用看得到的高度排版
+    box.style.setProperty('--tcv', Math.max(120, Math.min(r.height, lim - r.top)).toFixed(0) + 'px'); }
+  [...qc.children].forEach((w, i) => { const k = (w.offsetWidth || 100) / dim[i][0]; w.firstChild.style.transform = `scale(${k.toFixed(4)})`; });
+  if (from){
+    [...qc.children].forEach((w, i) => { const r = w.getBoundingClientRect(), f = from[i];
+      w.style.setProperty('--sx', (f.left + f.width / 2 - (r.left + r.width / 2)).toFixed(1) + 'px');
+      w.style.setProperty('--sy', (f.top + f.height / 2 - (r.top + r.height / 2)).toFixed(1) + 'px');
+      w.style.setProperty('--ss', (f.width / Math.max(1, r.width)).toFixed(3)); });
+    void box.offsetWidth; box.classList.add('anim');
+  }
+  qprFit();
 }
-function tcTargets(els){
-  const R = tcRegion(), w0 = els[0].offsetWidth || 150, h0 = els[0].offsetHeight || 220, sc = Math.min(R.cardH / h0, innerWidth * .4 / w0, 2.4), gap = Math.max(10, w0 * sc * .1);
-  const cy = R.top + R.titleH + 6 + R.cardH / 2;
-  return els.map((el, i) => ({ w: w0, h: h0, sc, x: R.cx + (i ? 1 : -1) * (w0 * sc + gap) / 2, y: cy, R }));
-}
-function tcOvHide(){ const o = document.getElementById('tcOv'); if (o) o.remove(); tcCards().forEach(el => el.classList.remove('tc-away')); document.body.classList.remove('tc-armed'); }
-function tcOvShow(animate){
-  tcOvHide();
-  const els = tcCards(); if (els.length < 2) return;
-  const T = tcTargets(els), b = tcBest();
-  const o = document.createElement('div'); o.id = 'tcOv';
-  const R = T[0].R;
-  { const sbr = $('modStart').getBoundingClientRect(); o.style.setProperty('--st', sbr.top - 6 + 'px'); o.style.setProperty('--sb', sbr.bottom + 6 + 'px'); }
-  o.innerHTML = `<div class="tc-dim"></div><div class="tc-dim b"></div><div class="tc-title" style="top:${R.top}px;height:${R.titleH}px"><b style="font-size:${Math.max(18, Math.min(64, R.titleH * .5, innerWidth * .078))}px">A TRUE CLASSIC</b><i>This is how it was.</i><small>${b ? `BEST ${Math.floor(b.alt || 0)}M · ${(b.score || 0).toLocaleString('en-US')} PTS · ${b.lines || 0} LINES · LV ${b.level || 0} · ` : ''}TAP THE CARDS TO GO BACK</small></div>`;
-  $('modsel').appendChild(o);
-  els.forEach((el, i) => {
-    const r = el.getBoundingClientRect(), t = T[i], w = document.createElement('div'); w.className = 'tc-c';
-    w.style.cssText = `width:${t.w}px;height:${t.h}px;left:${t.x - t.w / 2}px;top:${t.y - t.h / 2}px;transform:scale(${t.sc})`;
-    const c = el.cloneNode(true); c.removeAttribute('style'); c.className = el.className.replace(/\b(pressing|hov|tc-away)\b/g, '') + ' tc-clone'; w.appendChild(c);
-    w.onclick = () => tcArm(false);
-    o.appendChild(w); el.classList.add('tc-away');
-    if (animate && w.animate){
-      const dx = r.left + r.width / 2 - t.x, dy = r.top + r.height / 2 - t.y;
-      w.animate([{ transform: `translate(${dx}px,${dy}px) scale(1) rotateY(0deg)`, filter: 'brightness(1)' }, { transform: `translate(${dx * .35}px,${dy * .35 - 30}px) scale(${(1 + t.sc) / 2}) rotateY(180deg)`, filter: 'brightness(1.5)', offset: .5 }, { transform: `translate(0,0) scale(${t.sc}) rotateY(360deg)`, filter: 'brightness(1)' }],
-        { duration: 900, delay: i * 90, easing: 'cubic-bezier(.3,.7,.2,1)', fill: 'backwards' });
-    }
-  });
-  document.body.classList.add('tc-armed');
-  if (animate) o.classList.add('in');
-}
+function tcRevealHide(){ const box = $('qpReveal'); if (box) box.classList.remove('tc', 'anim'); if (qpRevealCard === -3) showReveal(-1); }
 function tcArm(on){
-  if (TC_ARM.busy || on === TC_ARM.on) return;
+  if (on === TC_ARM.on) return;
   if (on && !tcEligible()) return;
   TC_ARM.on = on;
-  if (on){ tcOvShow(uiDetail() > 0); sfxEv('cardrev', 'card_select_reverse'); say('A TRUE CLASSIC · PRESS START'); }
-  else {
-    const o = document.getElementById('tcOv'), els = tcCards();
-    if (o && uiDetail() > 0 && els.length === 2){
-      TC_ARM.busy = true; const T = tcTargets(els);
-      els.forEach(el => el.classList.remove('tc-away'));
-      const rs = els.map(el => el.getBoundingClientRect()); els.forEach(el => el.classList.add('tc-away'));
-      [...o.querySelectorAll('.tc-c')].forEach((w, i) => { const t = T[i], r = rs[i], dx = r.left + r.width / 2 - t.x, dy = r.top + r.height / 2 - t.y;
-        if (w.animate) w.animate([{ transform: `translate(0,0) scale(${t.sc}) rotateY(360deg)` }, { transform: `translate(${dx}px,${dy}px) scale(1) rotateY(0deg)` }], { duration: 450, easing: 'cubic-bezier(.4,0,.6,1)', fill: 'forwards' }); });
-      o.classList.add('out');
-      setTimeout(() => { TC_ARM.busy = false; tcOvHide(); renderModSel(); }, 460);
-    } else { tcOvHide(); }
-    sfxEv('cardsel', 'card_select');
-  }
+  if (on){ deckBusy(900); tcReveal(uiDetail() > 0); sfxEv('cardrev', 'card_select_reverse'); say('A TRUE CLASSIC · PRESS START'); }
+  else { tcRevealHide(); sfxEv('cardsel', 'card_select'); }
   tcStartLabel();
 }
 function tcStartLabel(){ const sb = $('modStart'); if (!sb) return; sb.classList.toggle('tc', TC_ARM.on); const q = $('qpCombo'); if (q && TC_ARM.on) q.textContent = '"A TRUE CLASSIC"'; }
-// renderModSel 之後：卡組不再是 NO HOLD＋GRAVITY 就自動取消；還在的話把兩張原卡藏好（重畫過會掉 class）
-const tcBlocked = () => document.body.classList.contains('qpres') || document.body.classList.contains('qpinres') || document.body.classList.contains('qpg') || document.body.classList.contains('game') || screen !== 'modsel';   // 結算頁／對戰中不蓋（狀態留著，AGAIN 一樣是 classic）
+const tcBlocked = () => document.body.classList.contains('qpres') || document.body.classList.contains('qpinres') || document.body.classList.contains('qpg') || document.body.classList.contains('game') || screen !== 'modsel' || (typeof QR !== 'undefined' && QR.inline);   // 結算頁／對戰中不開揭示（狀態留著，AGAIN 一樣是 classic）
+// renderModSel／切頁之後：卡組不再是 NO HOLD＋GRAVITY 就自動取消；還在的話把揭示畫面補回來
 function tcSync(){
-  if (!TC_ARM.on){ return; }
-  if (!tcEligible()){ TC_ARM.on = false; tcOvHide(); tcStartLabel(); return; }
-  if (tcBlocked()){ if (document.getElementById('tcOv')) tcOvHide(); tcStartLabel(); return; }
-  if (!document.getElementById('tcOv') && !TC_ARM.busy) tcOvShow(false);
-  else tcCards().forEach(el => el.classList.add('tc-away'));
+  if (!TC_ARM.on){ if (qpRevealCard === -3) tcRevealHide(); return; }
+  if (!tcEligible()){ TC_ARM.on = false; tcRevealHide(); tcStartLabel(); return; }
+  if (tcBlocked()){ if (qpRevealCard === -3) tcRevealHide(); tcStartLabel(); return; }
+  if (qpRevealCard !== -3 || $('qpReveal').classList.contains('hidden')) tcReveal(false);
   tcStartLabel();
 }
 new MutationObserver(() => { if (TC_ARM.on) requestAnimationFrame(tcSync); }).observe(document.body, { attributes: true, attributeFilter: ['class'] });
@@ -20704,7 +20682,7 @@ new MutationObserver(() => { if (TC_ARM.on) requestAnimationFrame(tcSync); }).ob
   const stop = () => { if (TC_ARM.raf) cancelAnimationFrame(TC_ARM.raf); TC_ARM.raf = 0; TC_ARM.t = 0; sb.style.removeProperty('--tcp'); sb.classList.remove('tc-hold'); };
   sb.addEventListener('pointerdown', e => {
     if (e.pointerType === 'mouse' && e.button !== 0) return;
-    if (!(TC_ARM.on || tcEligible()) || TC_ARM.busy) return;
+    if (!(TC_ARM.on || tcEligible())) return;
     stop(); TC_ARM.eat = false; TC_ARM.t = performance.now(); sb.classList.add('tc-hold');
     const tick = () => { if (!TC_ARM.t) return; const k = (performance.now() - TC_ARM.t) / 1000;
       if (typeof EXT_HOLD !== 'undefined' && EXT_HOLD.eat){ stop(); return; }           // 按住 START 點 THE TOWER 是擴建，不算
@@ -20716,7 +20694,6 @@ new MutationObserver(() => { if (TC_ARM.on) requestAnimationFrame(tcSync); }).ob
   for (const ev of ['pointerup', 'pointercancel', 'pointerleave']) sb.addEventListener(ev, () => { stop(); if (TC_ARM.eat) setTimeout(() => { TC_ARM.eat = false; }, 80); });
   sb.addEventListener('click', e => { if (TC_ARM.eat){ TC_ARM.eat = false; e.stopImmediatePropagation(); e.preventDefault(); } }, true);   // 長按完放開不算按 START
   sb.addEventListener('contextmenu', e => { if (TC_ARM.t || TC_ARM.eat) e.preventDefault(); });
-  addEventListener('resize', () => { if (TC_ARM.on && document.getElementById('tcOv') && !tcBlocked()) tcOvShow(false); });
 }
 $('modStart').onclick = e => qpStart(!!(e && (e.ctrlKey || e.metaKey)));
 ['qpReset', 'qpReset2'].forEach(id => { const b = $(id); if (!b) return;
