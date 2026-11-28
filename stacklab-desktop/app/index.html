@@ -20687,7 +20687,7 @@ function tcReveal(animate, sp){
 }
 function tcRevealHide(){ const box = $('qpReveal'); if (box) box.classList.remove('tc', 'anim'); if (qpRevealCard === -3) showReveal(-1); }
 // ── 組合揭示：選到 SWAMP WATER LITE／SWAMP WATER／EMPEROR'S DECADENCE／DIVINE MASTERY 的那一下，整組卡用同一套甩牌演出亮一次（各自的顏色），
-//    約 3 秒後自己回牌組，點一下也會回去。qpRevealCard＝-4。只是演出，不改規則。
+//    停在揭示畫面，點一下才回牌組。qpRevealCard＝-4。只是演出，不改規則。
 const CB_SPEC = { 'Swamp Water Lite': ['cb-swl', 'Comes in 8 different flavors!'], 'Swamp Water': ['cb-sw', 'The worst of all worlds.'], "Emperor's Decadence": ['cb-dec', "The Devil's lesson in humility."], 'Divine Mastery': ['cb-div', 'The universe is yours.'] };
 const CB = { last: null, t: 0, t2: 0 };
 function cbHide(){ clearTimeout(CB.t2); const box = $('qpReveal'); if (qpRevealCard !== -4) return; box.classList.remove('tc', 'anim', ...CB_CLS); $('qprCard').removeAttribute('style'); showReveal(-1); }
@@ -20695,7 +20695,6 @@ function cbShow(name){
   const sp = CB_SPEC[name], g = $('modGrid'); if (!sp || !g || tcBlocked() || TC_ARM.on || qpRevealCard !== -1 || qpComboName(pickedMods) !== name) return;
   const els = DECK.filter(c => pickedMods.has(c.base)).map(c => g.children[QDECK.indexOf(c)]).filter(Boolean); if (els.length < 2) return;
   deckBusy(900); tcReveal(uiDetail() > 0, { els, name: '"' + name.toUpperCase() + '"', fl: sp[1], cls: sp[0] }); sfxEv('cardrev', 'card_select_reverse');
-  clearTimeout(CB.t2); CB.t2 = setTimeout(cbHide, 3200);
 }
 function cbCheck(cn){                                               // refreshQuickPick 每次都會叫：組合名「剛變成」這四個之一才演（進選卡頁時原本就選好的不演）
   const was = CB.last; CB.last = cn || '';
