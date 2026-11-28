@@ -991,6 +991,28 @@ document.documentElement.classList.add('booting'); addEventListener('load', func
   #tlRes .tr-btns button.pri{ background:#7a1621; border-color:#c0303e; color:#ffd7db; }
   @media (max-width:640px){ #tlRes .tr-body{ grid-template-columns:1fr; } #tlRes .tr-stand{ order:-1; } #tlRes .tr-stand h3{ text-align:center; } }
 
+
+  /* ── A TRUE CLASSIC（選卡畫面）：整套棕色 ── */
+  #tcOv{ position:fixed; inset:0; z-index:40; pointer-events:none; perspective:1400px; font-family:var(--hunf, var(--t-font)); }
+  #tcOv .tc-dim{ position:absolute; left:0; right:0; top:0; height:var(--st, 50vh); background:radial-gradient(ellipse 70% 90% at 50% 60%, rgba(92,56,26,.6) 0, rgba(38,22,10,.85) 55%, rgba(14,8,4,.94) 100%); }
+  #tcOv .tc-dim.b{ top:var(--sb, 60vh); height:auto; bottom:0; background:rgba(20,11,5,.86); }   /* START 那一條不蓋，保持最亮 */
+  #tcOv.in .tc-dim{ animation:tcDim .7s ease-out both; } #tcOv.out{ animation:tcOut .45s ease-in both; }
+  #tcOv .tc-title{ position:absolute; left:0; right:0; display:flex; flex-direction:column; justify-content:center; text-align:center; color:#e3b27a; text-shadow:0 0 18px rgba(176,112,50,.9), 0 2px 0 #3a2210; }
+  #tcOv .tc-title b{ display:block; font-weight:900; line-height:1; letter-spacing:.04em; white-space:nowrap; }
+  #tcOv .tc-title i{ display:block; font:italic 400 clamp(10px,1.1vw,15px) var(--t-font); color:#c49a6c; text-shadow:none; margin-top:.25em; }
+  #tcOv .tc-title small{ display:block; font:600 clamp(8px,.85vw,11px) var(--t-font); letter-spacing:.16em; color:#9a7048; text-shadow:none; margin-top:.35em; }
+  #tcOv.in .tc-title{ animation:tcTitle .6s .75s cubic-bezier(.2,.8,.2,1) both; }
+  #tcOv .tc-c{ position:fixed; pointer-events:auto; cursor:pointer; transform-style:preserve-3d; box-shadow:0 0 0 2px #b07a3f, 0 0 34px 6px rgba(176,112,50,.75), 0 14px 40px rgba(0,0,0,.6); background:#2b190b; }
+  #tcOv .tc-c::after{ content:""; position:absolute; inset:0; background:linear-gradient(135deg, rgba(210,150,84,.28), rgba(92,52,20,.34)); mix-blend-mode:color; pointer-events:none; }
+  #tcOv .tc-c .tcard{ position:absolute !important; inset:0 !important; left:0 !important; top:0 !important; width:100% !important; height:100% !important; transform:none !important; opacity:1 !important; pointer-events:none; filter:sepia(.7) saturate(1.25) hue-rotate(-14deg) brightness(.96) !important; margin:0 !important; transition:none !important; }
+  #modGrid > .tcard.tc-away{ opacity:0 !important; pointer-events:none !important; }
+  body.tc-armed #modGrid > .tcard:not(.tc-away){ filter:brightness(.32) grayscale(.7) sepia(.4) !important; pointer-events:none !important; }
+  @keyframes tcDim{ from{ opacity:0; } to{ opacity:1; } } @keyframes tcOut{ to{ opacity:0; } }
+  @keyframes tcTitle{ from{ opacity:0; transform:translateY(10px) scale(.96); } to{ opacity:1; transform:none; } }
+  /* START：長按時由左到右填滿的棕色進度；切換後整顆變棕色 */
+  #modStart.tc-hold{ background-image:linear-gradient(90deg, rgba(176,122,63,.95) calc(var(--tcp, 0) * 100%), transparent calc(var(--tcp, 0) * 100%)) !important; }
+  #modStart.tc{ background-color:#5a3a1c !important; border-color:#b07a3f !important; color:#f3dcc0 !important; box-shadow:0 0 18px rgba(176,112,50,.55) !important; }
+  #modStart.tc small{ color:#e3b27a !important; }
   /* ── 官方 #pair（配對到對手的動畫）：tetrio.css 原樣照搬，只把字型換成本站載得到的同一套 ── */
   #pair{ position:fixed; inset:0; z-index:10000; overflow:hidden; user-select:none; }
   #pair.hidden{ display:none; }
@@ -5614,6 +5636,7 @@ const SHAPES = {
 const KSETS = {"SRS":{"k":{"10":[[1,0],[1,1],[0,-2],[1,-2]],"12":[[1,0],[1,1],[0,-2],[1,-2]],"13":[[1,0],[1,-2],[1,-1],[0,-2],[0,-1]],"20":[[0,1],[-1,1],[1,1],[-1,0],[1,0]],"21":[[-1,0],[-1,-1],[0,2],[-1,2]],"23":[[1,0],[1,-1],[0,2],[1,2]],"30":[[-1,0],[-1,1],[0,-2],[-1,-2]],"31":[[-1,0],[-1,-2],[-1,-1],[0,-2],[0,-1]],"32":[[-1,0],[-1,1],[0,-2],[-1,-2]],"01":[[-1,0],[-1,-1],[0,2],[-1,2]],"03":[[1,0],[1,-1],[0,2],[1,2]],"02":[[0,-1],[1,-1],[-1,-1],[1,0],[-1,0]]},"i":{"10":[[2,0],[-1,0],[2,-1],[-1,2]],"12":[[-1,0],[2,0],[-1,-2],[2,1]],"13":[],"20":[],"21":[[1,0],[-2,0],[1,2],[-2,-1]],"23":[[2,0],[-1,0],[2,-1],[-1,2]],"30":[[1,0],[-2,0],[1,2],[-2,-1]],"31":[],"32":[[-2,0],[1,0],[-2,1],[1,-2]],"01":[[-2,0],[1,0],[-2,1],[1,-2]],"03":[[-1,0],[2,0],[-1,-2],[2,1]],"02":[]}},"SRS+":{"k":{"10":[[1,0],[1,1],[0,-2],[1,-2]],"12":[[1,0],[1,1],[0,-2],[1,-2]],"13":[[1,0],[1,-2],[1,-1],[0,-2],[0,-1]],"20":[[0,1],[-1,1],[1,1],[-1,0],[1,0]],"21":[[-1,0],[-1,-1],[0,2],[-1,2]],"23":[[1,0],[1,-1],[0,2],[1,2]],"30":[[-1,0],[-1,1],[0,-2],[-1,-2]],"31":[[-1,0],[-1,-2],[-1,-1],[0,-2],[0,-1]],"32":[[-1,0],[-1,1],[0,-2],[-1,-2]],"01":[[-1,0],[-1,-1],[0,2],[-1,2]],"03":[[1,0],[1,-1],[0,2],[1,2]],"02":[[0,-1],[1,-1],[-1,-1],[1,0],[-1,0]]},"i":{"10":[[-1,0],[2,0],[-1,2],[2,-1]],"12":[[-1,0],[2,0],[-1,-2],[2,1]],"13":[[1,0]],"20":[[0,1]],"21":[[-2,0],[1,0],[-2,-1],[1,2]],"23":[[2,0],[-1,0],[2,-1],[-1,2]],"30":[[1,0],[-2,0],[1,2],[-2,-1]],"31":[[-1,0]],"32":[[1,0],[-2,0],[1,-2],[-2,1]],"01":[[1,0],[-2,0],[-2,1],[1,-2]],"03":[[-1,0],[2,0],[2,1],[-1,-2]],"02":[[0,-1]]}},"SRS-X":{"k":{"10":[[1,0],[1,1],[0,-2],[1,-2]],"12":[[1,0],[1,1],[0,-2],[1,-2]],"13":[[0,1],[0,2],[-1,1],[-1,2],[0,-1],[0,-2],[-1,-1],[-1,-2],[1,0],[0,3],[0,-3]],"20":[[-1,0],[-2,0],[-1,-1],[-2,-1],[1,0],[2,0],[1,-1],[2,-1],[0,1],[-3,0],[3,0]],"21":[[-1,0],[-1,-1],[0,2],[-1,2]],"23":[[1,0],[1,-1],[0,2],[1,2]],"30":[[-1,0],[-1,1],[0,-2],[-1,-2]],"31":[[0,1],[0,2],[1,1],[1,2],[0,-1],[0,-2],[1,-1],[1,-2],[-1,0],[0,3],[0,-3]],"32":[[-1,0],[-1,1],[0,-2],[-1,-2]],"01":[[-1,0],[-1,-1],[0,2],[-1,2]],"03":[[1,0],[1,-1],[0,2],[1,2]],"02":[[1,0],[2,0],[1,1],[2,1],[-1,0],[-2,0],[-1,1],[-2,1],[0,-1],[3,0],[-3,0]]},"i":{"10":[[2,0],[-1,0],[2,-1],[-1,2]],"12":[[-1,0],[2,0],[-1,-2],[2,1]],"13":[[0,1],[0,2],[0,-1],[0,-2],[-1,0]],"20":[[1,0],[2,0],[-1,0],[-2,0],[0,-1]],"21":[[1,0],[-2,0],[1,2],[-2,-1]],"23":[[2,0],[-1,0],[2,-1],[-1,2]],"30":[[1,0],[-2,0],[1,2],[-2,-1]],"31":[[0,1],[0,2],[0,-1],[0,-2],[1,0]],"32":[[-2,0],[1,0],[-2,1],[1,-2]],"01":[[-2,0],[1,0],[-2,1],[1,-2]],"03":[[-1,0],[2,0],[-1,-2],[2,1]],"02":[[-1,0],[-2,0],[1,0],[2,0],[0,1]]}},"TETRA-X":{"k":{"10":[[0,1],[1,0],[-1,0],[1,1],[-1,1],[0,-1],[1,-1],[-1,-1]],"12":[[0,1],[-1,0],[1,0],[-1,1],[1,1],[0,-1],[-1,-1],[1,-1]],"13":[[0,1],[0,-1],[-1,0],[1,0]],"20":[[0,1],[0,-1],[-1,0],[1,0]],"21":[[0,1],[1,0],[-1,0],[1,1],[-1,1],[0,-1],[1,-1],[-1,-1]],"23":[[0,1],[-1,0],[1,0],[-1,1],[1,1],[0,-1],[-1,-1],[1,-1]],"30":[[0,1],[-1,0],[1,0],[-1,1],[1,1],[0,-1],[-1,-1],[1,-1]],"31":[[0,1],[0,-1],[-1,0],[1,0]],"32":[[0,1],[1,0],[-1,0],[1,1],[-1,1],[0,-1],[1,-1],[-1,-1]],"01":[[0,1],[-1,0],[1,0],[-1,1],[1,1],[0,-1],[-1,-1],[1,-1]],"03":[[0,1],[1,0],[-1,0],[1,1],[-1,1],[0,-1],[1,-1],[-1,-1]],"02":[[0,1],[0,-1],[-1,0],[1,0]]},"i":{"10":[[0,-1],[0,-2],[0,1],[-1,0],[1,0],[2,0]],"12":[[0,-1],[0,-2],[0,1],[-1,0],[1,0],[2,0]],"13":[[0,-1],[0,1]],"20":[[0,-1],[0,1]],"21":[[0,1],[0,2],[0,-1],[-1,1],[1,1],[-1,2],[1,2]],"23":[[0,1],[0,2],[0,-1],[1,1],[-1,1],[1,2],[-1,2]],"30":[[0,-1],[0,-2],[0,1],[1,0],[-1,0],[-2,0]],"31":[[0,-1],[0,1]],"32":[[0,-1],[0,-2],[0,1],[1,0],[-1,0],[-2,0]],"01":[[0,-1],[0,-2],[0,1],[1,-1],[-1,-1],[1,-2],[-1,-2]],"03":[[0,-1],[0,-2],[0,1],[-1,-1],[1,-1],[-1,-2],[1,-2]],"02":[[0,-1],[0,1]]},"col":{"i1":"l","i2":"l","i3":"l","l3":"o","i5":"l","l":"o","o":"s","s":"i","i":"l","oo":"s"}},"NRS":{"k":{"10":[],"12":[],"13":[],"20":[],"21":[],"23":[],"30":[],"31":[],"32":[],"01":[],"03":[],"02":[]},"off":{"Z":[[1,1],[1,0],[1,0],[2,0]],"L":[[1,0],[1,0],[1,0],[1,0]],"O":[[0,0],[0,0],[0,0],[0,0]],"S":[[1,1],[1,0],[1,0],[2,0]],"I":[[0,1],[0,0],[0,0],[1,0]],"J":[[1,0],[1,0],[1,0],[1,0]],"T":[[1,0],[1,0],[1,0],[1,0]]},"spawn":{"L":2,"J":2,"T":2}},"ARS":{"k":{"10":[[1,0],[-1,0]],"12":[[1,0],[-1,0]],"13":[[1,0],[-1,0]],"20":[[1,0],[-1,0]],"21":[[1,0],[-1,0]],"23":[[1,0],[-1,0]],"30":[[1,0],[-1,0]],"31":[[1,0],[-1,0]],"32":[[1,0],[-1,0]],"01":[[1,0],[-1,0]],"03":[[1,0],[-1,0]],"02":[[1,0],[-1,0]]},"i":{"10":[],"12":[],"13":[],"20":[],"21":[],"23":[],"30":[],"31":[],"32":[],"01":[],"03":[],"02":[]},"off":{"Z":[[0,1],[0,0],[0,0],[1,0]],"L":[[0,1],[0,0],[0,0],[0,0]],"O":[[0,0],[0,0],[0,0],[0,0]],"S":[[0,1],[-1,0],[0,0],[0,0]],"I":[[0,0],[0,0],[0,-1],[1,0]],"J":[[0,1],[0,0],[0,0],[0,0]],"T":[[0,1],[0,0],[0,0],[0,0]]},"spawn":{"L":2,"J":2,"T":2},"cc":{"pieces":["L","J","T"],"rules":[[-1,-1],[0,-1],[1,-1],[-1,0],[0,0],[1,0],[-1,1],[0,1],[1,1]]},"col":{"i1":"z","i2":"z","i3":"z","i5":"z","z":"s","s":"t","i":"z","t":"i"}},"ASC":{"k":{"10":[[1,0],[0,1],[1,1],[0,2],[1,2],[2,0],[2,1],[2,2],[-1,0],[-1,1],[0,-1],[1,-1],[2,-1],[-1,2],[-2,0],[0,-2],[1,-2],[2,-2],[-2,1],[-2,2],[-1,-1]],"12":[[-1,0],[0,1],[-1,1],[0,2],[-1,2],[-2,0],[-2,1],[-2,2],[1,0],[1,1],[0,-1],[-1,-1],[-2,-1],[1,2],[2,0],[0,-2],[-1,-2],[-2,-2],[2,1],[2,2],[1,-1]],"13":[],"20":[],"21":[[1,0],[0,1],[1,1],[0,2],[1,2],[2,0],[2,1],[2,2],[-1,0],[-1,1],[0,-1],[1,-1],[2,-1],[-1,2],[-2,0],[0,-2],[1,-2],[2,-2],[-2,1],[-2,2],[-1,-1]],"23":[[-1,0],[0,1],[-1,1],[0,2],[-1,2],[-2,0],[-2,1],[-2,2],[1,0],[1,1],[0,-1],[-1,-1],[-2,-1],[1,2],[2,0],[0,-2],[-1,-2],[-2,-2],[2,1],[2,2],[1,-1]],"30":[[-1,0],[0,1],[-1,1],[0,2],[-1,2],[-2,0],[-2,1],[-2,2],[1,0],[1,1],[0,-1],[-1,-1],[-2,-1],[1,2],[2,0],[0,-2],[-1,-2],[-2,-2],[2,1],[2,2],[1,-1]],"31":[],"32":[[1,0],[0,1],[1,1],[0,2],[1,2],[2,0],[2,1],[2,2],[-1,0],[-1,1],[0,-1],[1,-1],[2,-1],[-1,2],[-2,0],[0,-2],[1,-2],[2,-2],[-2,1],[-2,2],[-1,-1]],"01":[[-1,0],[0,1],[-1,1],[0,2],[-1,2],[-2,0],[-2,1],[-2,2],[1,0],[1,1],[0,-1],[-1,-1],[-2,-1],[1,2],[2,0],[0,-2],[-1,-2],[-2,-2],[2,1],[2,2],[1,-1]],"03":[[1,0],[0,1],[1,1],[0,2],[1,2],[2,0],[2,1],[2,2],[-1,0],[-1,1],[0,-1],[1,-1],[2,-1],[-1,2],[-2,0],[0,-2],[1,-2],[2,-2],[-2,1],[-2,2],[-1,-1]],"02":[]},"i":{"10":[[1,0],[0,1],[1,1],[0,2],[1,2],[2,0],[2,1],[2,2],[-1,0],[-1,1],[0,-1],[1,-1],[2,-1],[-1,2],[-2,0],[0,-2],[1,-2],[2,-2],[-2,1],[-2,2],[-1,-1]],"12":[[-1,0],[0,1],[-1,1],[0,2],[-1,2],[-2,0],[-2,1],[-2,2],[1,0],[1,1],[0,-1],[-1,-1],[-2,-1],[1,2],[2,0],[0,-2],[-1,-2],[-2,-2],[2,1],[2,2],[1,-1]],"13":[],"20":[],"21":[[1,0],[0,1],[1,1],[0,2],[1,2],[2,0],[2,1],[2,2],[-1,0],[-1,1],[0,-1],[1,-1],[2,-1],[-1,2],[-2,0],[0,-2],[1,-2],[2,-2],[-2,1],[-2,2],[-1,-1]],"23":[[-1,0],[0,1],[-1,1],[0,2],[-1,2],[-2,0],[-2,1],[-2,2],[1,0],[1,1],[0,-1],[-1,-1],[-2,-1],[1,2],[2,0],[0,-2],[-1,-2],[-2,-2],[2,1],[2,2],[1,-1]],"30":[[-1,0],[0,1],[-1,1],[0,2],[-1,2],[-2,0],[-2,1],[-2,2],[1,0],[1,1],[0,-1],[-1,-1],[-2,-1],[1,2],[2,0],[0,-2],[-1,-2],[-2,-2],[2,1],[2,2],[1,-1]],"31":[],"32":[[1,0],[0,1],[1,1],[0,2],[1,2],[2,0],[2,1],[2,2],[-1,0],[-1,1],[0,-1],[1,-1],[2,-1],[-1,2],[-2,0],[0,-2],[1,-2],[2,-2],[-2,1],[-2,2],[-1,-1]],"01":[[-1,0],[0,1],[-1,1],[0,2],[-1,2],[-2,0],[-2,1],[-2,2],[1,0],[1,1],[0,-1],[-1,-1],[-2,-1],[1,2],[2,0],[0,-2],[-1,-2],[-2,-2],[2,1],[2,2],[1,-1]],"03":[[1,0],[0,1],[1,1],[0,2],[1,2],[2,0],[2,1],[2,2],[-1,0],[-1,1],[0,-1],[1,-1],[2,-1],[-1,2],[-2,0],[0,-2],[1,-2],[2,-2],[-2,1],[-2,2],[-1,-1]],"02":[]},"off":{"Z":[[0,0],[0,0],[0,0],[0,0]],"L":[[0,0],[0,0],[0,0],[0,0]],"O":[[0,0],[0,1],[-1,1],[-1,0]],"S":[[0,0],[0,0],[0,0],[0,0]],"I":[[0,0],[-1,0],[-1,-1],[0,-1]],"J":[[0,0],[0,0],[0,0],[0,0]],"T":[[0,0],[0,0],[0,0],[0,0]]},"oKick":true},"NONE":{"k":{"10":[],"12":[],"13":[],"20":[],"21":[],"23":[],"30":[],"31":[],"32":[],"01":[],"03":[],"02":[]}}};
 // 目前的旋轉系統：房間／自訂／ZEN 設定 > 教學（SRS+ 驗的）> 模擬器下拉選單
 function kickName(){
+  try { if (climb && climb.tc) return 'NRS'; } catch(e){}
   let KK = null; try { KK = ruleOf('kick'); } catch(e){}               // 載入初期 ruleOf 還沒定義（TDZ）
   if (KK) return String(KK).toUpperCase();
   try { if (climb && climb.tut) return 'SRS+'; } catch(e){}
@@ -5917,7 +5940,7 @@ const sideScale = () => mode === 'sim' && VISIBLE < 20 ? VISIBLE / 20 : mode ===
 // ASCETICISM 系列（逆位 nohold，含 FLIPSIDE／ABYSS）：HOLD 框整個拔掉、NEXT 框縮到只裝得下看得到的那幾顆（ABYSS 一顆都看不到＝NEXT 也拔掉）
 const ascPanels = () => !!(climb && typeof hasMod === 'function' && hasMod('ascetic'));
 const noHoldPanel = () => !!(climb && typeof hasMod === 'function' && (hasMod('nohold') || hasMod('ascetic')));   // NO HOLD 系列（含 ASCETICISM）：HOLD 框拔掉
-const nextSlots = () => ascPanels() ? Math.max(0, Math.min(5, nextShown())) : 5;
+const nextSlots = () => (ascPanels() || (climb && climb.tc)) ? Math.max(0, Math.min(5, nextShown())) : 5;
 function skinRects(){
   const s = cell / 92, k = s * sideScale(),   /* 實機 QP：HOLD／NEXT 跟盤面框同比例（原本縮 0.75，跟使用者的實機截圖比太小） */   /* 縮小盤面（雪球）照官方原尺寸×H/20，不再額外 ×0.75 */ Y0 = (H - VISIBLE) * cell, vs = VISIBLE / 20;   // 實機 Duo：HOLD／NEXT 是原尺寸（NEXT 高到盤面約 8 成）   // HOLD／NEXT／側欄縮 0.75 倍，手機才放得下
   const frame = { x:-79*s, y:Y0 - 29*s, w:(W * 92 + 160)*s, h:(VISIBLE * 92 + 188)*s };   // 10×20 時＝1080×2028（原圖大小）；雪球等其他尺寸用九宮格拉
@@ -7316,7 +7339,7 @@ function drawClimbHUD(wide){
   const hx = bare ? -W*cell - cell*0.35 - genL() : skin ? (SR.lbar.x - 4 - W*cell) : boardSkinOn() ? (SR.rbar.x + SR.rbar.w - W*cell + 4) : pad*1.5;
   const maxW = bare ? GUTL()*cell - cell*1.4 : skin ? SR.lbar.x - 4 + GUTL()*cell - pad : undefined;
   // 有盤面皮膚時 NEXT 框比較長，數據欄要擠進框底到盤面底之間
-  const lines = climb.custom && !climb.custom.tower ? 6 : climb.kind === 'practice' ? (climb.sub === 'zen' ? 6 : 5) : climb.kind === 'league' ? 5 : (climb.hyper ? 4 : 3);
+  const lines = climb.custom && !climb.custom.tower ? 6 : climb.kind === 'practice' ? (climb.sub === 'zen' ? 6 : 5) : climb.kind === 'league' ? 5 : (climb.hyper || climb.tc ? 4 : 3);
   const avail = bare ? Infinity : skin ? (H*cell - (SR.frame.y + SR.frame.h * .36 + cell * 2.4) - fs) : SR ? (H*cell - (SR.next.y + SR.next.h) - fs) : Infinity;
   let step = Math.max(fs * 1.9, Math.min(fs * 2.5, avail / lines));
   // 官方 Kc.generic.ns.counter（generic 板子、非 QP）：由下往上每 70 一欄；標題 size 20、數值 size 38（後半段 \f3＝0.6 倍），靠右對齊在盤面左邊 −10
@@ -7459,11 +7482,18 @@ function drawClimbHUD(wide){
     line('HYPERSPEED', Object.keys(climb.splits).map(n => `F${n} ${(climb.splits[n]/1000).toFixed(1)}`).slice(-2).join(' ') || 'GO', `hsl(${hue},90%,65%)`);
   }
   const QC = '#f1dcc8';                                                            // 實機 QP 數據是暖白色
-  line('TIME', clockParts(secs), QC);
   const TPc = teamPieces(), TSn = teamSent();                                         // Duo：數據是兩個人一起算（實機）
+  if (climb.tc){ const BR = '#e8c9a0';                                               // A TRUE CLASSIC：原版的三個數字（分數／行數／等級），棕色系
+    line('TIME', clockParts(secs), BR);
+    line('SCORE', String(climb.tc.score).padStart(6, '0'), BR);
+    line('LINES', String(climb.tc.lines).padStart(3, '0'), BR);
+    line('LEVEL', String(climb.tc.level).padStart(2, '0'), BR);
+  } else {
+  line('TIME', clockParts(secs), QC);
   line('ATTACK', [String(TSn), `, ${(TSn / secs * 60).toFixed(prec2())}/M`], QC);
   line('PIECES', [String(TPc), `, ${(TPc / secs).toFixed(prec2())}/S`], QC);
   if (climb.kind === 'qp') line("KO'S", String(climb.kos || 0), QC);
+  }
   if (climb.kind === 'qp' && SR && !(climb.custom && !climb.custom.tower)){                // 實機 QP：名字小小的寫在盤面框底部正中間（高度表上面）；Duo 兩個盤面各寫各的
     const nfs = Math.max(7.5, Math.min(cell * .3, 12)), nf = `700 ${nfs}px ${CANVAS_FONT}`, ny = H * cell + nfs * 1.02;
     ctx.save(); ctx.shadowColor = '#000'; ctx.shadowBlur = 0; ctx.shadowOffsetY = 1; ctx.shadowOffsetX = 1;
@@ -9732,6 +9762,8 @@ function drawFrame(){
   if (skinned){ drawSkinUnder(); genGrid(ctx); }
   renderBoard(ctx, shown, { scale:cell, grid:showGrid && !((gen || skinned) && genTex('gGrid')), buffer: mode !== 'sim', noBufGrid: mode === 'sim', transparent:skinned || genT, keepUnder:skinned || genT, frame:!skinned && !gen,   // 遊戲中照實機：盤面上方（出生區）不畫格線、不畫虛線
     invisible: hasMod('exile'), invPulse: !hasMod('exile') && hasMod('invisible') ? invPulse() : null });
+  if (CA && CA.tc && CA.quad && fxOn() && Math.floor((performance.now() - CA.t0) / TC_FRAME) % 4 === 0){   // 原版：一次消四行時畫面每 4 幀閃一下白
+    ctx.save(); ctx.globalAlpha = .7; ctx.fillStyle = '#fff'; ctx.fillRect(0, (H - VISIBLE) * cell, W * cell, VISIBLE * cell); ctx.restore(); }
 
   if (!showPreview){
     for (const y of fullRows(grid())){                 // 用真正的盤面判斷（Exile 的黑行把洞也塗掉了，不能拿顯示用的）
@@ -9810,7 +9842,7 @@ function drawFrame(){
     ctx.globalAlpha = Math.min(1, .28 * shA); ctx.fillStyle = opt('oColorGhost') ? COLORS[k] : '#9aa3b8';
     const gt = TIO_X.ghost && tioImgOn() && opt('oColorGhost') ? ghostTile(k) : null;
     if (gt) ctx.globalAlpha = Math.min(1, .9 * shA);
-    if (!hasMod('ascetic') && !isAb('exile') && !sunHas('noghost') && !(climb && climb.custom && !climb.custom.shadow))
+    if (!hasMod('ascetic') && !isAb('exile') && !sunHas('noghost') && !(climb && climb.tc) && !(climb && climb.custom && !climb.custom.shadow))
       for (const [x,y] of cellsOf(ghostOf(active)))
         if (y>=0){ if (gt) ctx.drawImage(gt, x*cell, y*cell, cell, cell); else ctx.fillRect(x*cell, y*cell, cell, cell); }
     ctx.globalAlpha = 1;
@@ -10653,7 +10685,8 @@ addEventListener('wheel', e => {
 // WARN WHEN NOT FOCUSED：遊戲中視窗失焦 → 畫面中央提示
 addEventListener('blur', () => { if (opt('oWarnFocus') && typeof inGame === 'function' && inGame()) document.body.classList.add('o-unfocus'); });
 addEventListener('focus', () => document.body.classList.remove('o-unfocus'));
-const handling = () => (climb && climb.kind === 'qp' && (climb.mods.has('permafrost') || sunHas('slip')))
+const handling = () => climb && climb.tc ? { ...handlingRaw(), das: 16 * TC_FRAME, arr: 6 * TC_FRAME, dcd: 0, sdf: 1, noAcc: false, cancelDas: false, preferSoft: false, irs: 'off', ihs: 'off' }
+  : (climb && climb.kind === 'qp' && (climb.mods.has('permafrost') || sunHas('slip')))
   ? { ...handlingRaw(), das: 5, arr: 5, dcd: 0 }                       // PERMAFROST：DAS 0.3f、ARR 0.3f 鎖定（≈5ms）；DEATH F7 借用
   : climb && sunHas('das20') ? { ...handlingRaw(), das: 20 * 1000 / 60 }   // DEATH F8：DAS 固定 20 幀
   : climb && sunHas('das30') ? { ...handlingRaw(), das: 30 * 1000 / 60 }   // MACABRE F6：DAS 固定 30 幀
@@ -10676,11 +10709,52 @@ function ghostOf(a){
   while (fits({ ...g, y:g.y+1 })) g.y++;
   return g;
 }
+// ══ A TRUE CLASSIC（Modern Classic 的進階版）：1989 紅白機版的規則 ══
+//   NO HOLD、只看 1 顆 NEXT、沒有硬降和落點預覽、NRS 旋轉（不踢牆）、方塊純隨機（抽到跟上一顆一樣就重抽一次）、
+//   沒有鎖定延遲（落不下去的那一拍直接鎖）、DAS 16 幀／之後每 6 幀一格、軟降每 2 幀一格（每顆都要重新按）、
+//   速度照等級（每 10 行升一級，29 級每幀一格）、計分 40／100／300／1200 ×（等級＋1），沒有 spin／combo／B2B。
+//   消行動畫：從中間兩欄往兩邊每 4 幀消一對（共 20 幀），一次消四行時畫面閃白；之後再等 10–18 幀下一顆才出來（鎖得越高等越久）。
+const TC = () => !!(climb && climb.tc);
+const TC_FPR = [48, 43, 38, 33, 28, 23, 18, 13, 8, 6, 5, 5, 5, 4, 4, 4, 3, 3, 3, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1];
+const TC_FRAME = 1000 / 60.0988;
+const tcFpr = lv => TC_FPR[Math.min(29, Math.max(0, lv))];
+function tcNext(){ let i = (rnd() * 8) | 0; if (i === 7 || PIECE_ORDER[i] === lastGen) i = (rnd() * 7) | 0; return (lastGen = PIECE_ORDER[i]); }
+function tcStep(dt){
+  const T = climb.tc;
+  if (!held.soft) T.softLock = false;
+  const soft = held.soft && !T.softLock;
+  if (!soft){ tickShift(dt); T.push = 0; }                              // 原版：按著下的時候不能左右移
+  if (!active) return;
+  const fpr = tcFpr(T.level); G_EFF = 1 / fpr;
+  gravAcc += (soft ? Math.max(.5, 1 / fpr) : 1 / fpr) * dt / TC_FRAME;
+  while (gravAcc >= 1 && active){
+    gravAcc -= 1;
+    if (move(0, 1)){ if (soft) T.push++; continue; }
+    if (soft && T.push){ T.score += T.push; }                            // 軟降一路按到底的格數加分
+    T.push = 0; lockPiece(); return;
+  }
+}
+function tcScore(n){
+  const T = climb.tc; if (!n) return;
+  T.score += [0, 40, 100, 300, 1200][Math.min(4, n)] * (T.level + 1);
+  T.lines += n;
+  const lv = Math.floor(T.lines / 10);
+  if (lv > T.level){ T.level = lv; sfxEv('levelup', 'levelup'); if (clearMsg) clearMsg.lines.push({ text: 'LEVEL ' + lv, color: '#e8c9a0', size: 'sm', k: 'level' }); }
+}
+const tcAre = cells => { const h = H - 1 - Math.max(...cells.map(c => c[1])); return Math.min(18, 10 + 2 * Math.floor((h + 2) / 4)); };
+function tcClrAnim(pre, ys, n){
+  const run = climb, A = run.clrAnim = { disp: pre, after: frames[fi], t0: performance.now(), ms: 20 * TC_FRAME, tc: true, quad: n >= 4 };
+  const mid = W / 2;
+  for (let i = 0; i < Math.ceil(mid); i++) setTimeout(() => { if (run.clrAnim !== A) return;
+    for (const y of ys){ const l = Math.ceil(mid) - 1 - i, r = Math.floor(mid) + i; if (l >= 0) A.disp[y * W + l] = 0; if (r < W) A.disp[y * W + r] = 0; } draw(); }, i * 4 * TC_FRAME);
+  setTimeout(() => { if (run.clrAnim !== A) return; run.clrAnim = null; draw(); }, 20 * TC_FRAME);
+}
 let lastGen = null;
 const rnd = () => climb && climb.rng ? climb.rng() : Math.random();
 // SOUL FORFEIT（Warlock ABYSS）：不發 T（7-bag 變成 6 顆一包）
 function nextBag(){ let t = nextBag0(), k = 0; if (climb && isAb('warlock')) while (t === 'T' && k++ < 50) t = nextBag0(); return t; }
 function nextBag0(){
+  if (climb && climb.tc) return tcNext();
   if (climb && climb.kind === 'qp' && (climb.mods.has('mutation') || sunHas('mut') || !!(climb.sunMods && climb.sunMods.has('mutation'))) && !climb.mods.has('pentrio') && !climb.mods.has('foolserrand')){
     if (!climb.mutQ || !climb.mutQ.length) climb.mutQ = mutBlock();
     return (lastGen = climb.mutQ.shift());
@@ -10766,8 +10840,11 @@ function spawn(type){
   const a = { type, rot:spawnRotOf(type), x: (W === 10 && PIECE_ORDER.includes(type)) ? (type === 'O' ? 4 : 3) : Math.floor((W - (SHAPES[type].s || (type === 'I' ? 4 : type === 'O' ? 2 : 3))) / 2), y: Math.max(0, H - VISIBLE - 2) };
   // Clutch Clear（TETR.IO Beta 1.5.0，tetris.wiki/Tetrio）：只有「這顆消了行、下一顆卻生成在方塊裡（block out）」時才觸發，
   // 下一顆被推到疊塊上方繼續玩；沒消行時出生點（叉叉）被擋住就直接 block out
+  if (climb && climb.tc){                                               // 原版出生位置：最上面那一列、靠中間（I 佔第 4–7 欄，其他以第 6 欄為中心）
+    const cs = SHAPES[type][a.rot & 3], mx = Math.min(...cs.map(c => c[0])), my = Math.min(...cs.map(c => c[1]));
+    a.x = (type === 'I' ? 3 : 4) - mx; a.y = (H - VISIBLE) - my; climb.tc.softLock = !!held.soft; climb.tc.push = 0; }
   if (!fits(a)){
-    const canClutch = clutchArm && (!climb || !climb.custom || climb.custom.clutch !== false);
+    const canClutch = clutchArm && !(climb && climb.tc) && (!climb || !climb.custom || climb.custom.clutch !== false);
     if (canClutch){ while (!fits(a) && a.y > 0) a.y--; }
     if (!canClutch || !fits(a) || !cellsOf(a).every(([, y]) => y >= 0)){
       clutchArm = false; clutchN = 0;
@@ -10848,6 +10925,7 @@ function move(dx,dy){
 // 官方 ComputeKick：先把方塊照 additional_offsets 的差值挪過去試原位，再依序試踢牆表；kick 記第幾個踢（0 起算，原位＝沒踢）
 function rotate(dir){                       // 1 順時針 / 3 逆時針 / 2 為 180
   if (!active || (climb && climb.rp)) return false;
+  if (dir === 2 && climb && climb.tc) return false;                       // A TRUE CLASSIC：只有左右轉
   rsCheck(dir === 2 ? 'r180' : dir < 0 || dir === 3 ? 'rccw' : 'rcw');
   if (dir === 2 && climb && climb.custom && !climb.custom.r180) return false;
   cInput();
@@ -10881,6 +10959,7 @@ function rotate(dir){                       // 1 順時針 / 3 逆時針 / 2 為
 }
 // T 用三角判定；其他方塊在 All-Spin 開啟時用 immobile 判定
 function detectSpin(a){
+  if (climb && climb.tc) return null;                                      // A TRUE CLASSIC：沒有 spin
   if (!lastWasRotation) return null;
   const CS = ruleOf('spins') || null;
   if (CS) return customSpin(a, CS);
@@ -11023,14 +11102,14 @@ function lockPiece(){
   lockInfo.holdT = holdType;
   if (climb && !climb.over) climb.garbCleared += garbRows;
 
-  const isPC = r.cleared > 0 && !r.board.some(v => v && v !== 9 && v !== 10);   // tetris.wiki：盤面上有 Wound 也能 All Clear（Wound／永久行不算）
+  const isPC = !TC() && r.cleared > 0 && !r.board.some(v => v && v !== 9 && v !== 10);   // A TRUE CLASSIC：沒有 All Clear   // tetris.wiki：盤面上有 Wound 也能 All Clear（Wound／永久行不算）
   const parts = [], lines = [];
   const push = (text, color, size) => { parts.push(text); lines.push({ text:text.toUpperCase(), color, size }); };
   if (spin){
     const pc = pieceColor(pkC(spin.type)) || '#6f7dff';   // 轉哪顆就用哪顆的顏色（有皮膚就用皮膚色）
     push((spin.mini ? 'Mini ' : '') + spin.name, pc, 'sm');
   }
-  if (r.cleared) push(climb && hasMod('warlock') && !spin ? 'Void' : (CLEAR_NAME[r.cleared] || `${r.cleared} Lines`), '#eef2f7', 'lg');
+  if (r.cleared) push(climb && hasMod('warlock') && !spin ? 'Void' : TC() && r.cleared === 4 ? 'Tetris' : (CLEAR_NAME[r.cleared] || `${r.cleared} Lines`), '#eef2f7', 'lg');
   const difficult = r.cleared > 0 && (!!spin || (r.cleared >= 4 && !(climb && hasMod('warlock'))));   // Warlock：Quad 也是 VOID（同一種消行），不算 difficult → 斷 B2B
   const prevCombo = combo, prevB2b = b2b;
   if (r.cleared > 0){
@@ -11039,11 +11118,12 @@ function lockPiece(){
     if (difficult && climb) climb.b2bPop = performance.now();
     if (isPC){ shout('allclear', 'ALL\nCLEAR'); bgCircle(); }                               // 官方 fx("allclear")：Strings.extra.clear，只有盤面中間的大字，左邊動作字沒有這一行
     // 官方：有 B2B 充能（TL／QP）時不出 back-to-back 字（看旁邊的 B2B 計數）；其他模式寫 back-to-back，第 3 次起加 X2、X3…
-    if (b2b > 0 && !(climb && surgeOn())) push(b2b >= 2 ? `back-to-back X${b2b}` : 'back-to-back', '#f7d33e', 'sm');
-    if (combo > 0) push(`${combo} Combo`, '#eef2f7', 'combo');
+    if (b2b > 0 && !TC() && !(climb && surgeOn())) push(b2b >= 2 ? `back-to-back X${b2b}` : 'back-to-back', '#f7d33e', 'sm');
+    if (combo > 0 && !TC()) push(`${combo} Combo`, '#eef2f7', 'combo');
   } else {
     combo = -1;
   }
+  if (TC()){ combo = -1; b2b = -1; }                                        // A TRUE CLASSIC：沒有 combo／B2B
   lockSfx(r.cleared, spin, difficult, prevCombo, prevB2b, isPC, combo);
   if (climb && !climb.over && climb.rs){ rsCheck('piece', lockInfo.type || (lockInfo.cells && lockInfo.cells.t)); if (r.cleared) rsCheck('clear'); if (spin) rsCheck('spin'); }
   if (spin && climb && !climb.over && sunHas('nospin')){                  // REQUIEM F2：TALENTLESS——做出任何 spin（含 mini）直接冒 5 行垃圾
@@ -11051,7 +11131,8 @@ function lockPiece(){
   if (b2b > prevB2b && r.cleared) bgCircle();                              // 官方：B2B 每延續一次放一圈 bgcircle
   if (spin && opt('oSpinBoard') && fxOn() && cv.animate){ const d = (spin.dir || (Math.random() < .5 ? -1 : 1)) * (spin.mini ? .8 : 1.6);   // 官方 SPIN BOARD：spin 時盤面晃一下（幅度 ⚠️ 推估）
     try { cv.animate([{ transform:'rotate(0deg)' }, { transform:`rotate(${d}deg)` }, { transform:'rotate(0deg)' }], { duration: 240, easing:'ease-out' }); } catch(e){} }
-  clearedYs.forEach((y, i) => opExplodeLine(y, clearedVals[i]));        // 官方 RemoveLinesFromStack → ExplodeLine（每行）
+  if (TC()){ if (clearedYs.length && !climb.over) tcClrAnim(preG, clearedYs, r.cleared); }
+  else clearedYs.forEach((y, i) => opExplodeLine(y, clearedVals[i]));        // 官方 RemoveLinesFromStack → ExplodeLine（每行）
   if (climb && !climb.over && (hasMod('dice') || sunHas('cdelay')) && clearedYs.length) clrAnimStart(preG, clearedYs, lockInfo.cells, isAb('dice') ? 3000 : isFs('dice') ? 2000 : 1150);
   if (lockedOut) push('Lock out', '#ef4b4b', 'sm');
   lastClear = parts.join(' · ');
@@ -11060,6 +11141,7 @@ function lockPiece(){
     if (at === 'off') lines.length = 0;
     else if (at === 'some'){ const keep = lines.filter(L => !['pc', 'clutch', 'level', 'left'].includes(L.k)); lines.length = 0; lines.push(...keep); } }   // 官方 SOME：只藏 ALL CLEAR／CLUTCH／LEVEL／PLAYERS LEFT
   if (lines.length) clearMsg = { lines, t: performance.now(), keep: !!(climb && isAllSpin()) };
+  if (TC() && !climb.over) tcScore(r.cleared);
   else if (!(climb && isAllSpin() && clearMsg && clearMsg.keep)) clearMsg = null;
   say(lastClear || 'Placed');
 
@@ -11068,6 +11150,11 @@ function lockPiece(){
   climbOnLock({ cleared:r.cleared, spin, b2b, prevB2b, combo, garb: garbRows, cols: lockCols, pc: isPC, ...lockInfo });
   if (climb && !climb.over && climb.sprintDone){ climb.lines = Math.min(raceLines(), climb.lines); finishSolo(true); draw(); return; }
   holdUsed = hasMod('nohold') || hasMod('ascetic');
+  if (TC() && !climb.over){                                                 // A TRUE CLASSIC：消行動畫 20 幀＋ARE 10–18 幀後下一顆才出來
+    const run = climb, ms = ((r.cleared ? 20 : 0) + tcAre(lockInfo.cells)) * TC_FRAME;
+    setTimeout(() => { if (climb === run && !run.over && !active) spawnNext(); }, ms);
+    draw(); return;
+  }
   if (climb && !climb.over && (hasMod('dice') || sunHas('cdelay')) && r.cleared > 0){       // Loaded Dice：消行延遲 1.15 秒
     const run = climb;
     setTimeout(() => { if (climb === run && !run.over && !active) spawnNext(); }, isAb('dice') ? 3000 : isFs('dice') ? 2000 : 1150);
@@ -11212,6 +11299,7 @@ function boardKick(dx, dy, dmg){
 }
 function hardDrop(){
   if (climb && climb.rp) return;
+  if (climb && climb.tc) return;                                          // A TRUE CLASSIC：沒有硬降
   setTimeout(() => boardKick(0, 3, false), 0);
   if (!active) return;
   if (climb && climb.custom && !climb.custom.hd) return;
@@ -11542,6 +11630,7 @@ function drawReplayTag(){
 let PHYS_T = 0;
 function physStep(dt){
   if (!active) return;
+  if (climb && climb.tc && !climb.over && !(DEMO && climb.demo)){ tcStep(dt); return; }
     const h = handling();
     let base = climb && !climb.over ? (sunGrav() ?? climb.gravity) : Math.max(0, +$('gravity').value || 0);   // THE SUN F4：0.2G → 20G
     if (climb && climb.kind === 'qp' && climb.glock > 0){                // 官方 GetEffectiveGravity：glock（幀）> 180 → 0；≤ 180 → (1 − glock/180)² × g
@@ -11785,7 +11874,7 @@ const ZEN_DEF = { leveling:'ON', infhold:false, spins:'ALL-MINI+', combo:'MULTIP
 const zenCfg = () => { try { return Object.assign({}, ZEN_DEF, JSON.parse(localStorage.getItem('bp:zen') || '{}')); } catch(e){ return { ...ZEN_DEF }; } };
 const isZen = () => !!(climb && climb.kind === 'practice' && climb.sub === 'zen');
 const ruleOf = k => climb && climb.custom ? climb.custom[k] : isZen() ? (climb.zen || (climb.zen = zenCfg()))[k] : undefined;
-const nextShown = () => { const C = climb && climb.custom; if (C) return C.nextq ? Math.max(0, Math.min(6, Math.round(C.next))) : 0; return isAb('ascetic') ? 0 : (hasMod('ascetic') || sunHas('next1')) ? 1 : isAb('exile') ? 2 : 5; };   // ABSOLUTE SILENCE：完全沒有 NEXT；OBLIVION：只看 2 顆
+const nextShown = () => { if (climb && climb.tc) return 1; const C = climb && climb.custom; if (C) return C.nextq ? Math.max(0, Math.min(6, Math.round(C.next))) : 0; return isAb('ascetic') ? 0 : (hasMod('ascetic') || sunHas('next1')) ? 1 : isAb('exile') ? 2 : 5; };   // ABSOLUTE SILENCE：完全沒有 NEXT；OBLIVION：只看 2 顆
 
 // 進遊戲的 mod：拿掉 EASY 卡（THE CHARIOT 各階段）跟 THE WORLD；FLIPSIDE／ABYSS 旗標只由 EASY 卡造成的也拿掉
 function qpRunMods(src){
@@ -11837,6 +11926,7 @@ function startClimb(kind = 'qp', opts = {}){
     me: kind === 'league' ? { score: opts.keepScore ? opts.keepScore.me : 0, tot: opts.keepScore ? opts.keepScore.tot : null, otot: opts.keepScore ? opts.keepScore.otot : null } : null,
   };
   if (climb.opp && opts.keepScore) climb.opp.score = opts.keepScore.opp;
+  if (kind === 'qp' && opts.classic) climb.tc = { level: 0, lines: 0, score: 0, push: 0, softLock: false };
   if (kind === 'league' && opts.lv && opts.seed){ let a = opts.seed >>> 0 || 1; climb.rng = () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }   // RIVALS TL：兩邊同種子＝同一串方塊
   if (isZen()){ const z = zenSave(); climb.zenLv = z.level || 1; climb.zenProg = z.progress || 0; climb.score = z.score || 0; }   // 官方 ZEN 從存檔的等級／進度／分數接著玩
   queue = []; bag = []; holdType = (climb.tut && climb.tut.R && climb.tut.R.hold) || null; holdUsed = false;   // PC 表練習：hold 先放 I
@@ -12149,7 +12239,8 @@ function recordMatch(won, vs, apm, pps, secs, oppTR, oppG){
 }
 let TL_LAST = null;
 function recordRun(kind, extra){
-  if (climb && climb.demo) return;                                   // DEMO（La bot 代打）不計戰績／成就／XP
+  if (climb && climb.demo) return;
+  if (climb && climb.tc){ tcRecord(); return; }                       // A TRUE CLASSIC：成績另外記，不進一般 QP 的戰績／PB／成就                                   // DEMO（La bot 代打）不計戰績／成就／XP
   if (climb && climb.opts && climb.opts.easy) return;                // EASY MOD：不計戰績／PB／成就／XP
   if (!climb) return;
   const p = loadProfile(), secs = climb.elapsed / 1000, lv0 = levelOf(p.xp);
@@ -14171,6 +14262,7 @@ function holePlan(N){
 }
 /* --- 收垃圾：≥8 行觸發 Windup 拆成 4+4+… --- */
 function climbReceive(lines, plan, fresh = true, quiet = false){
+  if (climb && climb.tc) return 0;                                         // A TRUE CLASSIC：沒有垃圾
   if (!climb || climb.over || climb.downed) return;                 // DUO：倒下等復活時不收垃圾
   // 官方 AddPendingGarbage（QP）：抵銷疲勞。每份攻擊至少變成 min(原本 + k×cancelstreak², 該樓層上限)；
   //   k＝0.001（只開 Volatile 0.0003、只開 All-Spin 0.002）；上限 F1–F7＝4/5/6/7/8/9/10，F8 起無上限；Windup 進行中上限最多 6
@@ -14848,6 +14940,7 @@ function climbOnLock(res){
       b2b = -1;                                    // 不能累積 B2B
     }
     if (sunHas('voidc') && !res.spin){ atk = 0; b2b = -1; if (clearMsg) clearMsg.lines.unshift({ text:'VOID', color:'#ff6070', size:'sm' }); }   // REQUIEM F6：普通消行不送、不接 B2B
+    if (climb.tc){ const m = [0, 1, 3, 5, 8][Math.min(4, res.cleared)]; atk = 0; b2b = -1; if (m){ addAlt(m); altGain(m); } }   // A TRUE CLASSIC：消 1／2／3／4 行直接爬 1／3／5／8 公尺，不送攻擊、沒有其他加成
     if (climb.kind === 'qp') passGate();
     climb.lastAtk = atk; if (res.combo >= 2) climb.comboPow = Math.min(Math.max(climb.comboPow || 0, atk), 7);   // 官方 combopower
     const sentRes = climbSend(atk);
@@ -17946,6 +18039,7 @@ function renderModSel(){
   if (FLIP_FX && kids[FLIP_FX.i]){ const el = kids[FLIP_FX.i], k = FLIP_FX.ns === 1 ? 'spin' : FLIP_FX.ns >= 2 ? 'revspin' : ''; if (k){ el.classList.add(k); const t = el.querySelector('.trot'), done = () => el.classList.remove(k); if (t) t.addEventListener('animationend', done, { once:true }); setTimeout(done, 1500); } }   // 重建後第一格要等圖片解碼，動畫會晚開始：等它真的播完才拿掉
   FLIP_FX = null;
   requestAnimationFrame(layoutDeck);
+  if (typeof tcSync === 'function') requestAnimationFrame(tcSync);
 }
 let FLIP_FX = null;
 let DECK_MHOV = -1, DECK_MOUSE = false, DECK_BUSY = 0;
@@ -20517,7 +20611,8 @@ $('modBack').onclick = () => setScreen('multisel');
 // EASY MOD（本站自訂，不是官方）：電腦 Ctrl＋START；手機按住 RESET 同時按 START → 爬速條（climb_pts）累積 ×2；這局不計紀錄
 const EASY = { resetHeld: 0, eatReset: false };
 function qpStart(easy){
-  qrOutOfLobby();                                                        // 結算時按 AGAIN（＝START）：結算區塊收回去
+  qrOutOfLobby();
+  if (TC_ARM.on && tcEligible()){ tcOvHide(); startClimb('qp', { classic: true }); say('A TRUE CLASSIC'); return; }                                                        // 結算時按 AGAIN（＝START）：結算區塊收回去
   { const st = cardState(CHARIOT_CARD); if (st) easy = [0, 2, 3, 5, 10][st]; }   // THE CHARIOT（EASY）×2／THE IDIOT ×3／THE DISADVANTAGE ×5／AUTOPILOT ×10
   if (pickedMods.has('world') && typeof QPK !== 'undefined'){ QPK.open(true); return; }
   if ((pickedMods.has('sun') || pickedMods.has('death')) && towerExt < 5){ buildTower(5); renderModSel(); say('CHALLENGE MOD · THE TOWER EXTENDED TO 5/5'); qcSys('CHALLENGE MOD requires the full tower: extended to 5/5.'); }   // THE WORLD：整個換成 Zenith Clicker（QUICK PICK）
@@ -20525,6 +20620,103 @@ function qpStart(easy){
   if (d && cardState(d) >= 1 && !duoMate){ say('WAITING FOR PLAYER · TAP THE EMPTY SLOT TO INVITE'); qcSys('Duo needs a partner: tap the empty slot or type /add labot.'); return; }
   startClimb('qp', easy ? { easy } : {});                                // easy：true（Ctrl＋START）或倍率數字（EASY 卡）
   if (easy && climb){ const k = easy === true ? 2 : easy; say(`EASY MOD · CLIMB SPEED ×${k} · NOT RECORDED`); qcSys(`EASY MOD on: climb speed ×${k}, this run is not recorded.`); }
+}
+// ── A TRUE CLASSIC 的選卡畫面：只選 NO HOLD＋GRAVITY 時長按 START 1 秒 → 兩張卡各翻 360° 飛到中間並排（棕色），停在選卡畫面；
+//    再按 START 才開局。點中間的卡或再長按一次 START＝取消，卡片翻回原位。切換後其他卡變暗不能選。
+const TC_ARM = { on: false, busy: false, t: 0, raf: 0, eat: false };
+const tcEligible = () => pickedMods.size === 2 && pickedMods.has('nohold') && pickedMods.has('gravity');
+const tcBest = () => { try { return JSON.parse(localStorage.getItem('bp:tcBest') || 'null'); } catch(e){ return null; } };
+function tcRecord(){
+  const T = climb.tc, b = tcBest() || {}, n = { alt: Math.max(b.alt || 0, climb.alt || 0), score: Math.max(b.score || 0, T.score), lines: Math.max(b.lines || 0, T.lines), level: Math.max(b.level || 0, T.level) };
+  try { localStorage.setItem('bp:tcBest', JSON.stringify(n)); } catch(e){}
+}
+function tcCards(){ const g = $('modGrid'); if (!g) return []; return ['nohold', 'gravity'].map(b => g.children[QDECK.findIndex(c => c.base === b)]).filter(Boolean); }
+// 版面：兩張卡排在 START 上面那塊（原本放 QUICK PLAY 說明的地方）的正中間，名字在卡片上方；START 和下面的牌堆不會被蓋住
+function tcRegion(){
+  const sb = $('modStart').getBoundingClientRect(), prev = $('modStart').previousElementSibling, pr = prev ? prev.getBoundingClientRect() : null;
+  const top = Math.max(60, pr && pr.height > 80 ? pr.top : 70), bot = sb.top - 10, h = Math.max(160, bot - top);
+  const titleH = Math.max(58, Math.min(112, h * .3));
+  return { top, bot, h, titleH, cardH: Math.max(90, h - titleH - 14), cx: sb.left + sb.width / 2 };
+}
+function tcTargets(els){
+  const R = tcRegion(), w0 = els[0].offsetWidth || 150, h0 = els[0].offsetHeight || 220, sc = Math.min(R.cardH / h0, innerWidth * .4 / w0, 2.4), gap = Math.max(10, w0 * sc * .1);
+  const cy = R.top + R.titleH + 6 + R.cardH / 2;
+  return els.map((el, i) => ({ w: w0, h: h0, sc, x: R.cx + (i ? 1 : -1) * (w0 * sc + gap) / 2, y: cy, R }));
+}
+function tcOvHide(){ const o = document.getElementById('tcOv'); if (o) o.remove(); tcCards().forEach(el => el.classList.remove('tc-away')); document.body.classList.remove('tc-armed'); }
+function tcOvShow(animate){
+  tcOvHide();
+  const els = tcCards(); if (els.length < 2) return;
+  const T = tcTargets(els), b = tcBest();
+  const o = document.createElement('div'); o.id = 'tcOv';
+  const R = T[0].R;
+  { const sbr = $('modStart').getBoundingClientRect(); o.style.setProperty('--st', sbr.top - 6 + 'px'); o.style.setProperty('--sb', sbr.bottom + 6 + 'px'); }
+  o.innerHTML = `<div class="tc-dim"></div><div class="tc-dim b"></div><div class="tc-title" style="top:${R.top}px;height:${R.titleH}px"><b style="font-size:${Math.max(18, Math.min(64, R.titleH * .5, innerWidth * .078))}px">A TRUE CLASSIC</b><i>This is how it was.</i><small>${b ? `BEST ${Math.floor(b.alt || 0)}M · ${(b.score || 0).toLocaleString('en-US')} PTS · ${b.lines || 0} LINES · LV ${b.level || 0} · ` : ''}TAP THE CARDS TO GO BACK</small></div>`;
+  $('modsel').appendChild(o);
+  els.forEach((el, i) => {
+    const r = el.getBoundingClientRect(), t = T[i], w = document.createElement('div'); w.className = 'tc-c';
+    w.style.cssText = `width:${t.w}px;height:${t.h}px;left:${t.x - t.w / 2}px;top:${t.y - t.h / 2}px;transform:scale(${t.sc})`;
+    const c = el.cloneNode(true); c.removeAttribute('style'); c.className = el.className.replace(/\b(pressing|hov|tc-away)\b/g, '') + ' tc-clone'; w.appendChild(c);
+    w.onclick = () => tcArm(false);
+    o.appendChild(w); el.classList.add('tc-away');
+    if (animate && w.animate){
+      const dx = r.left + r.width / 2 - t.x, dy = r.top + r.height / 2 - t.y;
+      w.animate([{ transform: `translate(${dx}px,${dy}px) scale(1) rotateY(0deg)`, filter: 'brightness(1)' }, { transform: `translate(${dx * .35}px,${dy * .35 - 30}px) scale(${(1 + t.sc) / 2}) rotateY(180deg)`, filter: 'brightness(1.5)', offset: .5 }, { transform: `translate(0,0) scale(${t.sc}) rotateY(360deg)`, filter: 'brightness(1)' }],
+        { duration: 900, delay: i * 90, easing: 'cubic-bezier(.3,.7,.2,1)', fill: 'backwards' });
+    }
+  });
+  document.body.classList.add('tc-armed');
+  if (animate) o.classList.add('in');
+}
+function tcArm(on){
+  if (TC_ARM.busy || on === TC_ARM.on) return;
+  if (on && !tcEligible()) return;
+  TC_ARM.on = on;
+  if (on){ tcOvShow(uiDetail() > 0); sfxEv('cardrev', 'card_select_reverse'); say('A TRUE CLASSIC · PRESS START'); }
+  else {
+    const o = document.getElementById('tcOv'), els = tcCards();
+    if (o && uiDetail() > 0 && els.length === 2){
+      TC_ARM.busy = true; const T = tcTargets(els);
+      els.forEach(el => el.classList.remove('tc-away'));
+      const rs = els.map(el => el.getBoundingClientRect()); els.forEach(el => el.classList.add('tc-away'));
+      [...o.querySelectorAll('.tc-c')].forEach((w, i) => { const t = T[i], r = rs[i], dx = r.left + r.width / 2 - t.x, dy = r.top + r.height / 2 - t.y;
+        if (w.animate) w.animate([{ transform: `translate(0,0) scale(${t.sc}) rotateY(360deg)` }, { transform: `translate(${dx}px,${dy}px) scale(1) rotateY(0deg)` }], { duration: 450, easing: 'cubic-bezier(.4,0,.6,1)', fill: 'forwards' }); });
+      o.classList.add('out');
+      setTimeout(() => { TC_ARM.busy = false; tcOvHide(); renderModSel(); }, 460);
+    } else { tcOvHide(); }
+    sfxEv('cardsel', 'card_select');
+  }
+  tcStartLabel();
+}
+function tcStartLabel(){ const sb = $('modStart'); if (!sb) return; sb.classList.toggle('tc', TC_ARM.on); const q = $('qpCombo'); if (q && TC_ARM.on) q.textContent = '"A TRUE CLASSIC"'; }
+// renderModSel 之後：卡組不再是 NO HOLD＋GRAVITY 就自動取消；還在的話把兩張原卡藏好（重畫過會掉 class）
+const tcBlocked = () => document.body.classList.contains('qpres') || document.body.classList.contains('qpinres') || document.body.classList.contains('qpg') || document.body.classList.contains('game') || screen !== 'modsel';   // 結算頁／對戰中不蓋（狀態留著，AGAIN 一樣是 classic）
+function tcSync(){
+  if (!TC_ARM.on){ return; }
+  if (!tcEligible()){ TC_ARM.on = false; tcOvHide(); tcStartLabel(); return; }
+  if (tcBlocked()){ if (document.getElementById('tcOv')) tcOvHide(); tcStartLabel(); return; }
+  if (!document.getElementById('tcOv') && !TC_ARM.busy) tcOvShow(false);
+  else tcCards().forEach(el => el.classList.add('tc-away'));
+  tcStartLabel();
+}
+new MutationObserver(() => { if (TC_ARM.on) requestAnimationFrame(tcSync); }).observe(document.body, { attributes: true, attributeFilter: ['class'] });
+{ const sb = $('modStart');
+  const stop = () => { if (TC_ARM.raf) cancelAnimationFrame(TC_ARM.raf); TC_ARM.raf = 0; TC_ARM.t = 0; sb.style.removeProperty('--tcp'); sb.classList.remove('tc-hold'); };
+  sb.addEventListener('pointerdown', e => {
+    if (e.pointerType === 'mouse' && e.button !== 0) return;
+    if (!(TC_ARM.on || tcEligible()) || TC_ARM.busy) return;
+    stop(); TC_ARM.eat = false; TC_ARM.t = performance.now(); sb.classList.add('tc-hold');
+    const tick = () => { if (!TC_ARM.t) return; const k = (performance.now() - TC_ARM.t) / 1000;
+      if (typeof EXT_HOLD !== 'undefined' && EXT_HOLD.eat){ stop(); return; }           // 按住 START 點 THE TOWER 是擴建，不算
+      sb.style.setProperty('--tcp', Math.min(1, k).toFixed(3));
+      if (k >= 1){ stop(); TC_ARM.eat = true; tcArm(!TC_ARM.on); return; }                  // eat：放開時那一下 click 不算（不管之後又按了多久）
+      TC_ARM.raf = requestAnimationFrame(tick); };
+    TC_ARM.raf = requestAnimationFrame(tick);
+  });
+  for (const ev of ['pointerup', 'pointercancel', 'pointerleave']) sb.addEventListener(ev, () => { stop(); if (TC_ARM.eat) setTimeout(() => { TC_ARM.eat = false; }, 80); });
+  sb.addEventListener('click', e => { if (TC_ARM.eat){ TC_ARM.eat = false; e.stopImmediatePropagation(); e.preventDefault(); } }, true);   // 長按完放開不算按 START
+  sb.addEventListener('contextmenu', e => { if (TC_ARM.t || TC_ARM.eat) e.preventDefault(); });
+  addEventListener('resize', () => { if (TC_ARM.on && document.getElementById('tcOv') && !tcBlocked()) tcOvShow(false); });
 }
 $('modStart').onclick = e => qpStart(!!(e && (e.ctrlKey || e.metaKey)));
 ['qpReset', 'qpReset2'].forEach(id => { const b = $(id); if (!b) return;
@@ -20608,6 +20800,10 @@ function qpShowResult(reason, info){
   $('qrFl').innerHTML = `<s>F</s>${fl.n}`; $('qrFlSub').textContent = fl.name;
   $('qrCsp').innerHTML = `<s>CSP</s>${c.cspPeak || c.csp || 1}`;
   $('qrCspSub').textContent = `${clockText(c.elapsed)} · ${(teamPieces() / Math.max(c.elapsed / 1000, .001)).toFixed(2)} PPS`;
+  if (c.tc){ const b = tcBest() || {};                                    // A TRUE CLASSIC：成績另外記，這一格改放原版的分數／行數／等級
+    $('qrWkL').textContent = 'A TRUE CLASSIC · SCORE'; $('qrWk').innerHTML = c.tc.score.toLocaleString('en-US');
+    sub.classList.toggle('pb', c.tc.score > 0 && c.tc.score >= (b.score || 0));
+    sub.textContent = `${c.tc.lines} LINES · LEVEL ${c.tc.level} · BEST ${(b.score || 0).toLocaleString('en-US')} PTS, ${Math.floor(b.alt || 0)}M`; }
   const id = 'R:' + ((Date.now() ^ Math.round(c.alt * 1000) ^ c.pieces * 2654435761) >>> 0).toString(16).padStart(8, '0') + (c.pieces % 4096).toString(16);
   $('qrId').textContent = id; $('qrReplay').classList.remove('hidden');
   QR.text = `TETR.IO-style QUICK PLAY · ${c.alt.toFixed(1)}m · F${fl.n} ${fl.name} · CSP ${c.cspPeak || c.csp || 1} · ${clockText(c.elapsed)}${mods.length ? ' · ' + mods.join(', ') : ''} · ${id}`;
